@@ -1,0 +1,18 @@
+nodes:
+  - name: data_process
+    class: XXXX
+    params:
+      data_local_path:XXX
+  - name: parse_title
+    class: XXParser
+    params:
+  - name: prompt_judge_title
+    class: XX
+    params:
+  - name: condition_score
+    class: XX
+    params:
+      condition: {
+       "no":0,
+       "yes":1
+      }
