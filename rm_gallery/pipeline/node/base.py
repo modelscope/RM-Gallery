@@ -1,12 +1,60 @@
-from typing import Any, Dict
-from pydantic import BaseModel
+from abc import abstractmethod
+from enum import IntEnum
+from typing import Any, Dict, TypeVar, Type, List, Callable
 
-class Node(BaseModel):
+from rm_gallery.marshal import Marshaller
+from rm_gallery.marshal.yaml import DEFAULT_MARSHALLER
+from rm_gallery.utils import file
+from rm_gallery.utils.tool_functions import init_instance_by_config
 
-    def check_in(self, **kwargs) -> bool:
+T = TypeVar("T",bound = "Node")
+
+class Node:
+
+    def __init__(self, **kwargs):
         pass
 
+    @abstractmethod
     def run(self, **kwargs) -> Any:
+        pass
+
+    @classmethod
+    def from_gallery(
+            cls: Type[T],
+            path: str,
+            marshaller: Marshaller = DEFAULT_MARSHALLER,
+            **kwargs) -> T:
+        fp = file.load_from_gallery(path)
+        return cls.from_dict(marshaller.unmarshal(fp.read()))
+
+    @classmethod
+    def from_dict(cls: Type[T], data: Dict[str, Any], **kwargs) -> T:
+        return init_instance_by_config(data)
+
+    def to_dict(self, **kwargs) -> Dict[str, Any]:
+        pass
+
+    def to_gallery(self, path: str, **kwargs):
+        pass
+
+    def with_dependencies(self,denpendencies:List[str]) -> T:
+        if isinstance(self,RuntimeNode):
+            self.dependencies = denpendencies
+        else:
+            runtime_node = RuntimeNode()
+            runtime_node.bound = self
+            runtime_node.dependencies = denpendencies
+            return runtime_node
+
+    def with_retry(self,max_retry_cnt:int) -> T:
+        if isinstance(self,RuntimeNode):
+            self.retry_max_cnt = max_retry_cnt
+        else:
+            runtime_node = RuntimeNode()
+            runtime_node.bound = self
+            return runtime_node
+
+    def with_check_in(self,**kwargs) -> T:
         pass
 
     def __or__(self, other):
@@ -15,14 +63,25 @@ class Node(BaseModel):
     def __ror__(self, other):
         pass
 
-    @classmethod
-    def from_dict(cls, data: Dict[str, Any]):
-        pass
+class RuntimeStatus(IntEnum):
+    READY: 1
+    RUNNING: 2
+    WAIT: 3
+    DONE: 4
+    ERROR: 5
 
-    @classmethod
-    def from_gallery(cls, path):
-        pass
+class RuntimeNode(Node):
+    bound: Node
+    runtime_name: str
+    dependencies: List[str]
+    check_in_func: Callable
+    retry_max_cnt: int = 1
+    runtime_status: RuntimeStatus
+    timeout_seconds: int
 
-    @classmethod
-    def from_string(cls,data:str):
-        pass
+
+    def run(self,**kwargs):
+        self.bound.run(**kwargs)
+
+    def update_status(self,new_status:RuntimeStatus):
+        self.runtime_status = new_status

@@ -31,6 +31,10 @@ class BaseData(BaseModel):
         }
 
 
+
+    def update(self,other):
+        pass
+
 class BaseDataSet(BaseModel):
     """Base dataset class for managing collections of data"""
     datas: Sequence[BaseData] = Field(default_factory=list, description="List of data items")

@@ -1,6 +1,6 @@
 from rm_gallery.data.base import BaseData
 from rm_gallery.evaluation.prompt import BasePrompt
-from rm_gallery.pipeline.base import RewardPipeline
+from rm_gallery.pipeline.base import PipelineBase
 
 
 def demo():
@@ -8,7 +8,7 @@ def demo():
     """
     init pipeline from gallery directly
     """
-    reward_pipeline = RewardPipeline.from_gallery(path="pipeline.writing.writing")
+    reward_pipeline = PipelineBase.from_gallery(path="pipeline.writing.writing")
     reward_pipeline.run(data)
 
     """
@@ -21,6 +21,6 @@ def demo():
     #custom_prompt = BasePrompt()
 
     nodes = [("parse",parser_prompt),("judge",judge_prompt)]
-    reward_pipeline = RewardPipeline(nodes)
+    reward_pipeline = PipelineBase(nodes)
     reward_pipeline.run(data)
 
