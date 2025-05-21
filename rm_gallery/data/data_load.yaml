@@ -1,0 +1,26 @@
+dataset:
+    name: "preference-test-sets"
+    description: "Preference test dataset from Anthropic HHH"
+    version: "1.0.0"
+    configs:
+        type: local # 必填
+        source: rewardbench # 必填
+        dimension: helpfulness # 可选，支持用户自定义评估维度，预制维度见data_schema.py
+        path: /Users/xielipeng/RM-Gallery/data/preference-test-sets/data/anthropic_helpful-00000-of-00001.parquet
+        limit: 2000 # 可选，随机采样数据集大小
+    processors:
+        - type: filter
+          name: conversation_turn_filter
+          config:
+            min_turns: 4
+            max_turns: 5
+        - type: data_juicer
+          name: text_length_filter
+          config:
+            min_len: 10
+            max_len: 1000
+    extra_metadata:
+        source: "anthropic"
+        task_type: "preference"
+
+
