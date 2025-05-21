@@ -1,11 +1,7 @@
-from typing import List
+import re
+from typing import List, Self
 from pydantic import BaseModel, Field
 from src.data.data_schema import EvaluationContext
-
-
-class Rule(BaseModel):
-    desc: str = Field(default=..., description="rule description")
-    score: float | int | str = Field(default=..., description="scorer")
 
 
 class LLMEvaluationContext(EvaluationContext):
@@ -17,7 +13,15 @@ class Claims(LLMEvaluationContext):
 
 
 class ViolatedPrinciples(LLMEvaluationContext):
-    priciples: List[int] = Field(default=..., description="violated principles")
+    principles: List[int] = Field(default=..., description="indices of the violated principles, a list")
+
+    @classmethod
+    def parse(cls, text: str) -> Self:
+        pattern = r'<([^>]+)>(.*?)</\1>'
+        matches = re.findall(pattern, text)
+        contents = {match[0]: match[1] for match in matches}
+        contents["principles"] = eval(contents["principles"])
+        return cls(**contents)
 
 
 class Score(LLMEvaluationContext):

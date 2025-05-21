@@ -1,7 +1,8 @@
 from typing import List, Type
 
 from pydantic import BaseModel
-from src.rm.schema import EvaluationContext, Rule
+from src.rm.base import Rule
+from src.rm.schema import EvaluationContext
 
 
 class BaseTemplate(BaseModel):

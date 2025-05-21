@@ -1,9 +1,8 @@
 from typing import List, Type
 from pydantic import Field
 from src.model.base import LLMClient
-from src.rm.base import BaseParser
+from src.rm.base import BaseParser, Rule
 from src.rm.schema import EvaluationContext
-from src.rm.scorer import Rule
 from src.rm.template import BaseTemplate, EvaluationTemplate, ParserTemplate
 
 

@@ -31,7 +31,7 @@ class Node(BaseModel):
         return init_instance_by_config(data)
 
     def to_dict(self, **kwargs) -> Dict[str, Any]:
-        ...
+        return self.model_dump()
 
     def to_gallery(self, path: str, **kwargs):
         ...

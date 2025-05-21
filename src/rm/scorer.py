@@ -1,9 +1,9 @@
 from typing import Dict, List, Type
 from pydantic import Field
 from src.data.data_schema import EvaluationContext
-from src.rm.base import BaseParser
+from src.rm.base import BaseParser, Rule
 from src.rm.llm import LLMParser
-from src.rm.schema import Rule, Score
+from src.rm.schema import Score
 from src.rm.template import BaseTemplate, RuleScoreTemplate
 
 

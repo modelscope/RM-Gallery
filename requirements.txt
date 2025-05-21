@@ -12,3 +12,6 @@ yaml~=0.2.5
 pyyaml~=6.0.2
 gym~=0.26.2
 networkx~=3.4.2
+openai
+loguru
+lazy-imports>=0.4.0

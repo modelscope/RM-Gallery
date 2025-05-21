@@ -2,7 +2,7 @@ from typing import Sequence, Dict, Any, Optional, List, Union
 from pydantic import BaseModel, Field
 from datetime import datetime
 
-from .data_schema import EvaluationSample
+from src.data.data_schema import EvaluationSample
 
 
 class BaseData(BaseModel):

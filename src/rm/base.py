@@ -19,8 +19,13 @@ class Var(BaseModel):
     default: Any | None = Field(default=None)
 
 
+class Rule(BaseModel):
+    desc: str = Field(default=..., description="rule description")
+    score: float | int | str = Field(default=..., description="scorer")
+
+
 class BaseParser(Node):
-    inputs: List[Var] = Field(default=...)
+    inputs: List[Var] = Field(default=[])
     name: str = Field(default=...)
 
     # 处理提取数据层
@@ -43,6 +48,7 @@ class BaseParser(Node):
         ...
 
     def run_pointwise(self, sample: EvaluationSample):
+        # TODO parallel
         for output in sample.outputs:
             kwargs = self.prepare_params(sample_input=sample, sample_output=output)
             context = self._run(**kwargs)
@@ -52,3 +58,6 @@ class BaseParser(Node):
         kwargs = self.prepare_params(sample_input=sample, sample_output=sample.outputs)
         context = self._run(**kwargs)
         sample.evaluation_contexts[self.name] = context
+
+    def run(self, **kwargs) -> Any:
+        return None

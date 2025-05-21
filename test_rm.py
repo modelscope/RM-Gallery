@@ -19,6 +19,7 @@ llm = LLMClient(model="qwen-max")
 
 rm = LLMEvaluation(
     client=llm,
+    name="严谨性",
     desc="你是严谨性评估专家，请评估理财师回答的严谨性，确保理财师回答没有出现明显错误。",
     output_schema=ViolatedPrinciples,
     template=EvaluationTemplate,
@@ -33,7 +34,6 @@ rm = LLMEvaluation(
 """,
 )
 
-
 response = rm._run(
     actual_output="今天是周三",
     context="今天是2025年5月20号，周二"
@@ -42,9 +42,9 @@ response = rm._run(
 print(response)
 
 
-rs = RuleScorer(
-    rules=[
-        Rule(desc="满足4条原则，且必须包含原则1、2、3、4", score=1),
-        Rule(desc="满足原则条数少于4条，或未满足原则1、2、3、4", score=0)
-    ]
-)
+# rs = RuleScorer(
+#     rules=[
+#         Rule(desc="满足4条原则，且必须包含原则1、2、3、4", score=1),
+#         Rule(desc="满足原则条数少于4条，或未满足原则1、2、3、4", score=0)
+#     ]
+# )
