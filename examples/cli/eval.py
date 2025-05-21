@@ -1,6 +1,6 @@
-from rm_gallery.data.base import BaseData
-from rm_gallery.evaluation.prompt import BasePrompt
-from rm_gallery.pipeline.base import PipelineBase
+from src.data.base import BaseData
+from src.evaluation.prompt import BasePrompt
+from src.pipeline.base import PipelineBase
 
 
 def demo():

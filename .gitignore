@@ -1,1 +1,5 @@
 .idea
+.pyc
+.DS_Store
+.vscode
+/data
