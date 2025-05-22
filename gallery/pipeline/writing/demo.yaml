@@ -4,7 +4,7 @@ nodes:
     params:
       data_local_path:XXX
   - name: parse_title
-    class: XXParser
+    class: XXTask
     params:
   - name: prompt_judge_title
     class: XX

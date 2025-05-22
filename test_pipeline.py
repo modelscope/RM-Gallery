@@ -1,23 +1,22 @@
-from src.data.data_schema import ContentDict, ContextDict, EvaluationSample
-from src.model.base import LLMClient
-from src.task.base import LLMTask, Var, VarType
-from src.task.parser import DataTask, LLMEvaluation
-from src.task.schema import BestOfN, Claims, ViolatedPrinciples
-from src.task.scorer import Rule, LLMScorer
-from src.task.template import EvaluationTemplate, ParserTemplate
+from src.data.data_schema import ContentDict, ContextDict, DataSample
+from src.model.base import LLMllm
+from src.rm.base import Var, VarType
+from gallery.node.rm import DataRM, LLMRM
+from src.rm.schema import BestOfN, ViolatedPrinciples
+from src.rm.template import EvaluationTemplate
 
-llm = LLMClient(model="qwen-max")
+llm = LLMllm(model="qwen-max")
 
 
-data_parser = DataTask(
+data_parser = DataRM(
     name="data"
 )
 
-fact_parser = LLMEvaluation(
-    client=llm,
+fact_parser = LLMRM(
+    llm=llm,
     name="pointwise",
     desc="你是严谨性评估专家，请评估理财师回答的严谨性，确保理财师回答没有出现明显错误。",
-    output_schema=ViolatedPrinciples,
+    output=ViolatedPrinciples,
     template=EvaluationTemplate,
     principles="""1. 回答必须完全基于现有可用参考材料，所有观点和数据必须来源于参考资料，禁止使用参考材料未提供的来自经验知识的观点、数据或者结论。
 2. 在使用数据相关内容时，避免无谓计算推理，除非用户明确要求，同时数据单位、周期必须与参考资料保持一致，禁止任何形式的单位和周期转换。
@@ -28,28 +27,28 @@ fact_parser = LLMEvaluation(
     - 板块A包含基金B和结论C不能推理得到基金B包含结论C。
     - 时间B的实体A包含结论D不能得到时间C的实体A包含结论D。
 """,
-    inputs=[
-        Var(name="actual_output", path="evaluation_contexts.data.actual_output"),
-        Var(name="context", path="evaluation_contexts.data.context", vtype=VarType.INPUT),
+    input=[
+        Var(name="actual_output", path="reward_contexts.data.actual_output"),
+        Var(name="context", path="reward_contexts.data.context", vtype=VarType.INPUT),
     ]
 )
 
 
-list_parser = LLMEvaluation(
-    client=llm,
+list_parser = LLMRM(
+    llm=llm,
     name="list_parser",
     desc="您是一位资深的理财内容评估专家，负责根据评分细则对多个回答进行评分和比较。",
-    output_schema=BestOfN,
+    output=BestOfN,
     template=EvaluationTemplate,
     principles="""评估回答的表达清晰度和易懂程度。优质回答应以通俗易懂的语言解释专业概念，结构清晰，便于用户理解。""",
-    inputs=[
-        Var(name="actual_output", path="evaluation_contexts.data.actual_output"),
-        Var(name="context", path="evaluation_contexts.data.context", vtype=VarType.INPUT),
+    input=[
+        Var(name="actual_output", path="reward_contexts.data.actual_output"),
+        Var(name="context", path="reward_contexts.data.context", vtype=VarType.INPUT),
     ]
 )
 
 
-sample = EvaluationSample(
+sample = DataSample(
     input=[
         ContentDict(
             role="user", content="今天是几号"

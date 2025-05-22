@@ -1,10 +1,10 @@
-from src.task.parser import FormatParser, LengthParser
+from gallery.node.rm import FormatRM, LengtRM
 
-length_parser = LengthParser(
+length_parser = LengtRM(
     name="length"
 )
 
-format_parser = FormatParser(
+format_parser = FormatRM(
     name="format"
 )
 

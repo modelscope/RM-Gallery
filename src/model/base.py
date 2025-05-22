@@ -235,7 +235,7 @@ class BaseLLM(BaseModel):
 
 
 class LLMClient(BaseLLM):
-    client: Any
+    llm: Any
     model: str = Field(default="gpt-4o")
     econml_api_key: Optional[str] = Field(default=None)
     boyin_api_key: Optional[str] = Field(default=None)

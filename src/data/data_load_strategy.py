@@ -8,7 +8,7 @@ from pathlib import Path
 from datetime import datetime
 from loguru import logger
 
-from .data_schema import EvaluationSample, ContentDict, Reward, DataInfo, ContextDict
+from .data_schema import DataSample, ContentDict, Reward, DataInfo, ContextDict
 from .base import BaseData
 
 
@@ -306,7 +306,7 @@ class ConversationDataLoadStrategy(FileDataLoadStrategy):
             return None
 
         # 创建单个sample
-        sample = EvaluationSample(
+        sample = DataSample(
             input=inputs,
             outputs=outputs,
             contexts=[

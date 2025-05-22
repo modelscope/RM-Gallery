@@ -1,30 +1,30 @@
 
 
-from src.model.base import LLMClient
-from src.task.base import LLMTask
-from src.task.parser import LLMEvaluation
-from src.task.schema import BestOfN, Claims, ViolatedPrinciples
-from src.task.scorer import Rule, RuleScorer
-from src.task.template import EvaluationTemplate, ParserTemplate
+from src.model.base import LLMllm
+from src.rm.base import LLMRewardModule
+from gallery.node.rm import LLMRM
+from src.rm.schema import BestOfN, Claims, ViolatedPrinciples
+from src.rm.scorer import Rule, RuleScorer
+from src.rm.template import EvaluationTemplate, TaskTemplate
 
-llm = LLMClient(model="qwen-max")
+llm = LLMllm(model="qwen-max")
 
 
 
-extract_parser = LLMTask(
-    client=llm,
+extract_parser = LLMRewardModule(
+    llm=llm,
     name="extract",
     desc="你的任务是从<context>中抽取事实描述",
-    output_schema=Claims,
-    template=ParserTemplate,
+    output=Claims,
+    template=TaskTemplate,
 )
 
 
-fact_parser = LLMEvaluation(
-    client=llm,
+fact_parser = LLMRM(
+    llm=llm,
     name="pointwise",
     desc="你是严谨性评估专家，请评估理财师回答的严谨性，确保理财师回答没有出现明显错误。",
-    output_schema=ViolatedPrinciples,
+    output=ViolatedPrinciples,
     template=EvaluationTemplate,
     principles="""1. 回答必须完全基于现有可用参考材料，所有观点和数据必须来源于参考资料，禁止使用参考材料未提供的来自经验知识的观点、数据或者结论。
 2. 在使用数据相关内容时，避免无谓计算推理，除非用户明确要求，同时数据单位、周期必须与参考资料保持一致，禁止任何形式的单位和周期转换。
@@ -45,11 +45,11 @@ fact_parser = LLMEvaluation(
 # )
 
 
-list_parser = LLMEvaluation(
-    client=llm,
+list_parser = LLMRM(
+    llm=llm,
     name="list_parser",
     desc="您是一位资深的理财内容评估专家，负责根据评分细则对多个回答进行评分和比较。",
-    output_schema=BestOfN,
+    output=BestOfN,
     template=EvaluationTemplate,
     principles="""评估回答的表达清晰度和易懂程度。优质回答应以通俗易懂的语言解释专业概念，结构清晰，便于用户理解。""",
 )

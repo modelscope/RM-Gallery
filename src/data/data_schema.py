@@ -2,6 +2,7 @@ import re
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, List, Self, Any
 
+
 class Reward(BaseModel):
     total_score: float = Field(..., description="total score")
     rewards_detail: List[Dict[str, Any]] = Field(
@@ -45,22 +46,6 @@ class DataInfo(BaseModel):
     )
 
 
-class EvaluationContext(BaseModel):
-    @classmethod
-    def parse(cls, text: str) -> Self:
-        pattern = r'<([^>]+)>(.*)</\1>'
-        matches = re.findall(pattern, text, re.DOTALL)
-        contents = {match[0]: match[1] for match in matches}
-        return cls(**contents)
-
-    @classmethod
-    def format(cls) -> str:
-        schema_str = ""
-        for key, property in cls.model_json_schema(by_alias=True)["properties"].items():
-            schema_str += f"<{key}>{property["description"]}</{key}>"
-        return schema_str
-
-
 class ContentDict(BaseModel):
     """Content with its corresponding reward"""
     role: str = Field(..., description="role")
@@ -69,7 +54,6 @@ class ContentDict(BaseModel):
     rewards: Optional[Reward] = Field(default=None, description="Reward for this output")
     # TODO: add extra schema
     extra_metadata: Optional[Dict] = Field(default=None, serialization_alias="extraMetadata")
-    evaluation_contexts: Dict[str, EvaluationContext | dict] = Field(default={})
 
 
 class ContextDict(BaseModel):
@@ -79,18 +63,29 @@ class ContextDict(BaseModel):
     extra_metadata: Optional[Dict] = Field(default=None, serialization_alias="extraMetadata")
 
 
-class EvaluationSample(BaseModel):
-    input: List[ContentDict] = Field(
+class InputSample(BaseModel):
+    history: List[ContentDict] = Field(
         default_factory=list,
         serialization_alias="input"
-    )
-    outputs: List[ContentDict] = Field(
-        default_factory=list,
-        serialization_alias="outputs"
     )
     contexts: List[ContextDict] = Field(
         default_factory=list,
         serialization_alias="contexts"
+    )
+
+
+class OutputSample(BaseModel):
+    answer: ContentDict = Field(default=...)
+
+
+class DataSample(BaseModel):
+    input: InputSample = Field(
+        default_factory=InputSample,
+        serialization_alias="input"
+    )
+    output: List[OutputSample] = Field(
+        default_factory=list,
+        serialization_alias="output"
     )
     data_info: Optional[DataInfo] = Field(
         default=None, serialization_alias="dataInfo"
@@ -98,5 +93,4 @@ class EvaluationSample(BaseModel):
     extra_metadata: Optional[Dict] = Field(
         default=None, serialization_alias="extraMetadata"
     )
-    evaluation_contexts: Dict[str, EvaluationContext | dict] = Field(default={})
     # TODO: support custom schema

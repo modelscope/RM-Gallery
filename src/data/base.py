@@ -2,14 +2,14 @@ from typing import Sequence, Dict, Any, Optional, List, Union
 from pydantic import BaseModel, Field
 from datetime import datetime
 
-from src.data.data_schema import EvaluationSample
+from src.data.data_schema import DataSample
 
 
 class BaseData(BaseModel):
     """Base data class, parent class for all specific data types"""
     unique_id: str = Field(..., description="Unique identifier for the data")
-    evaluation_sample: EvaluationSample = Field(
-        default_factory=EvaluationSample,
+    evaluation_sample: DataSample = Field(
+        default_factory=DataSample,
         serialization_alias="evaluationSample",
     )
     created_at: datetime = Field(default_factory=datetime.now, description="Creation timestamp")
@@ -57,7 +57,7 @@ class BaseDataSet(BaseModel):
         """Evaluate the dataset on a specific dimension"""
         pass
 
-    def get_evaluation_samples(self) -> List[EvaluationSample]:
+    def get_evaluation_samples(self) -> List[DataSample]:
         """Get all evaluation samples from the dataset"""
         return [data.samples for data in self.datas]
 
