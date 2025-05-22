@@ -1,8 +1,8 @@
 from typing import List, Type
 
 from pydantic import BaseModel
-from src.rm.base import BaseTemplate, Rule
-from src.rm.schema import EvaluationContext
+from src.task.base import BaseTemplate, Rule
+from src.task.schema import EvaluationContext
 
 
 class ParserTemplate(BaseTemplate):

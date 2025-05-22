@@ -1,17 +1,17 @@
 
 
 from src.model.base import LLMClient
-from src.rm.base import LLMParser
-from src.rm.parser import LLMEvaluation
-from src.rm.schema import BestOfN, Claims, ViolatedPrinciples
-from src.rm.scorer import Rule, RuleScorer
-from src.rm.template import EvaluationTemplate, ParserTemplate
+from src.task.base import LLMTask
+from src.task.parser import LLMEvaluation
+from src.task.schema import BestOfN, Claims, ViolatedPrinciples
+from src.task.scorer import Rule, RuleScorer
+from src.task.template import EvaluationTemplate, ParserTemplate
 
 llm = LLMClient(model="qwen-max")
 
 
 
-extract_parser = LLMParser(
+extract_parser = LLMTask(
     client=llm,
     name="extract",
     desc="你的任务是从<context>中抽取事实描述",

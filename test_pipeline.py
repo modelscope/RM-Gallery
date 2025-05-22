@@ -1,15 +1,15 @@
 from src.data.data_schema import ContentDict, ContextDict, EvaluationSample
 from src.model.base import LLMClient
-from src.rm.base import LLMParser, Var, VarType
-from src.rm.parser import DataParser, LLMEvaluation
-from src.rm.schema import BestOfN, Claims, ViolatedPrinciples
-from src.rm.scorer import Rule, LLMScorer
-from src.rm.template import EvaluationTemplate, ParserTemplate
+from src.task.base import LLMTask, Var, VarType
+from src.task.parser import DataTask, LLMEvaluation
+from src.task.schema import BestOfN, Claims, ViolatedPrinciples
+from src.task.scorer import Rule, LLMScorer
+from src.task.template import EvaluationTemplate, ParserTemplate
 
 llm = LLMClient(model="qwen-max")
 
 
-data_parser = DataParser(
+data_parser = DataTask(
     name="data"
 )
 

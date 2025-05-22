@@ -31,7 +31,7 @@ class BaseTemplate(BaseModel):
         ...
 
 
-class BaseParser(Node):
+class BaseTask(Node):
     inputs: List[Var] = Field(default=[])
     output_schema: Type[EvaluationContext] | Type[dict] = Field(default=dict)
     name: str = Field(default=...)
@@ -85,7 +85,7 @@ class BaseParser(Node):
         return None
 
 
-class LLMParser(BaseParser):
+class LLMTask(BaseTask):
     client: LLMClient = Field(default=..., description="llm client")
     desc: str | None = Field(default=None, description="evaluation task description")
     output_schema: Type[EvaluationContext] = Field(default=..., description="llm output schema")
@@ -104,7 +104,7 @@ class LLMParser(BaseParser):
         return output
 
 
-class RuleParser(BaseParser):
+class RuleTask(BaseTask):
     output_schema: Type[dict] = Field(default=dict)
 
     def _run(self, **kwargs) -> dict:

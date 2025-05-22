@@ -1,4 +1,4 @@
-from src.rm.parser import FormatParser, LengthParser
+from src.task.parser import FormatParser, LengthParser
 
 length_parser = LengthParser(
     name="length"

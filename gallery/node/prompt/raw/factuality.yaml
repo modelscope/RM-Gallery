@@ -1,33 +1,42 @@
-class: evaluation.prompt.BasePrompt
+class: task.parser.LLMTask
 
 params:
-  content:
+  inputs:
+    - name: dialogue_history
+      path: data.history
+      vtype: INPUT
+  output_schema:
+    class:
+    path:
+  template:
     你是严谨性评估专家，请评估理财师回答的严谨性，确保理财师回答没有出现明显错误。
-  
     # 评估原则
-    factuality
+       factuality
     # 示例
     # 参考资料
     ## 历史对话
-    { dialogue_history }
+        { dialogue_history }
     ## 用户问题
-    { user_query }
+        { user_query }
     ## 供给知识
-    { selection_result }
+        { selection_result }
     ## 用户画像
-    { user_profile }
+        { user_profile }
 
     # 理财师回答
     { ai_answer }
 
     # 执行流程
-    请严格审查以上原则，给出评分和原因。
-  
+        请严格审查以上原则，给出评分和原因。
+
     # 输出格式
-    <decision>
-    评分原因：
-    [列举理财师回答内容，详细分析每个原则是否违反，给出分析过程并说明原因]
-    
-    违反的原则编号：<violated>[例如：6,7]</violated>
-    评分：<score>2</score>
-    </decision>
+        <decision>
+        评分原因：
+        [列举理财师回答内容，详细分析每个原则是否违反，给出分析过程并说明原因]
+        
+        违反的原则编号：<violated>[例如：6,7]</violated>
+        评分：<score>2</score>
+        </decision>
+#  template:
+#    class: evaluation.prompt.BasePrompt
+

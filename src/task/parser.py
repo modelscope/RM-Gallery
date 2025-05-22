@@ -2,11 +2,11 @@ from pathlib import Path
 from typing import Dict, List, Type
 from pydantic import Field
 from src.data.data_schema import EvaluationSample
-from src.rm.base import LLMParser, Rule, RuleParser
-from src.rm.template import BaseTemplate, EvaluationTemplate
+from src.task.base import LLMTask, Rule, RuleTask
+from src.task.template import BaseTemplate, EvaluationTemplate
 
 
-class DataParser(RuleParser):
+class DataTask(RuleTask):
     def run_pointwise(self, sample: EvaluationSample):
         """
         call pointwise parser
@@ -25,7 +25,7 @@ retrieve context: {sample.contexts[-1].context}
             }
 
 
-class LLMEvaluation(LLMParser):
+class LLMEvaluation(LLMTask):
     principles: List[str] | str | None = Field(default=None, description="evaluation priciples")
     examples: List[str] | None = Field(default=None, description="evaluation examples")
     template: Type[BaseTemplate] | str | Dict = Field(default=EvaluationTemplate, description="genreal template of llm evaluation prompt")
@@ -35,7 +35,7 @@ class LLMEvaluation(LLMParser):
         return self.template.format(desc=self.desc, principles=self.principles, examples=self.examples, output_schema=self.output_schema, rules=self.rules, **kwargs)
 
 
-class LengthParser(RuleParser):
+class LengthParser(RuleTask):
     """
     rule parser: check the length of actual_output
     """
@@ -43,7 +43,7 @@ class LengthParser(RuleParser):
         return dict(actual_output_length=len(actual_output))
 
 
-class FormatParser(RuleParser):
+class FormatParser(RuleTask):
     """
     rule parser: check the format of actual_output
     """
