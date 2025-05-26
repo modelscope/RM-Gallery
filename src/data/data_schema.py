@@ -45,16 +45,17 @@ class DataInfo(BaseModel):
         default=None, serialization_alias="source"
     )
 
+class Step(BaseModel):
+    step_content: str = Field(..., description="step content")
+    step_label: Optional[str] = Field(default=None, description="step content label")
+    step_reward: Optional[Reward] = Field(default=None, description="step reward")
+    extra_metadata: Optional[Dict] = Field(default=None, serialization_alias="extraMetadata")
 
 class ContentDict(BaseModel):
     """Content with its corresponding reward"""
     role: str = Field(..., description="role")
     content: Optional[str] = Field(default=None, description="Output content")
-    content_label: Optional[str] = Field(default=None, description="content label")
-    rewards: Optional[Reward] = Field(default=None, description="Reward for this output")
-    # TODO: add extra schema
     extra_metadata: Optional[Dict] = Field(default=None, serialization_alias="extraMetadata")
-
 
 class ContextDict(BaseModel):
     """Context dict"""
@@ -76,6 +77,11 @@ class InputSample(BaseModel):
 
 class OutputSample(BaseModel):
     answer: ContentDict = Field(default=...)
+    answer_label: Optional[str] = Field(default=None, description="answer label")
+
+    steps: Optional[List[Step]] = Field(default=None, description="steps")
+    answer_reward: Optional[Reward] = Field(default=None, description="Reward for this output")
+    extra_metadata: Optional[Dict] = Field(default=None, serialization_alias="extraMetadata")
 
 
 class DataSample(BaseModel):
@@ -90,7 +96,12 @@ class DataSample(BaseModel):
     data_info: Optional[DataInfo] = Field(
         default=None, serialization_alias="dataInfo"
     )
+    sample_label: Optional[str] = Field(
+        default=None, description="sample label"
+    )
+    sample_reward: Optional[Reward] = Field(
+        default=None, serialization_alias="sampleReward"
+    )
     extra_metadata: Optional[Dict] = Field(
         default=None, serialization_alias="extraMetadata"
     )
-    # TODO: support custom schema

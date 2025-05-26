@@ -42,8 +42,8 @@ class ConversationTurnFilter(Operator[BaseData]):
             filtered_items = []
             for item in items:
                 # Count the number of user turns in the input
-                num_turns = sum(1 for input_item in item.evaluation_sample.input 
-                              if input_item.role == 'user') if item.evaluation_sample.input else 0
+                num_turns = sum(1 for input_item in item.reward_sample.input
+                              if input_item.role == 'user') if item.reward_sample.input else 0
                 
                 # Check if the number of turns is within the specified range
                 if self.min_turns <= num_turns <= self.max_turns:

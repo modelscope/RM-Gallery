@@ -4,3 +4,6 @@
 /.vscode
 /data
 __pycache__
+/.jsonl
+/.json
+/.parquet

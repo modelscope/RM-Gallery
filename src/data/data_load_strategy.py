@@ -8,6 +8,7 @@ from pathlib import Path
 from datetime import datetime
 from loguru import logger
 
+from src.base import BaseModule
 from .data_schema import DataSample, ContentDict, Reward, DataInfo, ContextDict
 from .base import BaseData
 
@@ -19,9 +20,8 @@ class DateTimeEncoder(json.JSONEncoder):
             return obj.isoformat()
         return super().default(obj)
 
-
 @dataclass(frozen=True)
-class StrategyKey:
+class StrategyKey(BaseModule):
     """
     Immutable key for strategy registration with wildcard support
     """
@@ -38,7 +38,7 @@ class StrategyKey:
                 and fnmatch.fnmatch(other.dimension, self.dimension))
 
 
-class DataLoadStrategy(ABC):
+class DataLoadStrategy(BaseModule):
     """
     Abstract class for data load strategy
     """
@@ -61,7 +61,7 @@ class DataLoadStrategy(ABC):
         """
         pass
 
-class DataLoadStrategyRegistry:
+class DataLoadStrategyRegistry(BaseModule):
     """
     Registry for data load strategies with wildcard matching
     """
@@ -334,6 +334,99 @@ class ConversationDataLoadStrategy(FileDataLoadStrategy):
                     'source': self.config['source'],
                     'has_chosen': 'chosen' in data_dict,
                     'has_rejected': 'rejected' in data_dict
+                }
+            )
+            return base_data
+        except Exception as e:
+            logger.error(f"Error creating BaseData object: {str(e)}")
+            return None
+
+
+@DataLoadStrategyRegistry.register('local', 'chatmessage', '*')
+class ChatMessageDataLoadStrategy(FileDataLoadStrategy):
+    """
+    Strategy for loading chat message data from local files (JSON, JSONL, Parquet)
+    Supports converting chat messages to BaseData format
+    """
+    def _convert_to_base_data(self, data_dict: Dict[str, Any]) -> BaseData:
+        """Convert chat message data to BaseData format
+        
+        Expected input format:
+        {
+            "messages": [
+                {"role": "user", "content": "Hello"},
+                {"role": "assistant", "content": "Hi there"}
+            ]
+        }
+        """
+        # Generate unique id from messages
+        import hashlib
+        messages_str = str(data_dict.get('messages', []))
+        unique_id = hashlib.md5(messages_str.encode()).hexdigest()
+        
+        # Process messages
+        inputs = []
+        messages = data_dict.get('messages', [])
+        
+        if not isinstance(messages, list):
+            logger.warning(f"Messages must be a list, got {type(messages)}")
+            return None
+            
+        for msg in messages:
+            if not isinstance(msg, dict):
+                logger.warning(f"Message must be a dict, got {type(msg)}")
+                continue
+                
+            role = msg.get('role', 'user')
+            content = msg.get('content', '')
+            
+            if not content:  # Skip empty messages
+                continue
+                
+            inputs.append(ContentDict(
+                role=role,
+                content=content
+            ))
+            
+        if not inputs:
+            logger.warning("No valid messages found in data")
+            return None
+            
+        # Handle the last message
+        outputs = []
+        if inputs and inputs[-1].role == "assistant":
+            # Move the last assistant message to outputs
+            last_message = inputs.pop()
+            reward = Reward(total_score=1.0)
+            reward.set_reward(self.config['dimension'], 1.0, "Original response")
+            outputs.append(ContentDict(
+                role="assistant",
+                content=last_message.content,
+                content_label="original",
+                rewards=reward
+            ))
+        elif inputs and inputs[-1].role == "user":
+            # Remove the last user message
+            inputs.pop()
+            
+        # Create evaluation sample
+        sample = DataSample(
+            input=inputs,
+            outputs=outputs,
+            data_info=DataInfo(
+                domain=self.config['dimension'],
+                source=self.config['source']
+            )
+        )
+        
+        # Create BaseData object
+        try:
+            base_data = BaseData(
+                unique_id=unique_id,
+                evaluation_sample=sample,
+                extra_metadata={
+                    'source': self.config['source'],
+                    'message_count': len(inputs)
                 }
             )
             return base_data

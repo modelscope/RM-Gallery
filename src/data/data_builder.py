@@ -4,6 +4,7 @@ from pathlib import Path
 import yaml
 import random
 
+from src.base import BaseModule
 from .base import BaseData, BaseDataSet
 from .data_load_strategy import DataLoadStrategyRegistry
 from .data_processor import (
@@ -11,7 +12,7 @@ from .data_processor import (
 )
 
 
-class DataBuilder:
+class DataBuilder(BaseModule):
     """
     DataBuilder is responsible for building evaluation datasets from various sources.
     It supports loading data from local files and remote sources (like Huggingface),

@@ -4,10 +4,18 @@ from loguru import logger
 import importlib
 
 from .base import BaseData
+from .data_processor import DataJuicerOperator
+from src.base import BaseModule
 
 T = TypeVar('T', bound=BaseData)
 
-class Operator(Generic[T], ABC):
+class BaseOperator(BaseModule):
+    """
+    Base class for all data processing operators
+    """
+    pass
+
+class Operator(Generic[T], BaseOperator):
     """
     Base class for all data processing operators
     """
@@ -26,7 +34,7 @@ class Operator(Generic[T], ABC):
         return f"{self.__class__.__name__}({self.name})"
 
 
-class OperatorFactory:
+class OperatorFactory(BaseModule):
     """
     Factory class for creating operators from configuration
     """
@@ -74,5 +82,4 @@ class OperatorFactory:
         operator_name = class_name(name)
         operator_module = importlib.import_module(f"{module_path}.{name.lower()}")
         operator_class = getattr(operator_module, operator_name)
-        from .data_processor import DataJuicerOperator
         return DataJuicerOperator(name=operator_name, juicer_op_class=operator_class, config=config)
