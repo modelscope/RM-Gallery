@@ -22,3 +22,5 @@ class ModuleOutput(BaseModel):
 
 class LLMModuleOutput(ModuleOutput):
     reason: str = Field(default=..., description="analysis process", alias="think")
+
+
