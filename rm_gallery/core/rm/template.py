@@ -1,5 +1,6 @@
 import re
 from typing import Self
+from loguru import logger
 from pydantic import BaseModel, Field
 
 from rm_gallery.core.model.base import BaseLLM
@@ -74,8 +75,11 @@ class BaseTemplate(BaseModel):
         - str: A string formatted according to the template, containing the given properties.
         """
         query = cls.format(**kwargs)
+        logger.info(f"query: {query}")
         response = llm.simple_chat(query=query)
+        logger.info(f"response: {response}")
         output = cls.parse(response)
+        logger.info(f"output: {output}")
         return output
 
 

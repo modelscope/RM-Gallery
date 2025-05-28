@@ -8,7 +8,7 @@ from rm_gallery.core.model.message import ChatMessage
     
 class Reward(BaseModel):
     """Reward for the data sample"""
-    total_score: float = Field(..., description="totalScore")
+    total_score: float = Field(0.0, description="totalScore")
     rewards_detail: List[Dict[str, Any]] = Field(default_factory=list,description="list of rewards")
     
     def get_reward_info(self, dimension: str) -> Dict[str, Any]:
@@ -42,8 +42,8 @@ class Reward(BaseModel):
 
 class Step(ChatMessage):
     """Step in the process"""
-    label: Optional[Dict[str, Any]] = Field(default=None,description="label")
-    reward: Optional[Reward] = Field(default=None,description="reward")
+    label: Optional[Dict[str, Any]] = Field(default=None, description="label")
+    reward: Reward = Field(default=Reward(), description="reward")
 
 
 class DataOutput(BaseModel):

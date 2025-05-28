@@ -1,6 +1,7 @@
+from concurrent.futures import ThreadPoolExecutor
 from rm_gallery.core.model.message import MessageRole
 from rm_gallery.core.data.schema import ChatMessage, DataOutput, DataSample, Step
-from rm_gallery.core.model.base import LLMClient
+from rm_gallery.core.model.openai_llm import OpenaiLLM
 from rm_gallery.gallery.rm.helpfulness import HelpfulnessReward
 
 
@@ -33,10 +34,15 @@ def test_helpfulness() -> None:
         ]
     )
 
-    llm = LLMClient(model="qwen-max")
+    llm = OpenaiLLM(model="qwen-max")
 
     helpfulness = HelpfulnessReward(
         llm=llm,
         name="helpfulness"
     )
+
     helpfulness.run(sample)
+    print(sample)
+
+
+test_helpfulness()

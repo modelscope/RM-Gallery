@@ -1,6 +1,6 @@
 from rm_gallery.core.model.message import MessageRole
 from rm_gallery.core.data.schema import ChatMessage, DataOutput, DataSample, Step
-from rm_gallery.core.model.base import LLMClient
+from rm_gallery.core.model.openai_llm import OpenaiLLM
 from rm_gallery.gallery.rm.faithfulness import FaithfulnessReward
 
 
@@ -33,9 +33,12 @@ def test_faithfulness() -> None:
         ]
     )
 
-    llm = LLMClient(model="qwen-max")
+    llm = OpenaiLLM(model="qwen-max")
     faithfullness = FaithfulnessReward(
         llm=llm,
         name="faithfulness"
     )
     faithfullness.run(sample)
+    print(sample)
+
+test_faithfulness()

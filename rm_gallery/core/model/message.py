@@ -29,7 +29,8 @@ class ChatMessage(BaseModel):
 
     role: MessageRole = Field(default=MessageRole.USER)
     name: Optional[str] = Field(default=None)
-    content: Optional[Any] = Field(default="")  # support str for llm or list of dict for multi-modal model
+    content: Optional[Any] = Field(default="")
+    reasoning_content: Optional[Any] = Field(default="")
     tool_calls: Optional[List[ChatTool]] = Field(default=None)
     additional_kwargs: dict = Field(default_factory=dict)
     time_created: datetime = Field(default_factory=datetime.now,

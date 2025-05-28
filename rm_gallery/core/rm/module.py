@@ -2,14 +2,14 @@
 
 
 from abc import abstractmethod
-from concurrent.futures import ThreadPoolExecutor, wait
+from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
 from typing import Generic, List, Type, TypeVar
 
 from pydantic import Field
 from rm_gallery.core.base_module import BaseModule
 from rm_gallery.core.data.base import BaseDataSet
-from rm_gallery.core.data.schema import DataSample, ChatMessage, Step
-from rm_gallery.core.model.base import LLMClient
+from rm_gallery.core.data.schema import DataOutput, DataSample, ChatMessage, Step
+from rm_gallery.core.model.base import BaseLLM
 from rm_gallery.core.rm.template import BaseTemplate
 
 
@@ -37,7 +37,7 @@ class BaseRewardModule(BaseModule):
         ...
 
     @abstractmethod
-    def run(self, sample: DataSample, thread_pool: ThreadPoolExecutor):
+    def run(self, sample: DataSample, thread_pool: ThreadPoolExecutor | None = None):
         """
         This abstract method is designed to handle the execution of a single data sample using the provided thread pool.
         Subclasses must implement this method to define the specific behavior of the task execution.
@@ -51,7 +51,7 @@ class BaseRewardModule(BaseModule):
         """
         ...
 
-    def run_batch(self, samples: BaseDataSet, thread_pool: ThreadPoolExecutor):
+    def run_batch(self, samples: BaseDataSet, thread_pool: ThreadPoolExecutor | None = None):
         """
         Execute a batch of samples using multi-threading.
     
@@ -67,10 +67,14 @@ class BaseRewardModule(BaseModule):
         futures = []
         for sample in samples:
             # Submit the current sample to the thread pool for execution
-            future = thread_pool.submit(self.run, sample=sample, thread_pool=thread_pool)
-            futures.append(future)
+            if thread_pool:
+                future = thread_pool.submit(self.run, sample=sample, thread_pool=thread_pool)
+                futures.append(future)
+            else:
+                self.run(sample=sample, thread_pool=thread_pool)
 
-        wait(futures)
+        if futures:
+            completed, _ = wait(futures, return_when=ALL_COMPLETED)
 
 
 class StepModule(BaseRewardModule):
@@ -93,7 +97,7 @@ class StepModule(BaseRewardModule):
         """
         ...
 
-    def run(self, sample: DataSample, thread_pool: ThreadPoolExecutor):
+    def run(self, sample: DataSample, thread_pool: ThreadPoolExecutor | None = None):
         """
         Method run processes the reward calculation for each step of the sample's output using multi-threading.
         
@@ -110,15 +114,19 @@ class StepModule(BaseRewardModule):
             assert isinstance(output.steps, list)
             # Iterate through each step in the output, submitting tasks for parallel execution using the thread pool.
             for step in output.steps:
-                future = thread_pool.submit(self._run, input=sample.input, output=output, step=step)
-                futures.append(future)
+                if thread_pool:
+                    future = thread_pool.submit(self._run, input=sample.input, output=output, step=step)
+                    futures.append(future)
+                else:
+                    self._run(input=sample.input, output=output.answer, step=step)
             
-        wait(futures)
+        if futures:
+            completed, _ = wait(futures, return_when=ALL_COMPLETED)
 
 
 class PointModule(BaseRewardModule):
     @abstractmethod
-    def _run(self, input: List[ChatMessage], output: Step):
+    def _run(self, input: List[ChatMessage], output: DataOutput):
         """
         This method is responsible for processing a list of chat messages and updating the step output based on the processing results.
         It is an internal method, indicated by the leading underscore, suggesting it should not be called directly from outside the class.
@@ -132,7 +140,7 @@ class PointModule(BaseRewardModule):
         """
         ...
 
-    def run(self, sample: DataSample, thread_pool: ThreadPoolExecutor):
+    def run(self, sample: DataSample, thread_pool: ThreadPoolExecutor | None = None):
         """
         Starts processing a data sample by submitting tasks to a thread pool.
 
@@ -148,10 +156,14 @@ class PointModule(BaseRewardModule):
         for output in sample.output:
             # Submit a task to the thread pool for asynchronous execution
             # The _run method is called with the current input and one of the outputs as arguments
-            future = thread_pool.submit(self._run, input=sample.input, output=output)
-            futures.append(future)
+            if thread_pool:
+                future = thread_pool.submit(self._run, input=sample.input, output=output)
+                futures.append(future)
+            else:
+                self._run(input=sample.input, output=output)
         
-        wait(futures)
+        if futures:
+            completed, _ = wait(futures, return_when=ALL_COMPLETED)
 
 
 class ListModule(BaseRewardModule):
@@ -177,7 +189,7 @@ class ListModule(BaseRewardModule):
         """
         ...
 
-    def run(self, sample: DataSample, thread_pool: ThreadPoolExecutor):
+    def run(self, sample: DataSample, thread_pool: ThreadPoolExecutor | None = None):
         """
         Executes the _run method in a multi-threaded environment.
         This method is intended to be called by external code, which provides a data sample and a thread pool executor.
@@ -192,24 +204,23 @@ class ListModule(BaseRewardModule):
         self._run(sample=sample)
 
 
-T = TypeVar("T", StepModule, PointModule, ListModule, BaseRewardModule)
+T = TypeVar("T", StepModule, PointModule, ListModule)
 
 
-class LLMModule(Generic[T]):
+class LLMModule(BaseRewardModule):
     """
     A generic class for LLM-based reward modules, providing a framework for interaction with LLMs and handling rewards.
     
     Attributes:
-    - llm: LLMClient = Field(default=..., description="llm client"): The LLM client used for interaction with the language model.
+    - llm: BaseLLM = Field(default=..., description="llm client"): The LLM client used for interaction with the language model.
     - template: Type[BaseTemplate] = Field(default=BaseTemplate, description="prompt template"): The prompt template used for generating queries to the LLM.
     """
     
-    llm: LLMClient = Field(default=..., description="llm client")
+    llm: BaseLLM = Field(default=..., description="llm client")
     # The description of the evaluation task is temporarily commented out, as it may not be necessary or may be handled elsewhere.
     # desc: str | None = Field(default=None, description="evaluation task description")
     template: Type[BaseTemplate] = Field(default=BaseTemplate, description="prompt template")
 
-    @abstractmethod
     def _before_call(self, **kwargs) -> dict:
         """
         Abstract method to be implemented by subclasses for preparing parameters before making a call to the LLM.
@@ -220,9 +231,8 @@ class LLMModule(Generic[T]):
         Returns:
         - dict: A dictionary containing the prepared parameters for the LLM call.
         """
-        ...
+        return {}
 
-    @abstractmethod
     def _call(self, **kwargs) -> BaseTemplate:
         """
         Abstract method to be implemented by subclasses for making a call to the LLM using the provided parameters.
@@ -234,8 +244,7 @@ class LLMModule(Generic[T]):
         - BaseTemplate: The parsed response from the LLM, formatted according to the specified template.
         """
         return self.template.call(llm=self.llm, **kwargs)
-    
-    @abstractmethod
+
     def _after_call(self, response: BaseTemplate, **kwargs) -> dict:
         """
         Abstract method to be implemented by subclasses for processing the response from the LLM and setting the reward.
@@ -247,7 +256,7 @@ class LLMModule(Generic[T]):
         Returns:
         - dict: A dictionary containing the result of the post-call processing, including the reward information.
         """
-        ...
+        pass
 
     def _run(self, **kwargs):
         """

@@ -1,8 +1,8 @@
 from concurrent.futures import ThreadPoolExecutor
 from typing import List, Type
 from pydantic import Field
-from rm_gallery.core.data.schema import DataSample, Step
-from rm_gallery.core.model.base import LLMClient
+from rm_gallery.core.data.schema import DataOutput, DataSample, Step
+from rm_gallery.core.model.base import BaseLLM
 from rm_gallery.core.model.message import ChatMessage
 from rm_gallery.core.rm.module import BaseRewardModule, LLMModule, ListModule, PointModule
 from rm_gallery.core.rm.template import BaseTemplate, ReasoningTemplate
@@ -16,7 +16,7 @@ class ExtractClaimsTemplate(ReasoningTemplate):
     claims: str = Field(default=..., description="extract claims from context.")
 
     @classmethod
-    def format(cls, desc: str, context: str) -> str:
+    def format(cls, desc: str, context: str, **kwargs) -> str:
         return f"""# Task Description
         {desc}
         # Context
@@ -33,7 +33,7 @@ class FaithfulnessTemplate(ReasoningTemplate):
     faithfulness: str = Field(default=..., description="Are all claims faithful? Yes or No.")
 
     @classmethod
-    def format(cls, desc: str, claims, truths: str) -> str:
+    def format(cls, desc: str, claims, truths: str, **kwargs) -> str:
         return f"""# Task Description
         {desc}
         # Claims    
@@ -45,63 +45,63 @@ class FaithfulnessTemplate(ReasoningTemplate):
         """
 
 
-class ExtractClaims(LLMModule[PointModule]):
+class ExtractClaims(LLMModule, PointModule):
     """
     A module class for extracting claims from a context.
     """
     name: str = Field(default=...)
     desc: str | None = Field(default="Your task is to extract claims from the context")
-    llm: LLMClient = Field(default=..., description="llm client")
+    llm: BaseLLM = Field(default=..., description="llm client")
     template: Type[BaseTemplate] | str | dict = Field(default=ExtractClaimsTemplate)
 
-    def _before_call(self, input: List[ChatMessage], output: Step, **kwargs) -> dict:
+    def _before_call(self, input: List[ChatMessage], output: DataOutput, **kwargs) -> dict:
         return {
             "desc": self.desc,
-            "answer": output.content
+            "context": output.answer.content
         }
 
-    def _after_call(self, response: ExtractClaimsTemplate, output: Step, **kwargs):
-        output.additional_kwargs["claims"] = response.claims
+    def _after_call(self, response: ExtractClaimsTemplate, output: DataOutput, **kwargs):
+        output.answer.additional_kwargs["claims"] = response.claims
 
 
-class ExtractTruths(LLMModule[ListModule]):
+class ExtractTruths(LLMModule, ListModule):
     """
     A module class for extracting truths from a context.
     """
     name: str = Field(default=...)
     desc: str | None = Field(default="Your task is to extract claims from the context")
-    llm: LLMClient = Field(default=..., description="llm client")
+    llm: BaseLLM = Field(default=..., description="llm client")
     template: Type[BaseTemplate] | str | dict = Field(default=ExtractClaimsTemplate)
 
-    def _before_call(self, input: List[ChatMessage], output: Step, **kwargs) -> dict:
+    def _before_call(self, sample: DataSample, **kwargs) -> dict:
         return {
             "desc": self.desc,
-            "context": input[-1].additional_kwargs["context"]
+            "context": sample.input[-1].additional_kwargs["context"]
         }
 
-    def _after_call(self, response: ExtractClaimsTemplate, output: Step, **kwargs):
-        input.additional_kwargs["truths"] = response.claims
+    def _after_call(self, response: ExtractClaimsTemplate, sample: DataSample, **kwargs):
+        sample.input[-1].additional_kwargs["truths"] = response.claims
 
 
-class Faithfulness(LLMModule[PointModule]):
+class Faithfulness(LLMModule, PointModule):
     """
     A Reward class for evaluating the faithfulness of an answer.
     """
     name: str = Field(default=...)
     desc: str | None = Field(default="Your task is to judge whether the answer is faithful")
-    llm: LLMClient = Field(default=..., description="llm client")
+    llm: BaseLLM = Field(default=..., description="llm client")
     template: Type[BaseTemplate] | str | dict = Field(default=FaithfulnessTemplate)
 
-    def _before_call(self, input: List[ChatMessage], output: Step, **kwargs) -> dict:
+    def _before_call(self, input: List[ChatMessage], output: DataOutput, **kwargs) -> dict:
         return {
             "desc": self.desc,
             "query": input[-1].content,
             "truths": input[-1].additional_kwargs["truths"],
-            "claims": output.additional_kwargs["claims"],
+            "claims": output.answer.additional_kwargs["claims"],
         }
 
-    def _after_call(self, response: FaithfulnessTemplate, output: Step, **kwargs):
-        output.reward.set_reward(
+    def _after_call(self, response: FaithfulnessTemplate, output: DataOutput, **kwargs):
+        output.answer.reward.set_reward(
             dimension="faithfulness", 
             value=1 if response.faithfulness == "Yes" else 0,
             reason=response.reason
@@ -109,9 +109,8 @@ class Faithfulness(LLMModule[PointModule]):
 
 
 @RewardRegistry.register("faithfulness")
-class FaithfulnessReward(LLMModule[BaseRewardModule]):
-    
-    def __init__(self, *args, **kwargs)
+class FaithfulnessReward(LLMModule, BaseRewardModule):
+    def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self._extract_claims_module = ExtractClaims(
@@ -127,10 +126,15 @@ class FaithfulnessReward(LLMModule[BaseRewardModule]):
             llm=self.llm,
         )
 
-    def _run(self, sample: DataSample, thread_pool: ThreadPoolExecutor):
-        future_claim = thread_pool.submit(self._extract_claims_module.run, sample=sample, thread_pool=thread_pool)
-        future_truth = thread_pool.submit(self._extract_truths_module.run, sample=sample, thread_pool=thread_pool)
+    def run(self, sample: DataSample, thread_pool: ThreadPoolExecutor | None = None):
+        if thread_pool:
+            future_claim = thread_pool.submit(self._extract_claims_module.run, sample=sample, thread_pool=thread_pool)
+            future_truth = thread_pool.submit(self._extract_truths_module.run, sample=sample, thread_pool=thread_pool)
 
-        future_claim.result()
-        future_truth.result()
-        self._faithfulness_module.run(sample=sample, thread_pool=thread_pool)
+            future_claim.result()
+            future_truth.result()
+            self._faithfulness_module.run(sample=sample, thread_pool=thread_pool)
+        else:
+            self._extract_claims_module.run(sample=sample)
+            self._extract_truths_module.run(sample=sample)
+            self._faithfulness_module.run(sample=sample)
