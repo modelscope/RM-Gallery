@@ -1,6 +1,7 @@
-from gallery.rm.faithfulness import ExtractClaims, ExtractTruths, FaithfulnessReward
-from rm_gallery.core.data.schema import ChatMessage, DataOutput, DataSample, MessageRole, Step
+from rm_gallery.core.model.message import MessageRole
+from rm_gallery.core.data.schema import ChatMessage, DataOutput, DataSample, Step
 from rm_gallery.core.model.base import LLMClient
+from rm_gallery.gallery.rm.faithfulness import FaithfulnessReward
 
 
 def test_faithfulness() -> None:
@@ -33,22 +34,8 @@ def test_faithfulness() -> None:
     )
 
     llm = LLMClient(model="qwen-max")
-
-    extract_turths = ExtractTruths(
-        llm=llm,
-        name="extract_truths"
-    )
-
-    extract_claims = ExtractClaims(
-        llm=llm,
-        name="extract_claims"
-    )
-        
     faithfullness = FaithfulnessReward(
         llm=llm,
         name="faithfulness"
     )
-
-    extract_turths.run(sample)
-    extract_claims.run(sample)
     faithfullness.run(sample)
