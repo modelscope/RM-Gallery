@@ -1,14 +1,19 @@
-from typing import List, Dict, Any, Optional, Tuple
+from typing import List, Dict, Any, Optional
 from loguru import logger
 import random
+from pydantic import Field
 
-from ..base import BaseData
-from ..base_operator import Operator, OperatorFactory
+from ..process import BaseOperator, OperatorFactory
+from ..schema import DataSample
 
-class GroupFilter(Operator[BaseData]):
+class GroupFilter(BaseOperator):
     """
     Filter and group data items into different sets (e.g., train/test).
     """
+
+    train_ratio: float = Field(default=0.8, description="Ratio of data to be used for training")
+    test_ratio: float = Field(default=0.2, description="Ratio of data to be used for testing")
+    seed: int = Field(default=42, description="Random seed for reproducibility")
 
     def __init__(self, 
                  name: str,
@@ -26,10 +31,13 @@ class GroupFilter(Operator[BaseData]):
             seed: Random seed for reproducibility (default: 42)
             config: Additional configuration parameters
         """
-        super().__init__(name, config)
-        self.train_ratio = train_ratio
-        self.test_ratio = test_ratio
-        self.seed = seed
+        super().__init__(
+            name=name, 
+            config=config,
+            train_ratio=train_ratio,
+            test_ratio=test_ratio,
+            seed=seed
+        )
         
         # Validate ratios
         if abs(train_ratio + test_ratio - 1.0) > 1e-6:
@@ -38,7 +46,7 @@ class GroupFilter(Operator[BaseData]):
         # Set random seed
         random.seed(seed)
 
-    def process_dataset(self, items: List[BaseData]) -> List[BaseData]:
+    def process_dataset(self, items: List[DataSample]) -> List[DataSample]:
         """
         Split items into train and test sets.
 
@@ -63,14 +71,14 @@ class GroupFilter(Operator[BaseData]):
             
             # Add group information to items
             for item in train_items:
-                if not hasattr(item, 'extra_metadata'):
-                    item.extra_metadata = {}
-                item.extra_metadata['group'] = 'train'
+                if item.metadata is None:
+                    item.metadata = {}
+                item.metadata['group'] = 'train'
             
             for item in test_items:
-                if not hasattr(item, 'extra_metadata'):
-                    item.extra_metadata = {}
-                item.extra_metadata['group'] = 'test'
+                if item.metadata is None:
+                    item.metadata = {}
+                item.metadata['group'] = 'test'
             
             logger.info(f"Split {n_items} items into {len(train_items)} train and {len(test_items)} test items")
             
@@ -83,21 +91,23 @@ class GroupFilter(Operator[BaseData]):
 
 # Register the operator with the factory
 @OperatorFactory.register('group_filter')
-def create_group_filter(config: Dict[str, Any]) -> GroupFilter:
+def create_group_filter(operator_config: Dict[str, Any]) -> BaseOperator:
     """
     Create a group filter operator from configuration.
 
     Args:
-        config: Configuration dictionary containing:
+        operator_config: Configuration dictionary containing:
             - name: Name of the operator
-            - train_ratio: Ratio of data for training (optional)
-            - test_ratio: Ratio of data for testing (optional)
-            - seed: Random seed (optional)
+            - config: Configuration dictionary containing:
+                - train_ratio: Ratio of data for training (optional)
+                - test_ratio: Ratio of data for testing (optional)
+                - seed: Random seed (optional)
 
     Returns:
         GroupFilter instance
     """
-    name = config.get('name', 'group_filter')
+    name = operator_config.get('name', 'group_filter')
+    config = operator_config.get('config', {})
     train_ratio = config.get('train_ratio', 0.8)
     test_ratio = config.get('test_ratio', 0.2)
     seed = config.get('seed', 42)

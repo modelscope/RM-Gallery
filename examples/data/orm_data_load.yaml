@@ -1,0 +1,34 @@
+dataset:
+    name: "preference-test-sets"
+    configs:
+        type: local # required, support remote, local
+        source: rewardbench # required, local support rewardbench, chatmessage, prmbench
+        dimension: helpfulness # optional
+        path: ./data/preference-test-sets/data/anthropic_helpful-00000-of-00001.parquet # required, must be local path or url
+        limit: 2000 # optional, random sample dataset size
+    processors:
+        - type: filter
+          name: conversation_turn_filter
+          config:
+            min_turns: 2
+            max_turns: 6
+        - type: filter
+          name: rm_text_length_filter
+          config:
+            min_length: 10
+            max_length: 1000
+        - type: data_juicer
+          name: text_length_filter
+          config:
+            min_len: 50
+            max_len: 100
+        - type: group
+          name: group_filter
+          config:
+            train_ratio: 0.7
+            test_ratio: 0.3
+    metadata:
+        source: "anthropic"
+        task_type: "preference"
+
+

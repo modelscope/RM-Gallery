@@ -1,14 +1,18 @@
 from typing import List, Dict, Any, Optional
 from loguru import logger
+from pydantic import Field
 
-from ..base import BaseData
-from ..base_operator import Operator, OperatorFactory
+from ..process import BaseOperator, OperatorFactory
+from ..schema import DataSample
 
-class ConversationTurnFilter(Operator[BaseData]):
+class ConversationTurnFilter(BaseOperator):
     """
     Filter conversations based on the number of turns in the input.
     A turn is defined as a single message in the conversation.
     """
+
+    min_turns: int = Field(default=1, description="Minimum number of turns required (inclusive)")
+    max_turns: int = Field(default=100, description="Maximum number of turns allowed (inclusive)")
 
     def __init__(self, 
                  name: str,
@@ -24,33 +28,36 @@ class ConversationTurnFilter(Operator[BaseData]):
             max_turns: Maximum number of turns allowed (inclusive)
             config: Additional configuration parameters
         """
-        super().__init__(name, config)
-        self.min_turns = min_turns
-        self.max_turns = max_turns
+        super().__init__(
+            name=name, 
+            config=config,
+            min_turns=min_turns,
+            max_turns=max_turns
+        )
 
-    def process_dataset(self, items: List[BaseData]) -> List[BaseData]:
+    def process_dataset(self, items: List[DataSample]) -> List[DataSample]:
         """
         Filter conversations based on the number of turns.
 
         Args:
-            items: List of BaseData items to process
+            items: List of DataSample items to process
 
         Returns:
-            List of BaseData items that meet the turn count criteria
+            List of DataSample items that meet the turn count criteria
         """
         try:
             filtered_items = []
             for item in items:
                 # Count the number of user turns in the input
-                num_turns = sum(1 for input_item in item.reward_sample.input
-                              if input_item.role == 'user') if item.reward_sample.input else 0
+                num_turns = sum(1 for input_item in item.input if input_item.role == 'user') if item.input else 0
                 
                 # Check if the number of turns is within the specified range
                 if self.min_turns <= num_turns <= self.max_turns:
                     filtered_items.append(item)
                 else:
-                    logger.debug(f"Filtered out conversation with {num_turns} user turns "
-                               f"(min: {self.min_turns}, max: {self.max_turns})")
+                    pass
+                    # logger.debug(f"Filtered out conversation with {num_turns} user turns "
+                    #            f"(min: {self.min_turns}, max: {self.max_turns})")
             
             return filtered_items
         except Exception as e:
@@ -60,7 +67,7 @@ class ConversationTurnFilter(Operator[BaseData]):
 
 # Register the operator with the factory
 @OperatorFactory.register('conversation_turn_filter')
-def create_conversation_turn_filter(operator_config: Dict[str, Any]) -> Operator:
+def create_conversation_turn_filter(operator_config: Dict[str, Any]) -> BaseOperator:
     """
     Create a conversation turn filter operator from configuration.
 

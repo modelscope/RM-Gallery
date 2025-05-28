@@ -2,6 +2,10 @@ from pydantic import BaseModel, Field
 from typing import Optional, Dict, List, Any, Union, Tuple
 from datetime import datetime
 from enum import Enum
+from abc import abstractmethod
+
+from src.base_module import BaseModule
+
 
 class MessageRole(str, Enum):
     """Message role"""
@@ -9,7 +13,15 @@ class MessageRole(str, Enum):
     USER = "user"
     ASSISTANT = "assistant"
     FUNCTION = "function"
-    
+
+class DataModuleType(Enum):
+    """data module type"""
+    BUILD = "builder"
+    LOAD = "loader"
+    GENERATE = "generator"
+    PROCESS = "processor"
+    ANNOTATION = "annotator"
+
 class Reward(BaseModel):
     """Reward for the data sample"""
     total_score: float = Field(..., description="totalScore")
@@ -138,7 +150,7 @@ class BaseDataSet(BaseModel):
 
     def get_data_samples(self) -> List[DataSample]:
         """Get all evaluation samples from the dataset"""
-        return [data for data in self.datas]
+        return [data.data_sample for data in self.datas]
 
     def to_dict(self) -> Dict[str, Any]:
         """Convert dataset to dictionary format"""

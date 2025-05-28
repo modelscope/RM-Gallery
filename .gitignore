@@ -1,10 +1,10 @@
 /.idea
-.pyc
+*.pyc
 .DS_Store
 /.vscode
 /data
 __pycache__
-/.jsonl
-/.json
-/.parquet
+*.jsonl
+*.json
+*.parquet
 /log

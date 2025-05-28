@@ -1,10 +1,10 @@
-from enum import Enum
-from typing import Dict, Any, List, Union, Optional
-from pydantic import Field
-from abc import abstractmethod
+from typing import Sequence, Dict, Any, Optional, List, Union
+from pydantic import BaseModel, Field
+from datetime import datetime
 
 from src.base_module import BaseModule
-from src.data.schema import BaseDataSet, DataSample
+from src.data.data_schema import DataSample
+
 
 class BaseData(BaseModel):
     """Base data class, parent class for all specific data types"""
@@ -33,11 +33,6 @@ class BaseData(BaseModel):
         }
 
 
-
-    def update(self,other):
-        pass
-
-
 class BaseDataSet(BaseModel):
     """Base dataset class for managing collections of data"""
     datas: Sequence[BaseData] = Field(default_factory=list, description="List of data items")
@@ -58,11 +53,30 @@ class BaseDataSet(BaseModel):
         """Evaluate the dataset on a specific dimension"""
         pass
 
-    def get_module_info(self) -> Dict[str, Any]:
-        """get module info"""
-        config_dict = self.config.model_dump() if self.config else None
+    def get_evaluation_samples(self) -> List[DataSample]:
+        """Get all evaluation samples from the dataset"""
+        return [data.samples for data in self.datas]
+
+    def to_dict(self) -> Dict[str, Any]:
+        """Convert dataset to dictionary format"""
         return {
-            "type": self.module_type.value,
             "name": self.name,
-            "config": config_dict
+            "description": self.description,
+            "version": self.version,
+            "extra_metadata": self.extra_metadata,
+            "datas": [data.dict() for data in self.datas]
         }
+
+    @classmethod
+    def from_dict(cls, data: Dict[str, Any]) -> 'BaseDataSet':
+        """Create dataset from dictionary format"""
+        return cls(
+            name=data["name"],
+            description=data.get("description"),
+            version=data.get("version", "1.0.0"),
+            extra_metadata=data.get("extra_metadata", {}),
+            datas=[BaseData(**item) for item in data["datas"]]
+        )
+
+    class Config:
+        arbitrary_types_allowed = True
