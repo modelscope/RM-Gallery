@@ -7,3 +7,4 @@ __pycache__
 /.jsonl
 /.json
 /.parquet
+/log
