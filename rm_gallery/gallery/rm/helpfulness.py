@@ -1,11 +1,11 @@
-from typing import List, Type
+from typing import Type
 
 from pydantic import Field
 
-from rm_gallery.core.data.schema import DataOutput
+from rm_gallery.core.data.schema import DataSample
 from rm_gallery.core.model.base import BaseLLM
-from rm_gallery.core.model.message import ChatMessage
 from rm_gallery.core.rm.module import LLMModule, PointModule
+from rm_gallery.core.rm.schema import DimensionScore, ModuleResult
 from rm_gallery.core.rm.template import BaseTemplate, ReasoningTemplate
 from rm_gallery.core.utils.registry import RewardRegistry
 
@@ -38,21 +38,28 @@ class HelpfulnessReward(LLMModule, PointModule):
     desc: str | None = Field(
         default="Your task is to judge whether the answer is helpfull"
     )
+    weight: float = Field(default=1.0, description="weight")
     llm: BaseLLM = Field(default=..., description="llm client")
     template: Type[BaseTemplate] | str | dict = Field(default=HelpfulnessTemplate)
 
-    def _before_call(
-        self, input: List[ChatMessage], output: DataOutput, **kwargs
-    ) -> dict:
+    def _before_call(self, sample: DataSample, **kwargs) -> dict:
         return {
             "desc": self.desc,
-            "query": input[-1].content,
-            "answer": output.answer.content,
+            "query": sample.input[-1].content,
+            "answer": sample.output[-1].answer.content,
         }
 
-    def _after_call(self, response: HelpfulnessTemplate, output: DataOutput, **kwargs):
-        output.answer.reward.set_reward(
-            dimension="helpfulness",
-            value=1 if response.helpfulness == "Yes" else 0,
-            reason=response.reason,
+    def _after_call(
+        self, response: HelpfulnessTemplate, **kwargs
+    ) -> ModuleResult[DimensionScore]:
+        return ModuleResult(
+            module_name=self.name,
+            reward_details=[
+                DimensionScore(
+                    name="helpfulness",
+                    score=1 if response.helpfulness == "Yes" else 0,
+                    reason=response.reason,
+                    weight=self.weight,
+                )
+            ],
         )

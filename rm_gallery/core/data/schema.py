@@ -4,43 +4,20 @@ from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, Field
 
 from rm_gallery.core.model.message import ChatMessage
+from rm_gallery.core.rm.schema import DimensionScore
 
 
 class Reward(BaseModel):
     """Reward for the data sample"""
 
-    total_score: float = Field(0.0, description="totalScore")
-    rewards_detail: List[Dict[str, Any]] = Field(
-        default_factory=list, description="list of rewards"
-    )
+    details: List[DimensionScore] = Field(default_factory=list, description="details")
 
-    def get_reward_info(self, dimension: str) -> Dict[str, Any]:
-        """Get reward value and reason for a specific dimension"""
-        for reward in self.rewards_detail:
-            if reward["dimension"] == dimension:
-                return {
-                    "value": reward.get("value", 0.0),
-                    "reason": reward.get("reason"),
-                }
-        return {"value": 0.0, "reason": None}
-
-    def set_reward(self, dimension: str, value: Any, reason: str = None) -> None:
-        """Set reward for a specific dimension with optional reason"""
-        reward_dict = {"dimension": dimension, "value": value}
-        if reason:
-            reward_dict["reason"] = reason
-
-        # Update existing reward or add new one
-        for reward in self.rewards_detail:
-            if reward["dimension"] == dimension:
-                reward.update(reward_dict)
-                break
-        else:
-            self.rewards_detail.append(reward_dict)
-
-        # Update total score if this is the first reward
-        if len(self.rewards_detail) == 1:
-            self.total_score = value
+    @property
+    def total_score(self) -> float:
+        """Get the total score of the reward"""
+        return sum(
+            dimension.score * dimension.weight for dimension in self.details
+        ) / sum(dimension.weight for dimension in self.details)
 
 
 class Step(ChatMessage):
@@ -63,8 +40,6 @@ class DataSample(BaseModel):
     unique_id: str = Field(..., description="Unique identifier for the data")
     input: List[ChatMessage] = Field(default_factory=list, description="input")
     output: List[DataOutput] = Field(default_factory=list, description="output")
-    label: Optional[Dict[str, Any]] = Field(default=None, description="label")
-    reward: Optional[Reward] = Field(default=None, description="reward")
     domain: Optional[str] = Field(default=None, description="domain")
     source: Optional[str] = Field(default=None, description="source")
     created_at: datetime = Field(default_factory=datetime.now, description="createdAt")
