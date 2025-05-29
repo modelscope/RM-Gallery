@@ -1,7 +1,7 @@
 from rm_gallery.core.data.schema import ChatMessage, DataOutput, DataSample, Step
 from rm_gallery.core.model.message import MessageRole
 from rm_gallery.core.model.openai_llm import OpenaiLLM
-from rm_gallery.gallery.rm.faithfulness import FaithfulnessReward
+from rm_gallery.gallery.rm.honesty import FaithfulnessReward
 
 
 def test_faithfulness() -> None:
