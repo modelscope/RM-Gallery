@@ -3,7 +3,7 @@
 
 from abc import abstractmethod
 from concurrent.futures import ThreadPoolExecutor
-from typing import Type
+from typing import Any, Dict, List, Type
 
 from pydantic import Field
 
@@ -13,6 +13,7 @@ from rm_gallery.core.data.schema import DataOutput, DataSample
 from rm_gallery.core.model.base import BaseLLM
 from rm_gallery.core.rm.schema import DimensionRank, DimensionScore, ModuleResult
 from rm_gallery.core.rm.template import BaseTemplate
+from rm_gallery.core.utils.registry import ModuleRegistry
 
 
 class BaseRewardModule(BaseModule):
@@ -35,8 +36,8 @@ class BaseRewardModule(BaseModule):
         self,
         sample: DataSample,
         thread_pool: ThreadPoolExecutor | None = None,
-        **kwargs
-    ):
+        **kwargs,
+    ) -> DataSample:
         """
         This abstract method is designed to handle the execution of a single data sample using the provided thread pool.
         Subclasses must implement this method to define the specific behavior of the task execution.
@@ -51,7 +52,7 @@ class BaseRewardModule(BaseModule):
         self,
         dataset: BaseDataSet,
         thread_pool: ThreadPoolExecutor | None = None,
-        **kwargs
+        **kwargs,
     ) -> BaseDataSet:
         """
         Execute a batch of samples.
@@ -79,8 +80,8 @@ class StepModule(BaseRewardModule):
         self,
         sample: DataSample,
         thread_pool: ThreadPoolExecutor | None = None,
-        **kwargs
-    ):
+        **kwargs,
+    ) -> DataSample:
         """
         Method run processes the reward calculation for each step of the sample's output.
         """
@@ -97,6 +98,7 @@ class StepModule(BaseRewardModule):
                 )
                 step.reward.details.extend(result.reward_details)
                 step.additional_kwargs[self.name] = result.extra_data
+        return sample
 
 
 class PointModule(BaseRewardModule):
@@ -108,7 +110,9 @@ class PointModule(BaseRewardModule):
         """
         ...
 
-    def run(self, sample: DataSample, thread_pool: ThreadPoolExecutor | None = None):
+    def run(
+        self, sample: DataSample, thread_pool: ThreadPoolExecutor | None = None
+    ) -> DataSample:
         """
         Starts processing a data sample by submitting tasks to a thread pool.
 
@@ -128,6 +132,7 @@ class PointModule(BaseRewardModule):
             )
             output.answer.reward.details += result.reward_details
             output.answer.additional_kwargs[self.name] = result.extra_data
+        return sample
 
 
 class ListModule(BaseRewardModule):
@@ -149,8 +154,8 @@ class ListModule(BaseRewardModule):
         self,
         sample: DataSample,
         thread_pool: ThreadPoolExecutor | None = None,
-        **kwargs
-    ):
+        **kwargs,
+    ) -> DataSample:
         """
         Executes the _run method in a multi-threaded environment.
         This method is intended to be called by external code, which provides a data sample and a thread pool executor.
@@ -162,6 +167,7 @@ class ListModule(BaseRewardModule):
                 output.answer.reward.details.append(reward[i])
 
         sample.input[-1].additional_kwargs[self.name] = result.extra_data
+        return sample
 
 
 class LLMModule(BaseRewardModule):
@@ -207,3 +213,32 @@ class LLMModule(BaseRewardModule):
         # Process the response from the LLM and set the reward.
         result = self._after_call(response=response, **kwargs)
         return result
+
+
+class SequenceModule(LLMModule, BaseRewardModule):
+    dimensions: List[Dict[str, Any] | BaseRewardModule] = Field(
+        default_factory=list, description="dimension"
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        for i in range(len(self.dimensions)):
+            if isinstance(self.dimensions[i], dict):
+                if isinstance(self.dimensions[i]["cls"], str):
+                    self.dimensions[i] = ModuleRegistry.get(self.dimensions[i]["cls"])(
+                        llm=self.llm, **self.dimensions[i]["params"]
+                    )
+                elif issubclass(self.dimensions[i]["cls"], BaseRewardModule):
+                    self.dimensions[i] = self.dimensions[i]["cls"](
+                        llm=self.llm, **self.dimensions[i]["params"]
+                    )
+                else:
+                    raise ValueError(f"Invalid dimension: {self.dimensions[i]}")
+
+    def run(
+        self, sample: DataSample, thread_pool: ThreadPoolExecutor | None = None
+    ) -> DataSample:
+        for dimension in self.dimensions:
+            dimension.run(sample, thread_pool)
+
+        return sample

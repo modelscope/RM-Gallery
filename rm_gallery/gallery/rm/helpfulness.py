@@ -7,7 +7,7 @@ from rm_gallery.core.model.base import BaseLLM
 from rm_gallery.core.rm.module import LLMModule, PointModule
 from rm_gallery.core.rm.schema import DimensionScore, ModuleResult
 from rm_gallery.core.rm.template import BaseTemplate, ReasoningTemplate
-from rm_gallery.core.utils.registry import RewardRegistry
+from rm_gallery.core.utils.registry import ModuleRegistry
 
 
 class HelpfulnessTemplate(ReasoningTemplate):
@@ -28,7 +28,7 @@ class HelpfulnessTemplate(ReasoningTemplate):
         """
 
 
-@RewardRegistry.register("helpfulness")
+@ModuleRegistry.register("helpfulness")
 class HelpfulnessReward(LLMModule, PointModule):
     """
     A reward module class for evaluating the helpfulness of an answer using an LLM (Large Language Model).

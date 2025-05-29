@@ -1,14 +1,14 @@
 from typing import Dict, Type
 
-from rm_gallery.core.rm.module import BaseRewardModule
+from rm_gallery.core.base_module import BaseModule
 
 
-class RewardRegistry(object):
+class ModuleRegistry(object):
     """This class is used to register some modules to registry by a repo
     name."""
 
     # Dictionary mapping reward module names to their corresponding classes
-    _registry: Dict[str, Type[BaseRewardModule]] = {}
+    _registry: Dict[str, Type[BaseModule]] = {}
 
     @classmethod
     def register(cls, reward_name: str):
@@ -27,7 +27,7 @@ class RewardRegistry(object):
         return _register
 
     @classmethod
-    def get(cls, reward_name: str) -> Type[BaseRewardModule] | None:
+    def get(cls, reward_name: str) -> Type[BaseModule] | None:
         """
         Retrieve a reward module class by its name.
 
