@@ -38,7 +38,7 @@ class HelpfulnessReward(LLMReward, PointWiseReward):
     desc: str | None = Field(
         default="Your task is to judge whether the answer is helpfull"
     )
-    weight: float = Field(default=1.0, description="weight")
+    # weight: float = Field(default=1.0, description="weight")
     llm: BaseLLM = Field(default=..., description="llm client")
     template: Type[BasePromptTemplate] | str | dict = Field(default=HelpfulnessTemplate)
 
@@ -59,7 +59,7 @@ class HelpfulnessReward(LLMReward, PointWiseReward):
                     name="helpfulness",
                     score=1 if response.helpfulness == "Yes" else 0,
                     reason=response.reason,
-                    weight=self.weight,
+                    # weight=self.weight,
                 )
             ],
         )

@@ -54,7 +54,7 @@ class ParallelComposition(SequenceComposition):
         sample = deepcopy(sample)
         futures = []
         for dimension in self.reward_modules:
-            futures.append(thread_pool.submit(dimension.run, sample, thread_pool))
+            futures.append(thread_pool.submit(dimension.evaluate, sample, thread_pool))
 
         wait(futures, return_when=ALL_COMPLETED)
         samples = [future.result() for future in futures]

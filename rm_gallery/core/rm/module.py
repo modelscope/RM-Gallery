@@ -95,7 +95,7 @@ class StepWiseReward(BaseReward):
         **kwargs,
     ) -> DataSample:
         """
-        Method run processes the reward calculation for each step of the sample's output.
+        Method evaluate processes the reward calculation for each step of the sample's output.
         """
         # TODO parallel
         sample = sample.model_copy(deep=True)
@@ -239,6 +239,10 @@ class PairWiseReward(ListWiseReward):
                     output=[output_i, output_j],
                 )
                 result = self._evaluate(subsample, **kwargs)
+                for reward in result.details:
+                    output_i.answer.reward.details.append(reward[0])
+                    output_j.answer.reward.details.append(reward[1])
+        return sample
 
 
 class LLMReward(BaseReward):

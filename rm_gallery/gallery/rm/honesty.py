@@ -120,7 +120,7 @@ class Honesty(LLMReward, PointWiseReward):
     desc: str | None = Field(
         default="Your task is to judge whether the answer is faithful"
     )
-    weight: float = Field(default=1.0, description="weight")
+    # weight: float = Field(default=1.0, description="weight")
     llm: BaseLLM = Field(default=..., description="llm client")
     template: Type[BasePromptTemplate] | str | dict = Field(default=HonestyTemplate)
 
@@ -142,7 +142,7 @@ class Honesty(LLMReward, PointWiseReward):
                     name="honesty",
                     score=1 if response.honesty == "Yes" else 0,
                     reason=response.reason,
-                    weight=self.weight,
+                    # weight=self.weight,
                 )
             ],
         )
@@ -157,7 +157,7 @@ class HonestyReward(SequenceComposition):
             "cls": Honesty,
             "params": {
                 "name": "honesty",
-                "weight": 1.0,
+                # "weight": 1.0,
             },
         },
     ]

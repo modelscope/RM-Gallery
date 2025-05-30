@@ -14,12 +14,12 @@ class Reward(BaseModel):
         default_factory=list, description="details"
     )
 
-    @property
-    def total_score(self) -> float:
-        """Get the total score of the reward"""
-        return sum(
-            dimension.score * dimension.weight for dimension in self.details
-        ) / sum(dimension.weight for dimension in self.details)
+    # @property
+    # def total_score(self) -> float:
+    #     """Get the total score of the reward"""
+    #     return sum(
+    #         dimension.score * dimension.weight for dimension in self.details
+    #     ) / sum(dimension.weight for dimension in self.details)
 
 
 class Step(ChatMessage):

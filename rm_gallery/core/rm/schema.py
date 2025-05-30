@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 class RewardDimension(BaseModel):
     name: str = Field(default=..., description="name")
-    weight: float = Field(default=..., description="weight")
+    # weight: float = Field(default=..., description="weight")
     reason: str = Field(default=..., description="reason")
 
 
@@ -27,7 +27,7 @@ class RewardDimensionWithRank(RewardDimension):
     def __getitem__(self, index: int) -> RewardDimensionWithScore:
         return RewardDimensionWithScore(
             name=self.name,
-            weight=self.weight,
+            # weight=self.weight,
             reason=self.reason,
             score=self.rank[index],
         )
