@@ -1,28 +1,18 @@
 from typing import Any, Dict, List, Optional
 
-from pydantic import Field
-
-from ..process import BaseOperator, OperatorFactory
-from ..schema import DataSample
+from rm_gallery.core.data.process import BaseOperator, OperatorFactory
+from rm_gallery.core.data.schema import DataSample
 
 
+@OperatorFactory.register("text_length_filter")
 class TextLengthFilter(BaseOperator):
     """
     Filter texts based on their length.
     """
 
-    min_length: int = Field(
-        default=10, description="Minimum text length required (inclusive)"
-    )
-    max_length: int = Field(
-        default=1000, description="Maximum text length allowed (inclusive)"
-    )
-
     def __init__(
         self,
         name: str,
-        min_length: int = 10,
-        max_length: int = 1000,
         config: Optional[Dict[str, Any]] = None,
     ):
         """
@@ -34,9 +24,7 @@ class TextLengthFilter(BaseOperator):
             max_length: Maximum text length allowed (inclusive)
             config: Additional configuration parameters
         """
-        super().__init__(
-            name=name, config=config, min_length=min_length, max_length=max_length
-        )
+        super().__init__(name=name, config=config)
 
     def process_dataset(self, items: List[DataSample]) -> List[DataSample]:
         """
@@ -72,7 +60,11 @@ class TextLengthFilter(BaseOperator):
             # calculate total length
             total_length = sum(len(text) for text in texts)
 
-            if self.min_length <= total_length <= self.max_length:
+            if (
+                self.config.get("min_length", 10)
+                <= total_length
+                <= self.config.get("max_length", 1000)
+            ):
                 filtered_items.append(item)
             else:
                 pass
@@ -80,8 +72,6 @@ class TextLengthFilter(BaseOperator):
         return filtered_items
 
 
-# Register the operator with the factory
-@OperatorFactory.register("rm_text_length_filter")
 def create_text_length_filter(operator_config: Dict[str, Any]) -> BaseOperator:
     """
     Create a text length filter operator from configuration.
@@ -98,9 +88,5 @@ def create_text_length_filter(operator_config: Dict[str, Any]) -> BaseOperator:
     """
     name = operator_config.get("name", "text_length_filter")
     config = operator_config.get("config", {})
-    min_length = config.get("min_length", 10)
-    max_length = config.get("max_length", 1000)
 
-    return TextLengthFilter(
-        name=name, min_length=min_length, max_length=max_length, config=config
-    )
+    return TextLengthFilter(name=name, config=config)

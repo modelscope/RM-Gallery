@@ -43,17 +43,32 @@ class OperatorFactory:
     """Factory for creating operators from configuration"""
 
     _operator_registry: Dict[str, Callable[[Dict[str, Any]], BaseOperator]] = {}
+    _external_operators: Dict[str, type] = {}
 
     # Operator type mapping
     _operator_types = {"filter": "filter", "group": "group", "map": "map"}
 
     @classmethod
     def register(cls, name: str) -> Callable:
-        """Decorator for registering operator creation functions"""
+        """Decorator for registering operator creation functions or classes"""
 
-        def decorator(func: Callable[[Dict[str, Any]], BaseOperator]) -> Callable:
-            cls._operator_registry[name] = func
-            return func
+        def decorator(func_or_class):
+            # Check if it's a class (subclass of BaseOperator)
+            if isinstance(func_or_class, type) and issubclass(
+                func_or_class, BaseOperator
+            ):
+                # Create a factory function for the class
+                def class_factory(operator_config: Dict[str, Any]) -> BaseOperator:
+                    op_name = operator_config.get("name", name)
+                    config = operator_config.get("config", {})
+                    return func_or_class(name=op_name, config=config)
+
+                cls._operator_registry[name] = class_factory
+                return func_or_class
+            else:
+                # It's a function, register as-is
+                cls._operator_registry[name] = func_or_class
+                return func_or_class
 
         return decorator
 
@@ -221,7 +236,7 @@ class DataJuicerOperator(BaseOperator[T]):
             return items
 
 
-class DataProcessModule(BaseDataModule):
+class DataProcess(BaseDataModule):
     """Data process module - process data"""
 
     operators: List[BaseOperator] = Field(
@@ -309,6 +324,6 @@ def create_process_module(
     name: str,
     config: Optional[Dict[str, Any]] = None,
     operators: Optional[List[BaseOperator]] = None,
-) -> DataProcessModule:
+) -> DataProcess:
     """Create data process module factory function"""
-    return DataProcessModule(name=name, config=config, operators=operators)
+    return DataProcess(name=name, config=config, operators=operators)

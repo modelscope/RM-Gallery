@@ -2,31 +2,20 @@ import random
 from typing import Any, Dict, List, Optional
 
 from loguru import logger
-from pydantic import Field
 
-from ..process import BaseOperator, OperatorFactory
-from ..schema import DataSample
+from rm_gallery.core.data.process import BaseOperator, OperatorFactory
+from rm_gallery.core.data.schema import DataSample
 
 
-class GroupFilter(BaseOperator):
+@OperatorFactory.register("group_train")
+class GroupTrain(BaseOperator):
     """
     Filter and group data items into different sets (e.g., train/test).
     """
 
-    train_ratio: float = Field(
-        default=0.8, description="Ratio of data to be used for training"
-    )
-    test_ratio: float = Field(
-        default=0.2, description="Ratio of data to be used for testing"
-    )
-    seed: int = Field(default=42, description="Random seed for reproducibility")
-
     def __init__(
         self,
         name: str,
-        train_ratio: float = 0.8,
-        test_ratio: float = 0.2,
-        seed: int = 42,
         config: Optional[Dict[str, Any]] = None,
     ):
         """
@@ -42,19 +31,23 @@ class GroupFilter(BaseOperator):
         super().__init__(
             name=name,
             config=config,
-            train_ratio=train_ratio,
-            test_ratio=test_ratio,
-            seed=seed,
         )
 
         # Validate ratios
-        if abs(train_ratio + test_ratio - 1.0) > 1e-6:
+        if (
+            abs(
+                self.config.get("train_ratio", 0.8)
+                + self.config.get("test_ratio", 0.2)
+                - 1.0
+            )
+            > 1e-6
+        ):
             logger.warning(
-                f"Train ratio ({train_ratio}) + test ratio ({test_ratio}) != 1.0"
+                f"Train ratio ({self.config.get('train_ratio', 0.8)}) + test ratio ({self.config.get('test_ratio', 0.2)}) != 1.0"
             )
 
         # Set random seed
-        random.seed(seed)
+        random.seed(self.config.get("seed", 42))
 
     def process_dataset(self, items: List[DataSample]) -> List[DataSample]:
         """
@@ -73,7 +66,7 @@ class GroupFilter(BaseOperator):
 
             # Calculate split indices
             n_items = len(shuffled_items)
-            n_train = int(n_items * self.train_ratio)
+            n_train = int(n_items * self.config.get("train_ratio", 0.8))
 
             # Split items
             train_items = shuffled_items[:n_train]
@@ -102,9 +95,7 @@ class GroupFilter(BaseOperator):
             return items
 
 
-# Register the operator with the factory
-@OperatorFactory.register("group_filter")
-def create_group_filter(operator_config: Dict[str, Any]) -> BaseOperator:
+def create_group_train(operator_config: Dict[str, Any]) -> BaseOperator:
     """
     Create a group filter operator from configuration.
 
@@ -121,14 +112,8 @@ def create_group_filter(operator_config: Dict[str, Any]) -> BaseOperator:
     """
     name = operator_config.get("name", "group_filter")
     config = operator_config.get("config", {})
-    train_ratio = config.get("train_ratio", 0.8)
-    test_ratio = config.get("test_ratio", 0.2)
-    seed = config.get("seed", 42)
 
-    return GroupFilter(
+    return GroupTrain(
         name=name,
-        train_ratio=train_ratio,
-        test_ratio=test_ratio,
-        seed=seed,
         config=config,
     )

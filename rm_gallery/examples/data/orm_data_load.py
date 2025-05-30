@@ -14,7 +14,7 @@ def convert_to_jsonl_format(data):
 
 def load_and_process_dataset():
     """load and process orm dataset"""
-    config_path = "./src/data/example/orm_data_load.yaml"
+    config_path = "./rm_gallery/examples/data/orm_data_load.yaml"
 
     try:
         logger.info(f"Loading dataset from config: {config_path}")

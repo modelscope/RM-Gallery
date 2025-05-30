@@ -8,25 +8,23 @@ import yaml
 from loguru import logger
 from pydantic import Field
 
+from rm_gallery.core.data.annotation import DataAnnotation, create_annotation_module
 from rm_gallery.core.data.base import BaseDataModule, DataModuleType
-from rm_gallery.core.data.load import DataLoadModule, create_load_module
-from rm_gallery.core.data.ops import register_all_operators
+from rm_gallery.core.data.load import DataLoad, create_load_module
 from rm_gallery.core.data.process import (
-    DataProcessModule,
+    DataProcess,
     OperatorFactory,
     create_process_module,
 )
 from rm_gallery.core.data.schema import BaseDataSet, DataSample
 
-# Ensure operators are registered when module is imported
-register_all_operators()
 
-
-class DataBuildModule(BaseDataModule):
+class DataBuild(BaseDataModule):
     """Data build module - driving the entire data pipeline"""
 
-    load_module: Optional[DataLoadModule] = Field(default=None)
-    process_module: Optional[DataProcessModule] = Field(default=None)
+    load_module: Optional[DataLoad] = Field(default=None)
+    process_module: Optional[DataProcess] = Field(default=None)
+    annotation_module: Optional[DataAnnotation] = Field(default=None)
 
     def __init__(self, name: str, config: Optional[Dict[str, Any]] = None, **modules):
         super().__init__(
@@ -45,6 +43,7 @@ class DataBuildModule(BaseDataModule):
             stages = [
                 ("Loading", self.load_module),
                 ("Processing", self.process_module),
+                ("Annotation", self.annotation_module),
             ]
 
             for stage_name, module in stages:
@@ -63,12 +62,12 @@ class DataBuildModule(BaseDataModule):
 
 def create_build_module(
     name: str, config: Optional[Dict[str, Any]] = None, **modules
-) -> DataBuildModule:
+) -> DataBuild:
     """Factory function to create data build module"""
-    return DataBuildModule(name=name, config=config, **modules)
+    return DataBuild(name=name, config=config, **modules)
 
 
-def create_build_module_from_yaml(config_path: str) -> DataBuildModule:
+def create_build_module_from_yaml(config_path: str) -> DataBuild:
     """Create data build module from YAML configuration"""
     config_path = Path(config_path)
     if not config_path.exists():
@@ -84,7 +83,7 @@ def create_build_module_from_yaml(config_path: str) -> DataBuildModule:
         raise ValueError("Invalid configuration file")
 
 
-def _create_from_dataset_config(dataset_config: Dict[str, Any]) -> DataBuildModule:
+def _create_from_dataset_config(dataset_config: Dict[str, Any]) -> DataBuild:
     """Create build module from dataset configuration"""
     dataset_name = dataset_config.get("name", "dataset")
     modules = {}
@@ -116,6 +115,20 @@ def _create_from_dataset_config(dataset_config: Dict[str, Any]) -> DataBuildModu
             config={"description": f"Process {dataset_name} data"},
             operators=operators,
         )
+
+    # Create annotation module
+    if dataset_config.get("annotation", False):
+        modules["annotation_module"] = create_annotation_module(
+            name=f"{dataset_name}-annotator",
+            config={"description": f"Annotate {dataset_name} data"},
+            label_config=dataset_config.get("label_config", ""),
+            project_title=dataset_config.get("project_title", ""),
+            project_description=dataset_config.get("project_description", ""),
+            server_url=dataset_config.get("server_url", ""),
+            api_token=dataset_config.get("api_token", ""),
+            export_processor=dataset_config.get("export_processor", ""),
+        )
+
     return create_build_module(
         name=dataset_name,
         config={"description": f"Build module for {dataset_name}"},

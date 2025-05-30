@@ -4,7 +4,7 @@ from pathlib import Path
 
 from loguru import logger
 
-# 使用最新的数据加载接口
+#
 from rm_gallery.core.data.build import create_build_module_from_yaml
 
 
