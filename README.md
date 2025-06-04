@@ -1,13 +1,25 @@
-# Easy-RM: 大语言模型奖励模型框架
+# RM-Gallery: A One-Stop Reward Model Platform
 
-Easy-RM 是一个灵活且可扩展的大语言模型奖励模型框架，支持用户自定义评测原则，并提供高并发的LLM API调用能力。
+RM-Gallery is a one-stop platform for training, building and deploying reward models. It provides a comprehensive solution for implementing reward models at both task-level and component-level, with high-throughput and fault-tolerant capabilities.
 
-## 特性
+## Features
 
-- 支持用户自定义评测原则
-- 支持高并发LLM API调用
-- 支持奖励模型训练
-- 可扩展的架构设计
+### Training RM 
+- **Integrated RM Training Pipeline**: Provides an RL-based framework for training reasoning reward models, compatible with popular frameworks (e.g., verl, OpenRLHF), and offers examples for integrating RM-Gallery into the framework. 
+
+### Building RM 
+- **Unified Reward Model Architecture**: Flexible implementation of reward models through standardized interfaces, supporting various architectures (model-based/free), reward formats (scalar/critique), and scoring patterns (pointwise/listwise/pairwise)
+
+- **Comprehensive RM Gallery**: Provides a rich collection of ready-to-use Reward Model instances for diverse tasks (e.g., math, coding, preference alignment, agent) with both task-level(RMComposition) and component-level(RewardModel). Users can directly apply RMComposition for specific tasks or assemble custom RMComposition via component-level RewardModel. 
+
+- **Principle-Critic-Score Paradigm**: Adopts the Principle+Critic+Score-based reasoning Reward Model  paradigm, offering best practices to help users generate principles with limited preference data.  
+
+### Deploying RM 
+
+- **Multiple Usage Scenarios**: Covers multiple Reward Model (RM) usage scenarios with detailed best practices, including Training with Rewards (e.g., post-training), Inference with Rewards (e.g., Best-of-N), and Post-Inference with Rewards (e.g., self-correction).
+
+- **High-Performance RM Serving**: Leverages the New API platform to deliver high-throughput, fault-tolerant reward model serving, enhancing feedback efficiency. 
+
 
 ## 目录结构
 
