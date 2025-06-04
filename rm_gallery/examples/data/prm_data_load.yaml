@@ -3,7 +3,6 @@ dataset:
     configs:
         type: local # required, support remote, local
         source: prmbench # required, local support prmbench
-        dimension: confidence # optional, evaluation dimension
         path: ./data/prmbench_preview.jsonl # required, must be local path or url
         limit: 1000 # optional, random sample dataset size
     processors:
@@ -16,3 +15,4 @@ dataset:
         source: "prm_benchmark"
         task_type: "confidence"
         data_format: "step_wise_process"
+        dimension: "confidence"

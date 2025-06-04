@@ -248,6 +248,7 @@ class DataProcess(BaseDataModule):
         name: str,
         config: Optional[Dict[str, Any]] = None,
         operators: Optional[List[BaseOperator]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
         super().__init__(
@@ -255,6 +256,7 @@ class DataProcess(BaseDataModule):
             name=name,
             config=config,
             operators=operators or [],
+            metadata=metadata,
             **kwargs,
         )
 
@@ -324,6 +326,7 @@ def create_process_module(
     name: str,
     config: Optional[Dict[str, Any]] = None,
     operators: Optional[List[BaseOperator]] = None,
+    metadata: Optional[Dict[str, Any]] = None,
 ) -> DataProcess:
     """Create data process module factory function"""
-    return DataProcess(name=name, config=config, operators=operators)
+    return DataProcess(name=name, config=config, operators=operators, metadata=metadata)

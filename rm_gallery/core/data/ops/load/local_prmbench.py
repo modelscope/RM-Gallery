@@ -7,7 +7,7 @@ from rm_gallery.core.data.load import DataLoadStrategyRegistry, FileDataLoadStra
 from rm_gallery.core.data.schema import ChatMessage, DataOutput, DataSample, Step
 
 
-@DataLoadStrategyRegistry.register("local", "prmbench", "*")
+@DataLoadStrategyRegistry.register("local", "prmbench")
 class PRMDataLoadStrategy(FileDataLoadStrategy):
     """
     Strategy for loading Process Reward Model (PRM) data
@@ -26,7 +26,7 @@ class PRMDataLoadStrategy(FileDataLoadStrategy):
         all_data = super().load_data(**kwargs)
 
         # get current dimension config
-        current_dimension = self.config.get("dimension", "*")
+        current_dimension = self.metadata.get("dimension", "*")
 
         # if wildcard or no mapping, return all data
         if (
@@ -90,7 +90,7 @@ class PRMDataLoadStrategy(FileDataLoadStrategy):
                 input=data_input,
                 output=data_output,
                 source="prmbench",
-                domain=data_dict.get("classification", "reasoning"),
+                task_category=data_dict.get("classification", "reasoning"),
                 metadata={
                     "classification": data_dict.get("classification"),
                     "modified_steps": data_dict.get("modified_steps", []),

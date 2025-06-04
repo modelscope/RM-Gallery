@@ -9,6 +9,7 @@ from loguru import logger
 from pydantic import Field
 
 from rm_gallery.core.data.base import BaseDataModule, DataModuleType
+from rm_gallery.core.data.client.label_studio_client import LabelStudioClient
 from rm_gallery.core.data.config.label_studio_config import get_export_processor
 from rm_gallery.core.data.schema import (
     BaseDataSet,
@@ -18,7 +19,6 @@ from rm_gallery.core.data.schema import (
     Reward,
     Step,
 )
-from rm_gallery.core.model.label_studio_client import LabelStudioClient
 
 
 class DataAnnotation(BaseDataModule):
@@ -55,6 +55,7 @@ class DataAnnotation(BaseDataModule):
         server_url: str = "http://localhost:8080",
         api_token: Optional[str] = None,
         export_processor: Optional[str] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
         super().__init__(
@@ -66,6 +67,7 @@ class DataAnnotation(BaseDataModule):
             server_url=server_url,
             api_token=api_token,
             export_processor=export_processor,
+            metadata=metadata,
             **kwargs,
         )
 
@@ -600,6 +602,7 @@ def create_annotation_module(
     server_url: str = "http://localhost:8080",
     api_token: Optional[str] = None,
     export_processor: Optional[str] = None,
+    metadata: Optional[Dict[str, Any]] = None,
 ) -> DataAnnotation:
     """Factory function to create data annotation module for build pipeline
 
@@ -636,6 +639,7 @@ def create_annotation_module(
         server_url=server_url,
         api_token=api_token,
         export_processor=export_processor,
+        metadata=metadata,
     )
 
     return annotation_module

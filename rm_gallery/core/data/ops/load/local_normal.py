@@ -7,7 +7,7 @@ from rm_gallery.core.data.load import DataLoadStrategyRegistry, FileDataLoadStra
 from rm_gallery.core.data.schema import ChatMessage, DataOutput, DataSample, Step
 
 
-@DataLoadStrategyRegistry.register("local", "*", "*")
+@DataLoadStrategyRegistry.register("local", "*")
 class NormalDataLoadStrategy(FileDataLoadStrategy):
     """
     Generic strategy for loading data and storing it directly in metadata
@@ -32,7 +32,7 @@ class NormalDataLoadStrategy(FileDataLoadStrategy):
                 input=data_input,
                 output=data_output,
                 source=self.config.get("source", "generic"),
-                domain=self.config.get("dimension", "generic"),
+                task_category=self.config.get("task_category", "generic"),
                 metadata={
                     "raw_data": data_dict,  # Store all original data here
                     "load_strategy": "NormalDataLoadStrategy",

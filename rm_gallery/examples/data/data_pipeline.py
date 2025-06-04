@@ -36,6 +36,7 @@ from typing import Any, Dict, Optional
 import requests
 from loguru import logger
 
+import rm_gallery.core.data.ops  # noqa: F401 - needed for strategy registration
 from rm_gallery.core.data.annotation import create_annotation_module
 from rm_gallery.core.data.build import create_build_module
 from rm_gallery.core.data.config.label_studio_config import REWARD_BENCH_LABEL_CONFIG
@@ -77,7 +78,6 @@ class AnnotationPipelineExample:
             config={},
             load_strategy_type="local",
             data_source="rewardbench",
-            dimension="helpfulness",
             load_config={
                 "path": self.config["data_source"]["path"],
                 "limit": limit,

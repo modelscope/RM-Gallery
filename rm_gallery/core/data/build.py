@@ -26,9 +26,19 @@ class DataBuild(BaseDataModule):
     process_module: Optional[DataProcess] = Field(default=None)
     annotation_module: Optional[DataAnnotation] = Field(default=None)
 
-    def __init__(self, name: str, config: Optional[Dict[str, Any]] = None, **modules):
+    def __init__(
+        self,
+        name: str,
+        config: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
+        **modules,
+    ):
         super().__init__(
-            module_type=DataModuleType.BUILD, name=name, config=config, **modules
+            module_type=DataModuleType.BUILD,
+            name=name,
+            config=config,
+            metadata=metadata,
+            **modules,
         )
 
     def run(
@@ -86,6 +96,7 @@ def create_build_module_from_yaml(config_path: str) -> DataBuild:
 def _create_from_dataset_config(dataset_config: Dict[str, Any]) -> DataBuild:
     """Create build module from dataset configuration"""
     dataset_name = dataset_config.get("name", "dataset")
+    metadata = dataset_config.get("metadata", {})
     modules = {}
 
     # Create load module
@@ -96,8 +107,8 @@ def _create_from_dataset_config(dataset_config: Dict[str, Any]) -> DataBuild:
             config={"description": f"Load {dataset_name} data"},
             load_strategy_type=configs.get("type", "local"),
             data_source=configs.get("source", "*"),
-            dimension=configs.get("dimension", "*"),
             load_config={"path": configs.get("path"), "limit": configs.get("limit")},
+            metadata=metadata,
         )
 
     # Create process module
@@ -114,6 +125,7 @@ def _create_from_dataset_config(dataset_config: Dict[str, Any]) -> DataBuild:
             name=f"{dataset_name}-processor",
             config={"description": f"Process {dataset_name} data"},
             operators=operators,
+            metadata=metadata,
         )
 
     # Create annotation module
@@ -127,6 +139,7 @@ def _create_from_dataset_config(dataset_config: Dict[str, Any]) -> DataBuild:
             server_url=dataset_config.get("server_url", ""),
             api_token=dataset_config.get("api_token", ""),
             export_processor=dataset_config.get("export_processor", ""),
+            metadata=metadata,
         )
 
     return create_build_module(

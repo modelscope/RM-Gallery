@@ -1,5 +1,5 @@
-from ..process import OperatorFactory
 from .load.local_chatmessage import ChatMessageDataLoadStrategy
+from .load.local_helpsteer2 import HelpSteer2DataLoadStrategy
 from .load.local_normal import NormalDataLoadStrategy
 from .load.local_prmbench import PRMDataLoadStrategy
 from .load.local_rewardbench import RewardBenchDataLoadStrategy
@@ -20,4 +20,5 @@ LOAD_STRATEGIES = {
     "prmbench": PRMDataLoadStrategy,
     "huggingface": HuggingfaceDataLoadStrategy,
     "normal": NormalDataLoadStrategy,
+    "helpsteer2": HelpSteer2DataLoadStrategy,
 }

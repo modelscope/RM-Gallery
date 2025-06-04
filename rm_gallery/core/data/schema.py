@@ -42,7 +42,7 @@ class DataSample(BaseModel):
     unique_id: str = Field(..., description="Unique identifier for the data")
     input: List[ChatMessage] = Field(default_factory=list, description="input")
     output: List[DataOutput] = Field(default_factory=list, description="output")
-    domain: Optional[str] = Field(default=None, description="domain")
+    task_category: Optional[str] = Field(default=None, description="task category")
     source: Optional[str] = Field(default=None, description="source")
     created_at: datetime = Field(default_factory=datetime.now, description="createdAt")
     metadata: Optional[Dict] = Field(default=None, description="metadata")

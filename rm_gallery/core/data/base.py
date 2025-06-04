@@ -67,4 +67,5 @@ class BaseDataSet(BaseModel):
             "type": self.module_type.value,
             "name": self.name,
             "config": config_dict,
+            "metadata": self.metadata,
         }

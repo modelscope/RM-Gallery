@@ -4,7 +4,7 @@ from pathlib import Path
 
 from loguru import logger
 
-#
+import rm_gallery.core.data.ops  # noqa: F401 - needed for strategy registration
 from rm_gallery.core.data.build import create_build_module_from_yaml
 
 
@@ -15,7 +15,7 @@ def convert_to_jsonl_format(data):
 
 def load_and_process_dataset():
     """load and process prm dataset"""
-    config_path = "./src/data/example/prm_data_load.yaml"
+    config_path = "./rm_gallery/examples/data/prm_data_load.yaml"
 
     try:
         logger.info(f"Loading PRM dataset from config: {config_path}")

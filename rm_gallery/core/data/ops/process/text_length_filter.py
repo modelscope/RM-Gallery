@@ -4,7 +4,7 @@ from rm_gallery.core.data.process import BaseOperator, OperatorFactory
 from rm_gallery.core.data.schema import DataSample
 
 
-@OperatorFactory.register("text_length_filter")
+@OperatorFactory.register("rm_text_length_filter")
 class TextLengthFilter(BaseOperator):
     """
     Filter texts based on their length.

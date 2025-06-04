@@ -7,41 +7,56 @@ from rm_gallery.core.data.load import DataLoadStrategyRegistry, FileDataLoadStra
 from rm_gallery.core.data.schema import ChatMessage, DataOutput, DataSample, Step
 
 
-@DataLoadStrategyRegistry.register("local", "chatmessage")
-class ChatMessageDataLoadStrategy(FileDataLoadStrategy):
+@DataLoadStrategyRegistry.register("local", "helpsteer2")
+class HelpSteer2DataLoadStrategy(FileDataLoadStrategy):
     """
-    Strategy for loading chat message data
+    Strategy for loading HelpSteer2 data format
     """
 
     def _convert_to_data_sample(self, data_dict: Dict[str, Any]) -> DataSample:
-        """Convert chat message data to DataSample format"""
+        """Convert HelpSteer2 data to DataSample format"""
         # generate unique id
         content = str(data_dict)
         unique_id = hashlib.md5(content.encode()).hexdigest()
 
         try:
-            # Create input from messages
-            data_input = self._create_chat_input(data_dict)
+            # Create input from prompt
+            data_input = [ChatMessage(role="user", content=data_dict["prompt"])]
+
+            # Extract evaluation metrics for label
+            label = {
+                "helpfulness": data_dict.get("helpfulness"),
+                "correctness": data_dict.get("correctness"),
+                "coherence": data_dict.get("coherence"),
+                "complexity": data_dict.get("complexity"),
+                "verbosity": data_dict.get("verbosity"),
+            }
 
             # Create output from response
-            data_output = self._create_chat_output(data_dict)
+            data_output = [
+                DataOutput(
+                    answer=Step(
+                        role="assistant", content=data_dict["response"], label=label
+                    )
+                )
+            ]
 
             data_sample = DataSample(
                 unique_id=unique_id,
                 input=data_input,
                 output=data_output,
-                source="chatmessage",
-                task_category=data_dict.get("task_category", "chat"),
+                source="helpsteer2",
+                task_category="chat",
                 metadata={
                     "raw_data": data_dict,
-                    "load_strategy": "ChatMessageDataLoadStrategy",
+                    "load_strategy": "HelpSteer2DataLoadStrategy",
                 },
             )
 
             return data_sample
 
         except Exception as e:
-            logger.error(f"Error creating chat DataSample: {str(e)}")
+            logger.error(f"Error creating HelpSteer2 DataSample: {str(e)}")
             return None
 
     def _create_chat_input(self, data_dict: Dict[str, Any]) -> List[ChatMessage]:

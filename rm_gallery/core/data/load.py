@@ -25,16 +25,13 @@ class StrategyKey:
 
     data_type: str
     data_source: str
-    dimension: str = "*"
 
     def matches(self, other: "StrategyKey") -> bool:
         """
         Check if this key matches another key with wildcard support
         """
-        return (
-            fnmatch.fnmatch(other.data_type, self.data_type)
-            and fnmatch.fnmatch(other.data_source, self.data_source)
-            and fnmatch.fnmatch(other.dimension, self.dimension)
+        return fnmatch.fnmatch(other.data_type, self.data_type) and fnmatch.fnmatch(
+            other.data_source, self.data_source
         )
 
 
@@ -45,12 +42,18 @@ class DataLoadStrategy(BaseDataModule):
 
     config: Dict[str, Any]
 
-    def __init__(self, config: Dict[str, Any], **kwargs):
+    def __init__(
+        self,
+        config: Dict[str, Any],
+        metadata: Optional[Dict[str, Any]] = None,
+        **kwargs,
+    ):
         # Provide required fields for BaseDataModule
         super().__init__(
             module_type=DataModuleType.LOAD,
             name=kwargs.get("name", f"{self.__class__.__name__}"),
             config=config,
+            metadata=metadata,
             **kwargs,
         )
         self.validate_config(config)
@@ -85,13 +88,13 @@ class DataLoadStrategyRegistry:
 
     @classmethod
     def get_strategy_class(
-        cls, data_type: str, data_source: str, dimension: str
+        cls, data_type: str, data_source: str, metadata: Optional[Dict[str, Any]] = None
     ) -> Optional[Type[DataLoadStrategy]]:
         """
         Retrieve the most specific matching strategy
         """
         logger.info(
-            f"Getting strategy class for data_type: {data_type}, data_source: {data_source}, dimension: {dimension}"
+            f"Getting strategy class for data_type: {data_type}, data_source: {data_source}"
         )
 
         # Default to wildcard if not provided
@@ -99,9 +102,7 @@ class DataLoadStrategyRegistry:
         data_source = data_source or "*"
 
         # Create the lookup key
-        lookup_key = StrategyKey(
-            data_type=data_type, data_source=data_source, dimension=dimension
-        )
+        lookup_key = StrategyKey(data_type=data_type, data_source=data_source)
 
         # First, check for exact match
         exact_match = cls._strategies.get(lookup_key)
@@ -128,20 +129,18 @@ class DataLoadStrategyRegistry:
             return found
 
         logger.warning(
-            f"No matching strategy found for data_type: {data_type}, data_source: {data_source}, dimension: {dimension}"
+            f"No matching strategy found for data_type: {data_type}, data_source: {data_source}"
         )
         return None
 
     @classmethod
-    def register(cls, data_type: str, data_source: str, dimension: str):
+    def register(cls, data_type: str, data_source: str):
         """
         Decorator for registering data load strategies
         """
 
         def decorator(strategy_class: Type[DataLoadStrategy]):
-            key = StrategyKey(
-                data_type=data_type, data_source=data_source, dimension=dimension
-            )
+            key = StrategyKey(data_type=data_type, data_source=data_source)
             cls._strategies[key] = strategy_class
             return strategy_class
 
@@ -263,7 +262,6 @@ class DataLoad(BaseDataModule):
         default="local", description="data load strategy type (local or remote)"
     )
     data_source: str = Field(default="*", description="data source")
-    dimension: str = Field(default="*", description="data dimension")
     load_config: Dict[str, Any] = Field(default_factory=dict, description="load config")
 
     def __init__(
@@ -272,8 +270,8 @@ class DataLoad(BaseDataModule):
         config: Optional[Dict[str, Any]] = None,
         load_strategy_type: str = "local",
         data_source: str = "*",
-        dimension: str = "*",
         load_config: Optional[Dict[str, Any]] = None,
+        metadata: Optional[Dict[str, Any]] = None,
         **kwargs,
     ):
         """
@@ -284,8 +282,8 @@ class DataLoad(BaseDataModule):
             config: module config
             load_strategy_type: load strategy type
             data_source: data source
-            dimension: data dimension
             load_config: load config
+            metadata: metadata for the module
         """
         super().__init__(
             module_type=DataModuleType.LOAD,
@@ -293,8 +291,8 @@ class DataLoad(BaseDataModule):
             config=config,
             load_strategy_type=load_strategy_type,
             data_source=data_source,
-            dimension=dimension,
             load_config=load_config or {},
+            metadata=metadata,
             **kwargs,
         )
 
@@ -305,21 +303,17 @@ class DataLoad(BaseDataModule):
         try:
             # Get appropriate data loading strategy
             strategy_class = DataLoadStrategyRegistry.get_strategy_class(
-                data_type=self.load_strategy_type,
-                data_source=self.data_source,
-                dimension=self.dimension,
+                data_type=self.load_strategy_type, data_source=self.data_source
             )
 
             if not strategy_class:
-                error_msg = f"No suitable data load strategy found for type: {self.load_strategy_type}, source: {self.data_source}, dimension: {self.dimension}"
+                error_msg = f"No suitable data load strategy found for type: {self.load_strategy_type}, source: {self.data_source}"
                 logger.error(error_msg)
                 raise ValueError(error_msg)
 
             # Initialize and use strategy to load data
-            # Add dimension to the config passed to strategy
             strategy_config = self.load_config.copy()
-            strategy_config["dimension"] = self.dimension
-            strategy = strategy_class(strategy_config)
+            strategy = strategy_class(strategy_config, metadata=self.metadata)
             try:
                 loaded_items = strategy.load_data()
             except Exception as load_error:
@@ -350,7 +344,6 @@ class DataLoad(BaseDataModule):
                 metadata={
                     "source": self.data_source,
                     "strategy_type": self.load_strategy_type,
-                    "dimension": self.dimension,
                     "load_config": self.load_config,
                 },
                 datas=data_samples,
@@ -371,8 +364,8 @@ def create_load_module(
     config: Optional[Dict[str, Any]] = None,
     load_strategy_type: str = "local",
     data_source: str = "*",
-    dimension: str = "*",
     load_config: Optional[Dict[str, Any]] = None,
+    metadata: Optional[Dict[str, Any]] = None,
 ) -> DataLoad:
     """create data load module factory function"""
     return DataLoad(
@@ -380,6 +373,6 @@ def create_load_module(
         config=config,
         load_strategy_type=load_strategy_type,
         data_source=data_source,
-        dimension=dimension,
         load_config=load_config,
+        metadata=metadata,
     )

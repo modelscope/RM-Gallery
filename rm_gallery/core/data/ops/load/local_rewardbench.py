@@ -7,7 +7,7 @@ from rm_gallery.core.data.load import DataLoadStrategyRegistry, FileDataLoadStra
 from rm_gallery.core.data.schema import ChatMessage, DataOutput, DataSample, Step
 
 
-@DataLoadStrategyRegistry.register("local", "rewardbench", "*")
+@DataLoadStrategyRegistry.register("local", "rewardbench")
 class RewardBenchDataLoadStrategy(FileDataLoadStrategy):
     """
     Strategy for loading conversation data with prompt, chosen and rejected responses
@@ -31,7 +31,7 @@ class RewardBenchDataLoadStrategy(FileDataLoadStrategy):
                 input=data_input,
                 output=data_output,
                 source="rewardbench",
-                domain=self.config.get("dimension", "conversation"),
+                task_category=self.config.get("task_category", "conversation"),
                 metadata={
                     "raw_data": data_dict,
                     "load_strategy": "RewardBenchDataLoadStrategy",
