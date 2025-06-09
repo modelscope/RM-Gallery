@@ -1,1 +1,0 @@
-how to build rm_server
