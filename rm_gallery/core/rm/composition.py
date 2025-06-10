@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
 from copy import deepcopy
 from typing import Any, Dict, List
@@ -9,13 +10,13 @@ from rm_gallery.core.rm.module import BaseReward
 from rm_gallery.core.rm.registry import RewardRegistry
 
 
-class BaseCompositionReward(BaseReward):
+class BaseComposition(BaseReward):
     params: Dict[str, Any] = Field(
         default={}, description="general parameters like llm"
     )
 
 
-class SimpleCompositionReward(BaseCompositionReward):
+class SimpleComposition(BaseComposition):
     weights: Dict[str, float] = Field(default={}, description="weight for each reward")
     reward_modules: List[Dict[str, Any] | BaseReward] = Field(
         default_factory=list, description="reward modules"
@@ -79,4 +80,21 @@ class SimpleCompositionReward(BaseCompositionReward):
                 for step in output.steps:
                     weight(step.reward)
 
+        return sample
+
+
+class RouterComposition(BaseComposition):
+    router: Dict[str, BaseComposition] = Field(
+        default_factory=dict, description="router for different reward modules"
+    )
+
+    @abstractmethod
+    def _condition(self, sample: DataSample) -> str:
+        ...
+
+    def evaluate(
+        self, sample: DataSample, thread_pool: ThreadPoolExecutor | None = None
+    ) -> DataSample:
+        condition = self._condition(sample)
+        self.router[condition].evaluate(sample, thread_pool)
         return sample

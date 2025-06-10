@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Self, Union
+from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field
 
@@ -48,7 +48,7 @@ class DataSample(BaseModel):
     created_at: datetime = Field(default_factory=datetime.now, description="createdAt")
     metadata: Optional[Dict] = Field(default=None, description="metadata")
 
-    def update(self, sample: "DataSample") -> Self:
+    def update(self, sample: "DataSample") -> "DataSample":
         self.input[-1].additional_kwargs.update(sample.input[-1].additional_kwargs)
         for i, output in enumerate(self.output):
             output.answer.additional_kwargs.update(

@@ -5,12 +5,13 @@ from abc import abstractmethod
 from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
 from typing import Dict, List, Type
 
+import numpy as np
 from loguru import logger
 from pydantic import Field
 
 from rm_gallery.core.base_module import BaseModule
 from rm_gallery.core.data.schema import DataOutput, DataSample
-from rm_gallery.core.model.base import BaseLLM
+from rm_gallery.core.model.base_llm import BaseLLM
 from rm_gallery.core.rm.schema import (
     RewardDimensionWithRank,
     RewardDimensionWithScore,
@@ -25,7 +26,10 @@ from rm_gallery.core.rm.template import (
 
 class BaseReward(BaseModule):
     """
-    This class is used to define a basic reward module, inheriting from BaseModule.
+    Base class for reward modules that provides fundamental evaluation interfaces.
+
+    Attributes:
+        name (str): Identifier for the reward module
     """
 
     name: str = Field(default=..., description="The name of the reward module")
@@ -33,8 +37,16 @@ class BaseReward(BaseModule):
     @abstractmethod
     def _evaluate(self, sample: DataSample, **kwargs) -> RewardResult:
         """
-        Main processing function, intended to be implemented by subclasses.
-        This method accepts arbitrary keyword arguments and its specific behavior is determined by the subclass implementation.
+        Core evaluation logic to be implemented by subclasses.
+
+        Processes a single data sample and generates reward metrics.
+
+        Parameters:
+            sample (DataSample): Input data sample containing prompts and responses
+            **kwargs: Additional implementation-specific parameters
+
+        Returns:
+            RewardResult: Computed reward metrics and metadata
         """
         ...
 
@@ -46,12 +58,17 @@ class BaseReward(BaseModule):
         **kwargs,
     ) -> DataSample:
         """
-        This abstract method is designed to handle the execution of a single data sample using the provided thread pool.
-        Subclasses must implement this method to define the specific behavior of the task execution.
+        Executes evaluation on a single data sample.
+
+        Provides thread-safe execution capability through optional thread pool.
 
         Parameters:
-        - sample: DataSample type, representing the data sample to be processed.
-        - thread_pool: ThreadPoolExecutor type, representing the thread pool used for task execution.
+            sample (DataSample): Data sample to evaluate
+            thread_pool (ThreadPoolExecutor | None): Optional executor for parallel processing
+            **kwargs: Additional parameters for evaluation logic
+
+        Returns:
+            DataSample: Processed sample with reward metrics populated
         """
         ...
 
@@ -62,7 +79,17 @@ class BaseReward(BaseModule):
         **kwargs,
     ) -> List[DataSample]:
         """
-        Execute a batch of samples.
+        Processes multiple data samples in parallel or sequentially.
+
+        Uses provided thread pool for concurrent execution when available.
+
+        Parameters:
+            samples (List[DataSample]): Batch of samples to process
+            thread_pool (ThreadPoolExecutor | None): Optional executor for parallel processing
+            **kwargs: Parameters passed to individual evaluations
+
+        Returns:
+            List[DataSample]: Processed samples with reward metrics
         """
         if thread_pool:
             futures = [
@@ -77,10 +104,40 @@ class BaseReward(BaseModule):
 
         return samples
 
+    def best_of_n(
+        self,
+        sample: DataSample,
+        thread_pool: ThreadPoolExecutor | None = None,
+        n: int = 1,
+        **kwargs,
+    ) -> DataSample:
+        """
+        Selects top-n responses based on reward scores.
+
+        Evaluates sample responses and retains those with highest scores.
+
+        Parameters:
+            sample (DataSample): Input sample containing multiple responses
+            thread_pool (ThreadPoolExecutor | None): Optional executor for parallel processing
+            n (int): Number of top responses to retain
+            **kwargs: Parameters passed to evaluation
+
+        Returns:
+            DataSample: Filtered sample containing top-n responses
+        """
+        sample = self.evaluate(sample=sample, thread_pool=thread_pool, **kwargs)
+        indices = np.argsort(
+            np.array([output.answer.reward.score for output in sample.output])
+        )[-n:]
+        sample.output = [sample.output[i] for i in indices]
+        return sample
+
 
 class BaseStepWiseReward(BaseReward):
     """
-    The StepWiseReward class, derived from BaseModule, is designed to calculate rewards for each step.
+    Reward module for step-wise evaluation of multi-step reasoning processes.
+
+    Processes each reasoning step independently to assess quality progression.
     """
 
     @abstractmethod
@@ -88,7 +145,14 @@ class BaseStepWiseReward(BaseReward):
         self, sample: DataSample, **kwargs
     ) -> RewardResult[RewardDimensionWithScore]:
         """
-        Abstract method _evaluate, intended to be implemented by subclasses for processing each step's reward calculation.
+        Step-level evaluation logic to be implemented by subclasses.
+
+        Parameters:
+            sample (DataSample): Single-step data sample for evaluation
+            **kwargs: Additional parameters for evaluation logic
+
+        Returns:
+            RewardResult[RewardDimensionWithScore]: Step-specific reward metrics
         """
         ...
 
@@ -99,7 +163,17 @@ class BaseStepWiseReward(BaseReward):
         **kwargs,
     ) -> DataSample:
         """
-        Method evaluate processes the reward calculation for each step of the sample's output.
+        Processes all reasoning steps in a data sample.
+
+        Applies step-wise evaluation to each step in the response chain.
+
+        Parameters:
+            sample (DataSample): Multi-step reasoning sample to evaluate
+            thread_pool (ThreadPoolExecutor | None): Optional executor for parallel processing
+            **kwargs: Parameters passed to step-wise evaluation
+
+        Returns:
+            DataSample: Sample with step-level reward metrics populated
         """
         sample = sample.model_copy(deep=True)
         futures = []
@@ -142,13 +216,25 @@ class BaseStepWiseReward(BaseReward):
 
 
 class BasePointWiseReward(BaseReward):
+    """
+    Point-wise reward module for individual response evaluation.
+
+    Evaluates each response independently without considering relative ranking.
+    """
+
     @abstractmethod
     def _evaluate(
         self, sample: DataSample, **kwargs
     ) -> RewardResult[RewardDimensionWithScore]:
         """
-        This method is responsible for processing a list of chat messages and updating the step output based on the processing results.
-        It is an internal method, indicated by the leading underscore, suggesting it should not be called directly from outside the class.
+        Processes a single response to generate reward metrics.
+
+        Parameters:
+            sample (DataSample): Single-response data sample
+            **kwargs: Evaluation parameters
+
+        Returns:
+            RewardResult[RewardDimensionWithScore]: Response-specific reward metrics
         """
         ...
 
@@ -156,14 +242,16 @@ class BasePointWiseReward(BaseReward):
         self, sample: DataSample, thread_pool: ThreadPoolExecutor | None = None
     ) -> DataSample:
         """
-        Starts processing a data sample by submitting tasks to a thread pool.
+        Evaluates all responses in a data sample independently.
 
-        For each output in the data sample, a task is submitted to the thread pool for processing.
-        This method does not wait for the tasks to complete.
+        Processes responses either in parallel (with thread pool) or sequentially.
 
         Parameters:
-        - sample: DataSample - The data sample to be processed, containing input and a list of outputs.
-        - thread_pool: ThreadPoolExecutor - The thread pool executor used to execute the tasks.
+            sample (DataSample): Sample containing multiple responses
+            thread_pool (ThreadPoolExecutor | None): Optional executor for parallel processing
+
+        Returns:
+            DataSample: Responses with point-wise reward metrics
         """
         sample = sample.model_copy(deep=True)
         futures = []
@@ -202,8 +290,9 @@ class BasePointWiseReward(BaseReward):
 
 class BaseListWiseReward(BaseReward):
     """
-    This class is a subclass of BaseModule, designed to process data samples and compute rewards.
-    It is an abstract class that requires subclasses to implement the _evaluate method to specify the specific reward calculation logic.
+    List-wise reward module for comparative evaluation of multiple responses.
+
+    Evaluates responses as a group to determine relative rankings.
     """
 
     @abstractmethod
@@ -211,9 +300,14 @@ class BaseListWiseReward(BaseReward):
         self, sample: DataSample, **kwargs
     ) -> RewardResult[RewardDimensionWithRank]:
         """
-        Abstract method _evaluate, intended to be overridden by subclasses.
-        This method's purpose is to process a given data sample to compute a reward.
+        Group evaluation logic to determine response rankings.
 
+        Parameters:
+            sample (DataSample): Multi-response sample for comparative evaluation
+            **kwargs: Evaluation parameters
+
+        Returns:
+            RewardResult[RewardDimensionWithRank]: Relative ranking metrics
         """
         ...
 
@@ -224,9 +318,17 @@ class BaseListWiseReward(BaseReward):
         **kwargs,
     ) -> DataSample:
         """
-        Executes the _evaluate method in a multi-threaded environment.
-        This method is intended to be called by external code, which provides a data sample and a thread pool executor.
+        Executes list-wise evaluation on a group of responses.
 
+        Applies ranking logic to all responses in the sample.
+
+        Parameters:
+            sample (DataSample): Multi-response sample to evaluate
+            thread_pool (ThreadPoolExecutor | None): Optional executor for parallel processing
+            **kwargs: Parameters for evaluation logic
+
+        Returns:
+            DataSample: Responses with ranking information populated
         """
         sample = sample.model_copy(deep=True)
         result = self._evaluate(sample=sample, thread_pool=thread_pool, **kwargs)
@@ -239,12 +341,31 @@ class BaseListWiseReward(BaseReward):
 
 
 class BasePairWiseReward(BaseListWiseReward):
+    """
+    Pair-wise comparison reward module.
+
+    Compares responses in pairs to determine relative preferences.
+    """
+
     def evaluate(
         self,
         sample: DataSample,
         thread_pool: ThreadPoolExecutor | None = None,
         **kwargs,
     ) -> DataSample:
+        """
+        Performs all pairwise comparisons between responses.
+
+        Evaluates every possible pair of responses to build comparative metrics.
+
+        Parameters:
+            sample (DataSample): Multi-response sample for pairwise evaluation
+            thread_pool (ThreadPoolExecutor | None): Optional executor for parallel processing
+            **kwargs: Evaluation parameters
+
+        Returns:
+            DataSample: Responses with pairwise comparison metrics
+        """
         sample = sample.model_copy(deep=True)
         for i, output_i in enumerate(sample.output):
             for j, output_j in enumerate(sample.output, start=i + 1):
@@ -264,7 +385,9 @@ class BasePairWiseReward(BaseListWiseReward):
 
 class BaseLLMReward(BaseReward):
     """
-    A generic class for LLM-based reward modules, providing a framework for interaction with LLMs and handli
+    Base class for LLM-based reward modules.
+
+    Provides framework for prompt-based interaction with language models.
     """
 
     llm: BaseLLM = Field(default=..., description="llm client")
@@ -275,40 +398,53 @@ class BaseLLMReward(BaseReward):
 
     def _before_evaluate(self, **kwargs) -> dict:
         """
-        Abstract method to be implemented by subclasses for preparing parameters before making a call to the LLM.
+        Prepares parameters for prompt generation.
+
+        Returns:
+            dict: Parameters for prompt template formatting
         """
         return {}
 
     def _after_evaluate(self, response: BasePromptTemplate, **kwargs) -> RewardResult:
         """
-        Abstract method to be implemented by subclasses for processing the response from the LLM and setting the reward.
+        Processes LLM response into reward metrics.
+
+        Parameters:
+            response (BasePromptTemplate): Parsed LLM response
+
+        Returns:
+            RewardResult: Structured reward metrics
         """
         return RewardResult(
             name=self.name, details=[], extra_data=response.model_dump()
         )
 
     def _format(self, **kwargs):
-        # Prepare parameters before making the call to the LLM.
-        params = self._before_evaluate(**kwargs)
+        """
+        Generates prompt without executing LLM call.
 
-        # Make the call to the LLM using the prepared parameters.
+        Returns:
+            RewardResult: Contains generated prompt in extra_data
+        """
+        params = self._before_evaluate(**kwargs)
         prompt = self.template.format(**params)
         logger.info(f"prompt: {prompt}")
-
         return RewardResult(name=self.name, details=[], extra_data={"prompt": prompt})
 
     def _evaluate(self, **kwargs) -> RewardResult:
         """
-        Method to execute the full cycle of preparing the call, making the call to the LLM, and processing the response.
+        Full LLM evaluation cycle: prepare, execute, process.
+
+        Handles errors during LLM interaction gracefully.
+
+        Returns:
+            RewardResult: Evaluation results with metrics and metadata
         """
         if self.to_format:
             return self._format(**kwargs)
 
         try:
-            # Prepare parameters before making the call to the LLM.
             params = self._before_evaluate(**kwargs)
-
-            # Make the call to the LLM using the prepared parameters.
             prompt = self.template.format(
                 enable_thinking=self.llm.enable_thinking, **params
             )
@@ -318,7 +454,6 @@ class BaseLLMReward(BaseReward):
             response = self.template.parse(response)
             logger.info(f"response: {response}")
 
-            # Process the response from the LLM and set the reward.
             result = self._after_evaluate(response=response, **kwargs)
             result.extra_data["prompt"] = prompt
         except Exception as e:
@@ -330,6 +465,12 @@ class BaseLLMReward(BaseReward):
 
 
 class BasePrincipleReward(BaseLLMReward):
+    """
+    Principle-based reward module using LLM evaluation.
+
+    Evaluates responses against defined ethical/principle guidelines.
+    """
+
     principles: List[str] = Field(default=..., description="principles")
     examples: List[str] = Field(default=[], description="examples")
     template: Type[BasePromptTemplate] = Field(
@@ -338,16 +479,45 @@ class BasePrincipleReward(BaseLLMReward):
     desc: str = Field(default=..., description="task desc")
 
     def _before_evaluate(self, sample: DataSample, **kwargs) -> dict:
+        """
+        Prepares principle evaluation parameters.
+
+        Parameters:
+            sample (DataSample): Sample containing query to evaluate
+
+        Returns:
+            dict: Parameters for principle-based prompt generation
+        """
+
+        principles_str = ""
+        for i, principle in enumerate(self.principles):
+            principles_str += f"{i + 1}. {principle}\n"
+
         return {
             "desc": self.desc,
-            "principles": "\n".join(self.principles),
+            "principles": principles_str,
             "examples": "\n".join(self.examples),
             "query": sample.input[-1].content,
         }
 
 
 class BasePointWisePrincipleReward(BasePrincipleReward, BasePointWiseReward):
+    """
+    Point-wise principle evaluation using LLM.
+
+    Evaluates each response individually against ethical principles.
+    """
+
     def _before_evaluate(self, sample: DataSample, **kwargs) -> Dict:
+        """
+        Adds response content to evaluation parameters.
+
+        Parameters:
+            sample (DataSample): Sample containing response to evaluate
+
+        Returns:
+            Dict: Parameters including response content
+        """
         params = super()._before_evaluate(sample=sample, **kwargs)
         params["answer"] = sample.output[0].answer.content
         return params
@@ -355,6 +525,15 @@ class BasePointWisePrincipleReward(BasePrincipleReward, BasePointWiseReward):
     def _after_evaluate(
         self, response: PrinciplePointWiseTemplate, sample: DataSample, **kwargs
     ) -> RewardResult:
+        """
+        Converts LLM response to point-wise reward metrics.
+
+        Parameters:
+            response (PrinciplePointWiseTemplate): Parsed LLM evaluation
+
+        Returns:
+            RewardResult: Violation score with explanation
+        """
         return RewardResult(
             name=self.name,
             details=[
@@ -366,9 +545,24 @@ class BasePointWisePrincipleReward(BasePrincipleReward, BasePointWiseReward):
 
 
 class BaseListWisePrincipleReward(BasePrincipleReward, BaseListWiseReward):
+    """
+    List-wise principle evaluation using LLM.
+
+    Compares responses against each other based on ethical principles.
+    """
+
     template: Type[PrincipleListWiseTemplate] = PrincipleListWiseTemplate
 
     def _before_evaluate(self, sample: DataSample, **kwargs) -> Dict:
+        """
+        Prepares list-wise evaluation parameters.
+
+        Parameters:
+            sample (DataSample): Multi-response sample to evaluate
+
+        Returns:
+            Dict: Parameters including all responses for comparison
+        """
         params = super()._before_evaluate(sample=sample, **kwargs)
         answers = [output.answer.content for output in sample.output]
         params["answers"] = answers
@@ -377,7 +571,15 @@ class BaseListWisePrincipleReward(BasePrincipleReward, BaseListWiseReward):
     def _after_evaluate(
         self, response: PrincipleListWiseTemplate, sample: DataSample, **kwargs
     ) -> RewardResult:
-        # calc score for every output, the length of scores must equal to num of output
+        """
+        Converts LLM response to list-wise ranking metrics.
+
+        Parameters:
+            response (PrincipleListWiseTemplate): Parsed LLM comparison
+
+        Returns:
+            RewardResult: Relative ranking of responses
+        """
         scores = [0 for i in range(len(sample.output))]
         scores[response.best - 1] = 1
         return RewardResult(

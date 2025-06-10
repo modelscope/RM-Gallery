@@ -4,7 +4,7 @@ from loguru import logger
 from openai import OpenAI
 from pydantic import Field, model_validator
 
-from rm_gallery.core.model.base import (
+from rm_gallery.core.model.base_llm import (
     BaseLLM,
     _convert_chat_message_to_openai_message,
     _convert_openai_response_to_response,

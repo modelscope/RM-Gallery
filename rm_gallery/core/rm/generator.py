@@ -9,7 +9,7 @@ from loguru import logger
 from pydantic import BaseModel, Field
 
 from rm_gallery.core.data.schema import DataSample
-from rm_gallery.core.model.base import BaseLLM
+from rm_gallery.core.model.base_llm import BaseLLM
 from rm_gallery.core.rm.template import BasePromptTemplate
 
 
@@ -60,14 +60,17 @@ class PrincipleGenerateTempalte(BaseGeneratorTemplate):
             completion_str += f"### Completion {i + 1}\n{completion}\n\n\n"
 
         return f"""## Overview
-As a professional assistant specializing in extracting key insights and summarizing information, you will receive a dataset containing the following elements: scenario, instruction, completions, preference. Your objective is to distill the fundamental principles tackle the scenario, by analyzing why one completion is superior to the others.
+Please propose at most ten concise principles about why one completion is superior to the others.
+Another assistant will evaluate the output based on these principles.
 
-## Process
-1. **Understand the Instruction's Context**: Thoroughly analyze the scenario and requirements outlined in the instruction.
-2. **Compare Completions**: Carefully examine completions, noting their differences.
-3. **Assess Completions**: Utilize the given preference to reason why one completion is favored over the other, combining this with your previous analysis in steps 1 and 2.
-4. **Formulate Principles**: Extract insights into a series of concise principles. Each principle should consist of a brief phrase accompanied by a single sentence description. All principles should generalize across scenarios.
-5. **Check for Consistency**: Ensure the preference aligns with the formulated principles. If a discrepancy exists, return to step 1 and attempt another version of the principles.
+## Task Description
+
+
+## Requirements for Principles:
+(1) The principles should **specifically** target some general standards that may revolve around key points of the instruction.
+(2) Principles are presented from most important to least important.
+(3) The principles should be as critical as possible.
+(4) Each principle should consist of a brief phrase accompanied by a single sentence description.
 
 ## Input
 ### Scenario

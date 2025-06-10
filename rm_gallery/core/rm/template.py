@@ -1,5 +1,5 @@
 import re
-from typing import Dict, List, Self
+from typing import Dict, List
 
 from pydantic import BaseModel, Field
 
@@ -22,7 +22,7 @@ class BasePromptTemplate(BaseModel):
         return contents
 
     @classmethod
-    def parse(cls, text: str) -> Self:
+    def parse(cls, text: str) -> "BasePromptTemplate":
         """
         Parses a string according to a specified template format and returns an instance of this class.
 
@@ -32,7 +32,7 @@ class BasePromptTemplate(BaseModel):
         - text (str): The string to parse, which should follow the template format.
 
         Returns:
-        - Self: An instance of the class, initialized with the parsed key-value pairs.
+        - BasePromptTemplate: An instance of the class, initialized with the parsed key-value pairs.
         """
         contents = cls._parse(text)
         # Use the dictionary to initialize an instance of the class
@@ -89,28 +89,32 @@ class PrinciplePointWiseTemplate(BasePromptTemplate):
     def format(
         cls,
         desc: str,
-        principles: List[str],
+        principles: str,
         examples: str,
         query: str,
         context: str,
         answer: str,
         **kwargs,
     ) -> str:
-        principles_str = ""
-        for i, principle in enumerate(principles):
-            principles_str += f"{i + 1}. {principle}\n"
+        if examples:
+            examples = f"# Examples\n{examples}\n"
+
         return f"""# Task Description
 {desc}
 # Principles
-{principles_str}
-# Examples
+{principles}
+
 {examples}
+
 # Query
 {query}
+
 # Context
 {context}
+
 # Answer
 {answer}
+
 # Output Requirement
 {cls.schema(**kwargs)}
 """
@@ -140,18 +144,24 @@ class PrincipleListWiseTemplate(BasePromptTemplate):
     ) -> str:
         answer_str = ""
         for i, answer in enumerate(answers):
-            answer_str += f"# Answer {i + 1}\n{answer}\n"
+            answer_str += f"# Answer {i + 1}\n{answer}\n\n"
+
+        if examples:
+            examples = f"# Examples\n{examples}\n"
 
         return f"""# Task Description
 {desc}
+
 # Principles
 {principles}
-# Examples
+
 {examples}
+
 # Query
 {query}
 
 {answer_str}
+
 # Output Requirement
 {cls.schema(**kwargs)}
 """

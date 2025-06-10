@@ -134,7 +134,7 @@ def test_3h_rmb():
         )
 
         samples = reward_module.evaluate_batch(
-            samples, thread_pool=ThreadPoolExecutor(max_workers=128)
+            samples, thread_pool=ThreadPoolExecutor(max_workers=1)
         )
         acc = calc_acc(samples)
         logger.info(f"{file}: {acc}")
@@ -147,4 +147,4 @@ def test_3h_rmb():
 # test_3h_rm()
 # test_3h_generate()
 # test_rmb_generate()
-test_3h_rmb()
+# test_3h_rmb()

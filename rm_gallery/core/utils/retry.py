@@ -1,5 +1,5 @@
 from time import time
-from typing import Any, Self
+from typing import Any
 
 from loguru import logger
 
@@ -10,7 +10,7 @@ class Retry(object):
         self.attempt = 0
         self.retry_delay = retry_delay
 
-    def __enter__(self) -> Self:
+    def __enter__(self) -> "Retry":
         return self
 
     def __call__(self, func, *args: Any, **kwrgs: Any) -> Any:

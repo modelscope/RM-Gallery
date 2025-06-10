@@ -42,10 +42,5 @@ class HelpfulnessListWiseReward(BaseListWisePrincipleReward):
     desc: str = """You are a professional expert in helpfulness evaluation.
 You will be provided with a query and two answers based on that query.
 Your task is to judge which answer is the best via the given "principles" of helpfulness.
-
-# Process
-1. Carefully read the query and analyze which parts of the principles need to be adhered to under this specific query. Remember, you must select applicable sections from the given principles within the current query. The provided principles are general and may not be specifically tailored to each query, but you can only choose from them and cannot create new ones.
-2. Thoroughly understand the principles you have selected.
-3. Compare the differences between the answers attentively, focusing on which one is superior. First, determine if you can judge which answer is best based on the principles chosen in step 2.
 """
     principles: List[str] = Field(default=HELPFULNESS_PRINCIPLES)
