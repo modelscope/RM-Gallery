@@ -89,6 +89,7 @@ class PrinciplePointWiseTemplate(BasePromptTemplate):
     def format(
         cls,
         desc: str,
+        scenario: str,
         principles: str,
         examples: str,
         query: str,
@@ -97,19 +98,24 @@ class PrinciplePointWiseTemplate(BasePromptTemplate):
         **kwargs,
     ) -> str:
         if examples:
-            examples = f"# Examples\n{examples}\n"
+            examples = f"\n# Examples\n{examples}\n"
+
+        if scenario:
+            scenario = f"\n# Scenario\n{scenario}\n"
+
+        if context:
+            context = f"\n# Context\n{context}\n"
 
         return f"""# Task Description
 {desc}
+{scenario}
+
 # Principles
 {principles}
-
 {examples}
 
 # Query
 {query}
-
-# Context
 {context}
 
 # Answer
@@ -136,30 +142,40 @@ class PrincipleListWiseTemplate(BasePromptTemplate):
     def format(
         cls,
         desc: str,
+        scenario: str,
         principles: str,
         examples: str,
         query: str,
+        context: str,
         answers: List[str],
         **kwargs,
     ) -> str:
         answer_str = ""
         for i, answer in enumerate(answers):
-            answer_str += f"# Answer {i + 1}\n{answer}\n\n"
+            answer_str += f"## Answer {i + 1}\n{answer}\n\n"
 
         if examples:
             examples = f"# Examples\n{examples}\n"
 
+        if scenario:
+            scenario = f"\n# Scenario\n{scenario}\n"
+
+        if context:
+            context = f"\n# Context\n{context}\n"
+
         return f"""# Task Description
 {desc}
+{scenario}
 
 # Principles
 {principles}
-
 {examples}
 
 # Query
 {query}
+{context}
 
+# Answers
 {answer_str}
 
 # Output Requirement

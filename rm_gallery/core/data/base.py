@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import Field
 
-from rm_gallery.core.base_module import BaseModule
+from rm_gallery.core.base import BaseModule
 from rm_gallery.core.data.schema import BaseDataSet, DataSample
 
 

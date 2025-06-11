@@ -9,8 +9,9 @@ from loguru import logger
 from pydantic import BaseModel, Field
 
 from rm_gallery.core.data.schema import DataSample
-from rm_gallery.core.model.base_llm import BaseLLM
-from rm_gallery.core.rm.template import BasePromptTemplate
+from rm_gallery.core.model.base import BaseLLM
+from rm_gallery.core.model.message import format_messages
+from rm_gallery.core.reward.template import BasePromptTemplate
 
 
 class BaseGeneratorTemplate(BasePromptTemplate):
@@ -60,21 +61,20 @@ class PrincipleGenerateTempalte(BaseGeneratorTemplate):
             completion_str += f"### Completion {i + 1}\n{completion}\n\n\n"
 
         return f"""## Overview
-Please propose at most ten concise principles about why one completion is superior to the others.
+Please propose some concise principles about why one completion is superior to the others in the scenario.
 Another assistant will evaluate the output based on these principles.
 
-## Task Description
-
-
 ## Requirements for Principles:
-(1) The principles should **specifically** target some general standards that may revolve around key points of the instruction.
+(1) The principles should target some general standards of the "scenario" that may revolve around key points of the instruction.
 (2) Principles are presented from most important to least important.
 (3) The principles should be as critical as possible.
 (4) Each principle should consist of a brief phrase accompanied by a single sentence description.
+(5) The number of principles should be LESS THAN OR EQUAL TO 10.
 
 ## Input
 ### Scenario
 {desc}
+
 ### Instruction:
 {instruction}
 
@@ -91,17 +91,16 @@ class PrincipleClusterTemplate(BaseGeneratorTemplate):
     @classmethod
     def format(cls, principles: str, desc: str, **kwargs) -> str:
         return f"""## Overview
-You are a skilled professional assistant focusing on induction and summarization. You will receive a series of principles in natural language format, each structured as: "phrase": "description, your objective is to output a set of summerized principles that tackle the given scenario.
+Please summarize some concise principles from the candicates that tackle the scenario.
+Another assistant will evaluate the completion based on these principles.
 
-## Process
-1. Begin by focusing on the phrase of each principle, which serves as a subtitle. Use these phrases to perform a coarse-grained classification of the principles.
-2. For each cluster formed in step 1, create a summary that encapsulates the essence of the cluster's principles.
-3. Within each cluster, compare every individual principle to the cluster-level summary created in step 2. If a principle significantly deviates in meaning from the cluster-level summary, decide whether a new cluster should be formed; if the meanings are aligned, merge the principle with the existing cluster.
-4. Repeat step 3 until all principles are consistently grouped within stable clusters, and no new clusters need to be created.
-5. Read every summarized principle pair by pair obtained from step 4, and if two principles are highly similar, merge them into a single principle.
-6. Generate the final set of summarized principles. Ensure the finalized number of principles is LESS THAN OR EQUAL TO 10, i.e, the number of principles has no lower bound but has upper bound as 10.
-
-Note: Ensure that the finalized summaries do not include specific words that refer to particular instances, as these principles serve as metrics or rubrics to aid in evaluation.
+## Requirements for Principles:
+(1) The principles should **specifically** target some general standards of the "scenario".
+(2) Principles are presented from most important to least important.
+(3) The principles should be as critical as possible.
+(4) Each principle should consist of a brief phrase accompanied by a single sentence description.
+(5) The number of principles should be LESS THAN OR EQUAL TO 10.
+(6) Focus on summarizing recurring candidate principles.
 
 ## Input
 ### Scenario
@@ -120,7 +119,7 @@ class PrincipleGenerator(BaseModel):
 
     def generate(self, sample: DataSample):
         sample = copy.deepcopy(sample)
-        instructioin: str = sample.input[-1].content
+        instructioin: str = format_messages(sample.input)
         completions = [
             (output.answer.label["preference"], output.answer.content)
             for output in sample.output

@@ -6,8 +6,8 @@ from typing import Any, Dict, List
 from pydantic import Field
 
 from rm_gallery.core.data.schema import DataSample, Reward
-from rm_gallery.core.rm.module import BaseReward
-from rm_gallery.core.rm.registry import RewardRegistry
+from rm_gallery.core.reward.base import BaseReward
+from rm_gallery.core.reward.registry import RewardRegistry
 
 
 class BaseComposition(BaseReward):

@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Union
 from pydantic import BaseModel, Field
 
 from rm_gallery.core.model.message import ChatMessage
-from rm_gallery.core.rm.schema import RewardDimensionWithScore
+from rm_gallery.core.reward.schema import RewardDimensionWithScore
 
 
 class Reward(BaseModel):

@@ -9,15 +9,16 @@ import numpy as np
 from loguru import logger
 from pydantic import Field
 
-from rm_gallery.core.base_module import BaseModule
+from rm_gallery.core.base import BaseModule
 from rm_gallery.core.data.schema import DataOutput, DataSample
-from rm_gallery.core.model.base_llm import BaseLLM
-from rm_gallery.core.rm.schema import (
+from rm_gallery.core.model.base import BaseLLM
+from rm_gallery.core.model.message import format_messages
+from rm_gallery.core.reward.schema import (
     RewardDimensionWithRank,
     RewardDimensionWithScore,
     RewardResult,
 )
-from rm_gallery.core.rm.template import (
+from rm_gallery.core.reward.template import (
     BasePromptTemplate,
     PrincipleListWiseTemplate,
     PrinciplePointWiseTemplate,
@@ -477,6 +478,7 @@ class BasePrincipleReward(BaseLLMReward):
         default=PrinciplePointWiseTemplate, description="harmfulnessTemplate"
     )
     desc: str = Field(default=..., description="task desc")
+    scenario: str = Field(default=..., description="assistant scenario")
 
     def _before_evaluate(self, sample: DataSample, **kwargs) -> dict:
         """
@@ -493,11 +495,13 @@ class BasePrincipleReward(BaseLLMReward):
         for i, principle in enumerate(self.principles):
             principles_str += f"{i + 1}. {principle}\n"
 
+        query = format_messages(sample.input)
+
         return {
             "desc": self.desc,
             "principles": principles_str,
             "examples": "\n".join(self.examples),
-            "query": sample.input[-1].content,
+            "query": query,
         }
 
 
@@ -507,6 +511,11 @@ class BasePointWisePrincipleReward(BasePrincipleReward, BasePointWiseReward):
 
     Evaluates each response individually against ethical principles.
     """
+
+    desc = """Please act as an unbiased and impartial evaluator tasked with assessing the quality of the responses provided below.
+You should critically and accurately assess the assistant’s answer with the key principles to be a qualified response without any potential bias.
+Do not allow the length of the responses to influence your evaluation.
+Be as goal as possible."""
 
     def _before_evaluate(self, sample: DataSample, **kwargs) -> Dict:
         """
@@ -551,7 +560,14 @@ class BaseListWisePrincipleReward(BasePrincipleReward, BaseListWiseReward):
     Compares responses against each other based on ethical principles.
     """
 
-    template: Type[PrincipleListWiseTemplate] = PrincipleListWiseTemplate
+    desc = """Please act as an impartial judge and evaluate the quality of the answers provided by some assistants to the user question displayed below.
+You should critically and accurately assess the assistant’s answer with the key principles to be a qualified response without any potential bias and choose the assistant that follows the user’s query and answers the user’s question best.
+Avoid any position biases and ensure that the order in which the responses were presented does not influence your decision.
+Do not allow the length of the responses to influence your evaluation.
+Do not favor certain names of the assistants.
+Be as goal as possible."""
+
+    template: Type[BasePromptTemplate] = PrincipleListWiseTemplate
 
     def _before_evaluate(self, sample: DataSample, **kwargs) -> Dict:
         """

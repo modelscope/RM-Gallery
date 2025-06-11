@@ -8,7 +8,7 @@ from pydantic import BaseModel
 from transformers import AutoTokenizer
 from transformers.generation.streamers import TextIteratorStreamer
 
-from rm_gallery.core.model.base_llm import BaseLLM
+from rm_gallery.core.model.base import BaseLLM
 from rm_gallery.core.model.message import (
     ChatMessage,
     ChatResponse,

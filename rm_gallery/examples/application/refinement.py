@@ -1,13 +1,13 @@
 from pydantic import Field
 
-from rm_gallery.core.base_module import BaseModule
+from rm_gallery.core.base import BaseModule
 from rm_gallery.core.data.schema import DataSample
-from rm_gallery.core.model.base_llm import BaseLLM
-from rm_gallery.core.rm.module import BaseReward
-from rm_gallery.core.rm.template import BasePromptTemplate
+from rm_gallery.core.model.base import BaseLLM
+from rm_gallery.core.reward.base import BaseReward
+from rm_gallery.core.reward.template import BasePromptTemplate
 
 
-class BaseSelfRefine(BaseModule):
+class LLMRefinement(BaseModule):
     """
     refer: https://selfrefine.info/
     """

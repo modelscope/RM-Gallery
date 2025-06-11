@@ -8,8 +8,8 @@ from rm_gallery.core.utils.temp import (
     load_rewardbench_test_samples,
     write_datasamples_to_file,
 )
-from rm_gallery.gallery.rm.harmfulness_paiwise import HarmfulnessPairwise
-from rm_gallery.gallery.rm.helpfulness_pairwise import HelpfulnessPairwise
+from rm_gallery.gallery.harmfulness_paiwise import HarmfulnessPairwise
+from rm_gallery.gallery.helpfulness_pairwise import HelpfulnessPairwise
 
 os.environ["OPENAI_API_KEY"] = "sk-qS2yrmvJYAhsJN7xA4lZFJwYoOiQgglD5MukURFzMARrGlLJ"
 os.environ["BASE_URL"] = "http://8.130.177.212:3000/v1"

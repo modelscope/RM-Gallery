@@ -135,3 +135,12 @@ class ChatResponse(BaseModel):
 
 
 GeneratorChatResponse = Generator[ChatResponse, None, None]
+
+
+def format_messages(messages: List[ChatMessage]) -> str:
+    """
+    Format messages into a string.
+    """
+    return "\n".join(
+        [f"<{message.role}>{message.content}</{message.role}>" for message in messages]
+    )

@@ -1,6 +1,6 @@
 from typing import Dict, Type
 
-from rm_gallery.core.rm.module import BaseReward
+from rm_gallery.core.reward.base import BaseReward
 
 
 class RewardRegistry:
