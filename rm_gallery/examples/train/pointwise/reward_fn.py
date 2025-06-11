@@ -1,54 +1,33 @@
-import re
+import math
 
-
-def extract_helpfulness_score(response_text):
-    """
-    extract helpfulness score from model response
-    directly extract score from <violation> tag
-    """
-    # Handle case where response_text might not be a string
-    if not isinstance(response_text, str):
-        response_text = str(response_text)
-
-    # 从<violation>标签中提取分数
-    violation_pattern = r"<violation>(.*?)</violation>"
-    match = re.search(violation_pattern, response_text, re.DOTALL)
-
-    if match:
-        violation_content = match.group(1).strip()
-        # 提取其中的数字
-        numbers = re.findall(r"\d+", violation_content)
-        if numbers:
-            try:
-                score = int(numbers[0])  # 取第一个数字作为分数
-                if 0 <= score <= 4:  # 假设分数范围是0-4
-                    return score
-            except:
-                pass
-
-    return 0  # 如果无法提取，默认为0
+from rm_gallery.examples.train.pointwise.helpfulness_template import (
+    HelperfulnessTrainTemplate,
+)
 
 
 def calculate_helpfulness_reward(predicted_score, true_score):
     """
-    calculate reward based on the difference between predicted helpfulness score and true helpfulness score
-    the smaller the difference, the higher the reward
+    base on relative error
+    use exponential decay, more tolerant for small errors, more severe for large errors
     """
-    if true_score is None or true_score == 0:
+    if true_score is None:
         return 0.0
 
-    # calculate difference
-    diff = abs(predicted_score - true_score)
+    # calculate relative error (consider the case of denominator is 0)
+    if true_score == 0:
+        abs_error = abs(predicted_score)
+        max_possible_error = 4  # max score
+    else:
+        abs_error = abs(predicted_score - true_score)
+        max_possible_error = 4  # helpfulness score range 0-4
 
-    # convert difference to reward score (the smaller the difference, the higher the reward)
-    # the maximum possible difference is 4 (0-4 range), so normalize to 0-1
-    max_possible_diff = 4
-    normalized_diff = min(diff / max_possible_diff, 1.0)
+    # use exponential decay function
+    # reward = exp(-k * error_ratio), where k is the decay parameter
+    k = 2.0  # decay parameter, can be adjusted
+    error_ratio = abs_error / max_possible_error
+    reward = math.exp(-k * error_ratio)
 
-    # reward = 1 - normalized difference
-    reward = 1.0 - normalized_diff
-
-    return reward
+    return float(reward)
 
 
 def compute_score(data_source, solution_str, ground_truth, extra_info=None, **kwargs):
@@ -61,8 +40,15 @@ def compute_score(data_source, solution_str, ground_truth, extra_info=None, **kw
     - extra_info: extra information
     """
     try:
-        # extract helpfulness score from solution_str
-        predicted_helpfulness = extract_helpfulness_score(solution_str)
+        # extract helpfulness score from solution_str using BasePromptTemplate logic
+        parsed_result = HelperfulnessTrainTemplate.parse(solution_str)
+
+        # Extract integer score from violation (now List[int])
+        predicted_helpfulness = parsed_result.score
+
+        # Validate range
+        if not (0 <= predicted_helpfulness <= 4):
+            predicted_helpfulness = 0
 
         # process ground_truth - maybe a number or a dictionary
         if isinstance(ground_truth, dict):
@@ -86,15 +72,22 @@ def compute_score(data_source, solution_str, ground_truth, extra_info=None, **kw
         # calculate reward
         reward = calculate_helpfulness_reward(predicted_helpfulness, true_helpfulness)
 
+        accuracy = 1 if predicted_helpfulness == true_helpfulness else 0
+
         # return detailed information
         return {
             "score": reward,
             "predicted_helpfulness": predicted_helpfulness,
             "true_helpfulness": true_helpfulness,
             "data_source": data_source,
+            "accuracy": accuracy,
         }
 
     except Exception as e:
-        print(f"Error in compute_score: {e}")
-        # return default value
-        return {"score": 0.0, "error": str(e), "data_source": data_source}
+        return {
+            "score": 0.0,
+            "predicted_helpfulness": 0,
+            "true_helpfulness": 0,
+            "data_source": data_source,
+            "accuracy": 0,
+        }

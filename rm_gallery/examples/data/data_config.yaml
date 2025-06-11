@@ -1,0 +1,39 @@
+dataset:
+    name: "rewardbench-test"
+    configs:
+        type: local # required, support remote, local
+        source: rewardbench # required, local support rewardbench, chatmessage, prmbench
+        path: ./data/reward-bench/data/train-00000-of-00001.parquet # required, must be local path or url
+        limit: 2000 # optional, random sample dataset size
+    processors:
+        - type: filter
+          name: conversation_turn_filter
+          config:
+            min_turns: 1
+            max_turns: 6
+        - type: filter
+          name: text_length_filter
+          config:
+            min_length: 10
+            max_length: 1000
+        - type: data_juicer
+          name: character_repetition_filter
+          config:
+            rep_len: 10
+            min_ratio: 0.0
+            max_ratio: 0.5
+    annotation:
+        template_name: "reward_bench"
+        project_title: "Reward Bench Evaluation"
+        project_description: "Reward model evaluation using reward bench template"
+        server_url: "http://localhost:8080"
+        api_token: "8c2f03e74b5700bf5e3cadd6fe073dbbb88caebe"
+
+    export:
+        output_dir: ./rm_gallery/examples/data/exports
+        formats: ["parquet"]
+        split_ratio: {"train": 0.8, "test": 0.2}
+    metadata:
+        source: "rewardbench"
+
+

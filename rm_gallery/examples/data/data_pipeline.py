@@ -1,409 +1,452 @@
 """
-Annotation Pipeline Example for RM Gallery
+Simple Data Pipeline Validation Tool
 
-This module demonstrates how to use annotation as a stage in the build pipeline.
-It provides examples of:
-1. Data pipeline without annotation
-2. Data pipeline with annotation integration
-3. Exporting annotation results
-4. Service health checks
+Test data modules: Load, Process, Annotation, Export
 
 Usage:
-    python annotation_pipeline.py [--with-annotation] [--export-only] [--check-service]
+    python data_pipeline.py [--mode MODE] [--limit LIMIT]
 
-example:
-    # Run basic pipeline (without annotation)
-    python annotation_pipeline.py
+Examples:
+    # basic pipeline
+    python data_pipeline.py --mode basic
 
-    # Run pipeline with annotation
-    python annotation_pipeline.py --with-annotation --api-token YOUR_TOKEN
+    # annotation pipeline
+    python data_pipeline.py --mode annotation --api-token TOKEN
 
-    # Check service status only
-    python annotation_pipeline.py --check-service
+    # load only
+    python data_pipeline.py --mode load-only --limit 100
 
-    # Export annotation results only
-    python annotation_pipeline.py --export-only --project-id 123 --api-token YOUR_TOKEN
+    # process only
+    python data_pipeline.py --mode process-only
 
-    # Use custom configuration
-    python annotation_pipeline.py --config config.json
+    # export only
+    python data_pipeline.py --mode export-only
+
+    # export annotation
+    python data_pipeline.py --mode export-annotation --api-token TOKEN --project-id PROJECT_ID
+
 """
 
 import argparse
-import json
-from pathlib import Path
-from typing import Any, Dict, Optional
 
 import requests
 from loguru import logger
 
-import rm_gallery.core.data.ops  # noqa: F401 - needed for strategy registration
-from rm_gallery.core.data.annotation import create_annotation_module
+import rm_gallery.core.data  # noqa: F401 - needed for strategy registration
+from rm_gallery.core.data.annotation.annotation import create_annotation_module
 from rm_gallery.core.data.build import create_build_module
-from rm_gallery.core.data.config.label_studio_config import REWARD_BENCH_LABEL_CONFIG
-from rm_gallery.core.data.load import create_load_module
-from rm_gallery.core.data.process import OperatorFactory, create_process_module
-
-# Configuration Constants
-DEFAULT_CONFIG = {
-    "data_source": {
-        "path": "./data/preference-test-sets/data/anthropic_helpful-00000-of-00001.parquet",
-        "limit": 2000,
-    },
-    "label_studio": {
-        "server_url": "http://localhost:8080",
-        "api_token": "your_api_token",  # Replace with actual token
-        "project_title": "RM Gallery Quality Annotation",
-    },
-    "filters": {
-        "conversation_turns": {"min_turns": 2, "max_turns": 6},
-        "text_length": {"min_length": 50, "max_length": 2000},
-        "data_juicer_length": {"min_len": 50, "max_len": 100},
-        "group_split": {"train_ratio": 0.7, "test_ratio": 0.3},
-    },
-}
+from rm_gallery.core.data.export import create_export_module
+from rm_gallery.core.data.load.base import create_load_module
+from rm_gallery.core.data.process.ops.base import OperatorFactory
+from rm_gallery.core.data.process.process import create_process_module
+from rm_gallery.core.data.schema import BaseDataSet
 
 
-class AnnotationPipelineExample:
-    """Main class for annotation pipeline examples"""
+class DataPipelineValidator:
+    """Simple data pipeline validation"""
 
-    def __init__(self, config: Dict[str, Any] = None):
-        self.config = config or DEFAULT_CONFIG
+    def __init__(self, limit: int = 100):
+        self.limit = limit
+        self.data_path = (
+            "./data/preference-test-sets/data/anthropic_helpful-00000-of-00001.parquet"
+        )
+        self.export_dir = "./rm_gallery/examples/data/exports"
+        self.data_source = "rewardbench"
+        self.format = "parquet"
 
     def create_load_module(self, limit: int = None):
-        """Create and configure load module"""
-        limit = limit or self.config["data_source"]["limit"]
-
+        """Create load module"""
         return create_load_module(
-            name="preference-test-sets",
-            config={},
+            name="test-data-loader",
             load_strategy_type="local",
-            data_source="rewardbench",
-            load_config={
-                "path": self.config["data_source"]["path"],
-                "limit": limit,
+            data_source=self.data_source,
+            config={
+                "path": self.data_path,
+                "limit": limit or self.limit,
             },
         )
 
-    def create_basic_process_module(self):
-        """Create basic processing module with common filters"""
+    def create_process_module(self):
+        """Create simple process module"""
         return create_process_module(
-            name="preference-test-sets-processor",
-            config={},
+            name="test-processor",
             operators=[
                 OperatorFactory.create_operator(
                     {
                         "type": "filter",
                         "name": "conversation_turn_filter",
-                        "config": self.config["filters"]["conversation_turns"],
+                        "config": {"min_turns": 1, "max_turns": 10},
                     }
                 ),
                 OperatorFactory.create_operator(
                     {
                         "type": "filter",
-                        "name": "rm_text_length_filter",
-                        "config": self.config["filters"]["text_length"],
-                    }
-                ),
-                OperatorFactory.create_operator(
-                    {
-                        "type": "data_juicer",
                         "name": "text_length_filter",
-                        "config": self.config["filters"]["data_juicer_length"],
-                    }
-                ),
-                OperatorFactory.create_operator(
-                    {
-                        "type": "group",
-                        "name": "group_train",
-                        "config": self.config["filters"]["group_split"],
+                        "config": {"min_length": 10, "max_length": 5000},
                     }
                 ),
             ],
         )
 
-    def create_annotation_process_module(self):
-        """Create processing module optimized for annotation"""
-        return create_process_module(
-            name="annotation-preprocessor",
-            config={},
-            operators=[
-                OperatorFactory.create_operator(
-                    {
-                        "type": "filter",
-                        "name": "conversation_turn_filter",
-                        "config": self.config["filters"]["conversation_turns"],
-                    }
-                ),
-                OperatorFactory.create_operator(
-                    {
-                        "type": "filter",
-                        "name": "rm_text_length_filter",
-                        "config": self.config["filters"]["text_length"],
-                    }
-                ),
-            ],
+    def create_export_module(self):
+        """Create export module"""
+        return create_export_module(
+            name="test-exporter",
+            config={
+                "output_dir": self.export_dir,
+                "formats": [self.format],
+                "split_ratio": {"train": 0.8, "test": 0.2},
+            },
         )
 
-    def create_annotation_module(self, api_token: str = None):
-        """Create annotation module with Label Studio integration"""
-        api_token = api_token or self.config["label_studio"]["api_token"]
-
-        if api_token == "your_api_token":
-            logger.warning("⚠️  Please set a valid API token!")
-            logger.info(
-                "Get your token from: http://localhost:8080 -> Account & Settings"
-            )
-
+    def create_annotation_module(self, api_token: str):
+        """Create annotation module"""
         return create_annotation_module(
-            name="rm_gallery_annotation",
+            name="test-annotation",
             api_token=api_token,
-            server_url=self.config["label_studio"]["server_url"],
-            project_title=self.config["label_studio"]["project_title"],
-            label_config=REWARD_BENCH_LABEL_CONFIG,
+            server_url="http://localhost:8080",
+            project_title="Test Annotation",
+            template_name="reward_bench",
         )
 
-    def run_pipeline_without_annotation(self) -> bool:
-        """Run data pipeline without annotation stage"""
-        logger.info("🚀 Running pipeline without annotation...")
-
+    def test_load_only(self, limit: int = None) -> bool:
+        """Test loading only"""
+        logger.info("🔍 Testing load module...")
         try:
-            load_module = self.create_load_module(
-                limit=self.config["data_source"]["limit"]
-            )
-            process_module = self.create_basic_process_module()
+            load_module = self.create_load_module(limit)
+            result = load_module.run()
 
-            build_module = create_build_module(
-                name="simple_pipeline",
-                config={},
-                load_module=load_module,
-                process_module=process_module,
-            )
-
-            result = build_module.run()
-
-            logger.success("✅ Pipeline completed successfully!")
-            logger.info(f"📊 Processed {len(result)} items")
-            logger.info(f"📋 Dataset: {result.name}")
-
-            return True
+            # Verify result is BaseDataSet
+            if isinstance(result, BaseDataSet):
+                logger.success(
+                    f"✅ Loaded {len(result)} samples into BaseDataSet: {result.name}"
+                )
+                logger.info(f"   Metadata: {result.metadata}")
+                if len(result) > 0:
+                    sample = result[0]
+                    logger.info(
+                        f"   Sample structure: ID={sample.unique_id}, Input={len(sample.input)} messages, Output={len(sample.output)} items"
+                    )
+                return True
+            else:
+                logger.error(f"❌ Expected BaseDataSet, got {type(result)}")
+                return False
 
         except Exception as e:
-            logger.error(f"❌ Pipeline failed: {e}")
+            logger.error(f"❌ Load failed: {e}")
             return False
 
-    def run_pipeline_with_annotation(self, api_token: str = None) -> Optional[Any]:
-        """Run complete pipeline with annotation stage"""
-        logger.info("🚀 Running pipeline with annotation...")
-
-        # Check service first
-        if not self.check_label_studio_service():
-            logger.error("❌ Label Studio service is not available")
-            return None
-
+    def test_process_only(self) -> bool:
+        """Test processing only"""
+        logger.info("🔍 Testing process module...")
         try:
-            # Create modules
-            load_module = self.create_load_module()
-            process_module = self.create_annotation_process_module()
-            annotation_module = self.create_annotation_module(api_token)
+            load_module = self.create_load_module(10)
+            process_module = self.create_process_module()
 
-            # Create build pipeline
-            build_module = create_build_module(
-                name="annotation_pipeline",
-                config={"description": "Complete pipeline with annotation"},
-                load_module=load_module,
-                process_module=process_module,
-                annotation_module=annotation_module,
-            )
+            # Load data first
+            data = load_module.run()
+            logger.info(f"📥 Input: {len(data)} samples from dataset '{data.name}'")
 
-            # Run pipeline
-            result = build_module.run()
+            # Process data
+            result = process_module.run(data)
 
-            self._print_annotation_results(result)
-            return result
+            # Verify result is BaseDataSet
+            if isinstance(result, BaseDataSet):
+                logger.success(
+                    f"✅ Processed to {len(result)} samples in dataset '{result.name}'"
+                )
+                logger.info(f"   Metadata: {result.metadata}")
+                return True
+            else:
+                logger.error(f"❌ Expected BaseDataSet, got {type(result)}")
+                return False
 
         except Exception as e:
-            logger.error(f"❌ Pipeline failed: {e}")
-            logger.info("💡 Make sure Label Studio is running and API token is correct")
-            return None
+            logger.error(f"❌ Process failed: {e}")
+            return False
 
-    def export_annotations(
-        self, project_id: int, api_token: str = None
-    ) -> Optional[Any]:
-        """Export annotations from a completed project"""
-        logger.info(f"📤 Exporting annotations from project {project_id}...")
-
+    def test_export_only(self) -> bool:
+        """Test export only"""
+        logger.info("🔍 Testing export module...")
         try:
-            annotation_module = self.create_annotation_module(api_token)
-            annotation_module.project_id = project_id
+            load_module = self.create_load_module(5)
+            export_module = self.create_export_module()
 
-            annotated_dataset = annotation_module.export_annotations_to_dataset(
-                filename="exported_annotations.json", include_original_data=True
-            )
+            # Load data first
+            data = load_module.run()
+            logger.info(f"📥 Input: {len(data)} samples from dataset '{data.name}'")
 
-            logger.success(f"✅ Exported annotations: {annotated_dataset.name}")
-            logger.info(f"📊 Annotated samples: {len(annotated_dataset.datas)}")
-            logger.info(f"📝 Metadata: {annotated_dataset.metadata}")
+            # Export data
+            result = export_module.run(data)
 
-            return annotated_dataset
+            # Verify export result
+            if isinstance(result, BaseDataSet):
+                logger.success(f"✅ Exported {len(result)} samples to {self.export_dir}")
+                logger.info(f"   Dataset: {result.name}")
+                return True
+            else:
+                logger.error(f"❌ Expected BaseDataSet, got {type(result)}")
+                return False
 
         except Exception as e:
             logger.error(f"❌ Export failed: {e}")
-            return None
-
-    def check_label_studio_service(self) -> bool:
-        """Check if Label Studio service is running and accessible"""
-        try:
-            response = requests.get(
-                f"{self.config['label_studio']['server_url']}/health", timeout=5
-            )
-            if response.status_code == 200:
-                logger.success("✅ Label Studio service is running")
-                return True
-            else:
-                logger.error(
-                    f"❌ Label Studio service returned status {response.status_code}"
-                )
-                return False
-        except Exception as e:
-            logger.error(f"❌ Label Studio service is not running: {e}")
-            logger.info("💡 Start it with: label-studio start")
             return False
 
-    @staticmethod
-    def _print_annotation_results(result):
-        """Print annotation pipeline results"""
-        logger.success("🎉 Pipeline completed successfully!")
-        logger.info(f"📊 Result: {result.name}")
-        logger.info(f"📋 Data count: {len(result.datas)}")
-        logger.info(f"📝 Metadata: {result.metadata}")
-
-        project_id = result.metadata.get("annotation_project_id")
-        server_url = result.metadata.get("annotation_server_url")
-
-        if project_id:
-            logger.info("\n🎯 Annotation project created!")
-            logger.info(f"📋 Project ID: {project_id}")
-            logger.info(f"🌐 Access at: {server_url}/projects/{project_id}")
-            logger.info("\n📝 Next steps:")
-            logger.info("   1. Go to the URL above")
-            logger.info("   2. Annotate some tasks")
-            logger.info(
-                f"   3. Export annotations using: --export-only --project-id {project_id}"
-            )
-
-
-class DataExporter:
-    """Utility class for data export operations"""
-
-    @staticmethod
-    def convert_to_jsonl_format(data):
-        """Convert BaseData object to JSONL format"""
-        return data.model_dump(mode="json")
-
-    @staticmethod
-    def export_dataset_to_jsonl(dataset, output_path: str):
-        """Export dataset to JSONL file"""
-        if not dataset or not dataset.datas:
-            logger.warning("No data to export")
-            return
-
-        output_path = Path(output_path)
-        written_count = 0
-
+    def run_basic_pipeline(self) -> bool:
+        """Run basic pipeline: Load → Process → Export"""
+        logger.info("🚀 Running basic pipeline: Load → Process → Export")
         try:
-            with open(output_path, "w", encoding="utf-8") as f:
-                for data in dataset.datas:
-                    json_data = DataExporter.convert_to_jsonl_format(data)
-                    f.write(json.dumps(json_data, ensure_ascii=False) + "\n")
-                    written_count += 1
-
-            logger.success(
-                f"✅ Successfully exported {written_count} items to {output_path}"
+            build_module = create_build_module(
+                name="basic_pipeline",
+                load_module=self.create_load_module(),
+                process_module=self.create_process_module(),
+                export_module=self.create_export_module(),
             )
+
+            result = build_module.run()
+
+            # Verify final result
+            if isinstance(result, BaseDataSet):
+                logger.success(
+                    f"✅ Basic pipeline completed: {len(result)} samples in dataset '{result.name}'"
+                )
+                logger.info(f"   Final metadata: {result.metadata}")
+                return True
+            else:
+                logger.error(f"❌ Expected BaseDataSet, got {type(result)}")
+                return False
 
         except Exception as e:
-            logger.error(f"❌ Error exporting to JSONL: {str(e)}")
+            logger.error(f"❌ Basic pipeline failed: {e}")
+            return False
+
+    def run_annotation_pipeline(self, api_token: str) -> bool:
+        """Run annotation pipeline: Load → Process → Annotation → Export"""
+        logger.info(
+            "🚀 Running annotation pipeline: Load → Process → Annotation → Export"
+        )
+
+        # Check service
+        if not self.check_service():
+            logger.error("❌ Label Studio service not available")
+            return False
+
+        try:
+            build_module = create_build_module(
+                name="annotation_pipeline",
+                load_module=self.create_load_module(),
+                process_module=self.create_process_module(),
+                annotation_module=self.create_annotation_module(api_token),
+                export_module=self.create_export_module(),
+            )
+
+            result = build_module.run()
+
+            # Verify final result
+            if isinstance(result, BaseDataSet):
+                logger.success(
+                    f"✅ Annotation pipeline completed: {len(result)} samples in dataset '{result.name}'"
+                )
+                logger.info(f"   Final metadata: {result.metadata}")
+                return True
+            else:
+                logger.error(f"❌ Expected BaseDataSet, got {type(result)}")
+                return False
+
+        except Exception as e:
+            logger.error(f"❌ Annotation pipeline failed: {e}")
+            return False
+
+    def check_service(self) -> bool:
+        """Check Label Studio service"""
+        try:
+            response = requests.get("http://localhost:8080/health", timeout=5)
+            return response.status_code == 200
+        except:
+            return False
+
+    def export_annotation_data(self, api_token: str, project_id: int = None) -> bool:
+        """Export completed annotation data from Label Studio"""
+        logger.info("🚀 Exporting annotation data from Label Studio...")
+
+        # Check service
+        if not self.check_service():
+            logger.error("❌ Label Studio service not available")
+            return False
+
+        try:
+            # Create annotation module
+            logger.info("📝 Creating annotation module...")
+            annotation_module = self.create_annotation_module(api_token)
+            logger.info("✅ Annotation module created successfully")
+
+            # Set project ID if provided, otherwise try to find the most recent project
+            if project_id:
+                annotation_module.project_id = project_id
+                logger.info(f"📊 Using specified project ID: {project_id}")
+            else:
+                # Try to get project ID from client
+                logger.info("🔍 Searching for existing projects...")
+                if annotation_module.client:
+                    projects = annotation_module.client.get_projects()
+                    if projects:
+                        # Use the most recent project
+                        annotation_module.project_id = projects[-1]["id"]
+                        logger.info(
+                            f"📊 Using most recent project ID: {annotation_module.project_id}"
+                        )
+                    else:
+                        logger.error("❌ No projects found in Label Studio")
+                        return False
+                else:
+                    logger.error("❌ Cannot initialize Label Studio client")
+                    return False
+
+            # Export annotations to dataset format
+            logger.info("📤 Exporting annotations from Label Studio...")
+            annotated_dataset = annotation_module.export_annotations_to_dataset()
+
+            # Verify the exported dataset
+            if isinstance(annotated_dataset, BaseDataSet):
+                logger.info(
+                    f"✅ Successfully retrieved {len(annotated_dataset)} samples into dataset '{annotated_dataset.name}'"
+                )
+                logger.info(f"   Metadata: {annotated_dataset.metadata}")
+
+                if len(annotated_dataset) > 0:
+                    logger.success(
+                        f"✅ Exported {len(annotated_dataset)} annotated samples"
+                    )
+                    logger.info(f"📁 Saved to: {self.export_dir}")
+
+                    # Also export in various formats using export module
+                    logger.info("📦 Exporting to additional formats...")
+                    export_module = self.create_export_module()
+                    export_result = export_module.run(annotated_dataset)
+
+                    if isinstance(export_result, BaseDataSet):
+                        logger.info(
+                            f"📦 Additional export formats completed for dataset '{export_result.name}'"
+                        )
+                        logger.info(f"📦 Files saved to: {self.export_dir}")
+
+                    return True
+                else:
+                    logger.warning("⚠️  No annotated data found to export")
+                    logger.info(
+                        "💡 Make sure you have completed some annotations in Label Studio"
+                    )
+                    return False
+            else:
+                logger.error(
+                    f"❌ Expected BaseDataSet from annotation export, got {type(annotated_dataset)}"
+                )
+                return False
+
+        except Exception as e:
+            logger.error(f"❌ Export annotation data failed: {e}")
+            import traceback
+
+            logger.error(f"🔍 Full traceback: {traceback.format_exc()}")
+            return False
 
 
 def parse_arguments():
     """Parse command line arguments"""
-    parser = argparse.ArgumentParser(
-        description="RM Gallery Annotation Pipeline Examples"
+    parser = argparse.ArgumentParser(description="Simple Data Pipeline Validator")
+
+    parser.add_argument(
+        "--mode",
+        choices=[
+            "basic",
+            "annotation",
+            "load-only",
+            "process-only",
+            "export-only",
+            "export-annotation",
+            "yaml-config",
+        ],
+        default="basic",
+        help="Pipeline mode (default: basic)",
     )
     parser.add_argument(
-        "--with-annotation",
-        action="store_true",
-        help="Run pipeline with annotation stage",
+        "--limit",
+        type=int,
+        default=100,
+        help="Number of samples to process (default: 100)",
     )
     parser.add_argument(
-        "--export-only",
-        action="store_true",
-        help="Only export annotations from existing project",
+        "--api-token",
+        type=str,
+        help="Label Studio API token (required for annotation and export-annotation modes)",
     )
     parser.add_argument(
-        "--check-service",
-        action="store_true",
-        help="Only check Label Studio service status",
+        "--project-id",
+        type=int,
+        help="Label Studio project ID (optional for export-annotation mode)",
     )
     parser.add_argument(
-        "--project-id", type=int, help="Project ID for exporting annotations"
+        "--config-path",
+        type=str,
+        help="Path to YAML configuration file (required for yaml-config mode)",
     )
-    parser.add_argument("--api-token", type=str, help="Label Studio API token")
-    parser.add_argument("--config", type=str, help="Path to custom configuration file")
 
     return parser.parse_args()
 
 
-def load_config(config_path: str = None) -> Dict[str, Any]:
-    """Load configuration from file or use defaults"""
-    if config_path and Path(config_path).exists():
-        with open(config_path, "r") as f:
-            custom_config = json.load(f)
-        # Merge with defaults
-        config = DEFAULT_CONFIG.copy()
-        config.update(custom_config)
-        return config
-    return DEFAULT_CONFIG
-
-
 def main():
-    """Main execution function"""
+    """Main function"""
     args = parse_arguments()
 
-    # Load configuration
-    config = load_config(args.config)
-    pipeline = AnnotationPipelineExample(config)
+    validator = DataPipelineValidator(limit=args.limit)
 
-    logger.info("🚀 RM Gallery Annotation Pipeline Examples")
-    logger.info("=" * 60)
+    logger.info("🚀 Data Pipeline Validator")
+    logger.info("=" * 40)
+    logger.info(f"🔧 Mode: {args.mode}")
+    logger.info(f"📊 Limit: {args.limit}")
+    logger.info(f"📁 Export dir: {validator.export_dir}")
+    logger.info("=" * 40)
 
-    # Handle different execution modes
-    if args.check_service:
-        pipeline.check_label_studio_service()
-        return
+    success = False
 
-    if args.export_only:
-        if not args.project_id:
-            logger.error("❌ --project-id is required for export-only mode")
+    if args.mode == "load-only":
+        success = validator.test_load_only(args.limit)
+
+    elif args.mode == "process-only":
+        success = validator.test_process_only()
+
+    elif args.mode == "export-only":
+        success = validator.test_export_only()
+
+    elif args.mode == "basic":
+        success = validator.run_basic_pipeline()
+
+    elif args.mode == "annotation":
+        if not args.api_token:
+            logger.error("❌ --api-token required for annotation mode")
+            logger.info("💡 Get your token from: http://localhost:8080")
             return
-        pipeline.export_annotations(args.project_id, args.api_token)
-        return
+        success = validator.run_annotation_pipeline(args.api_token)
 
-    if args.with_annotation:
-        # Check service first
-        if not pipeline.check_label_studio_service():
-            logger.error("⚠️  Please start Label Studio service first!")
-            logger.info("💡 Run: label-studio start")
+    elif args.mode == "export-annotation":
+        if not args.api_token:
+            logger.error("❌ --api-token required for export-annotation mode")
+            logger.info("💡 Get your token from: http://localhost:8080")
             return
+        success = validator.export_annotation_data(args.api_token, args.project_id)
 
-        result = pipeline.run_pipeline_with_annotation(args.api_token)
-        if result:
-            logger.info("\n🎯 Pipeline completed! You can now:")
-            logger.info("   • Annotate tasks in the web interface")
-            logger.info("   • Export results with --export-only flag")
+    elif args.mode == "yaml-config":
+        if not args.config_path:
+            logger.error("❌ --config-path required for yaml-config mode")
+            logger.info("💡 Specify path to YAML configuration file")
+            return
+        success = validator.run_yaml_config_pipeline(args.config_path)
+
+    if success:
+        logger.success(f"\n🎉 {args.mode} completed successfully!")
+        logger.info(f"📁 Check results in: {validator.export_dir}")
     else:
-        # Run basic pipeline without annotation
-        pipeline.run_pipeline_without_annotation()
+        logger.error(f"\n❌ {args.mode} failed!")
 
 
 if __name__ == "__main__":

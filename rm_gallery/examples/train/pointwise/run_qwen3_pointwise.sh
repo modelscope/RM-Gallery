@@ -11,7 +11,11 @@ PROJECT_NAME=warmup_train
 EXPERIMENT_NAME=rm-gallery-qwen3-${TIMESTAMP}
 
 CUSTOM_REWARD_FUNCTION_PATH=./rm_gallery/examples/train/pointwise/reward_fn.py
-CUSTOM_CHAT_RL_DATASET_PATH=./rm_gallery/examples/train/pointwise/process_dataset.py
+CUSTOM_CHAT_RL_DATASET_PATH=./rm_gallery/examples/train/pointwise/dataset_helpsteer2.py
+CUSTOM_CHAT_RL_DATASET_NAME=HelpSteer2TrainDataset
+REWARD_MANAGER=naive
+REWARD_FUNCTION_NAME=compute_score
+
 
 DEFAULT_LOCAL_DIR=./checkpoints/${TIMESTAMP}
 
@@ -35,10 +39,10 @@ ray job submit --address="http://127.0.0.1:8265" \
     data.truncation='right' \
     data.prompt_key='input' \
     data.custom_cls.path="${CUSTOM_CHAT_RL_DATASET_PATH}" \
-    data.custom_cls.name="ChatRLDataset" \
-    reward_model.reward_manager='naive' \
-    custom_reward_function.path="${CUSTOM_REWARD_FUNCTION_PATH}" \
-    custom_reward_function.name='compute_score' \
+    data.custom_cls.name="${CUSTOM_CHAT_RL_DATASET_NAME}" \
+    reward_model.reward_manager=${REWARD_MANAGER} \
+    custom_reward_function.path=${CUSTOM_REWARD_FUNCTION_PATH} \
+    custom_reward_function.name=${REWARD_FUNCTION_NAME} \
     actor_rollout_ref.model.path=${MODEL_PATH} \
     actor_rollout_ref.actor.optim.lr=1e-6 \
     actor_rollout_ref.model.use_remove_padding=True \

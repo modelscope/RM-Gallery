@@ -4,19 +4,20 @@ Data Build Module - core data build module, driving the entire data pipeline
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-import yaml
 from loguru import logger
 from pydantic import Field
 
-from rm_gallery.core.data.annotation import DataAnnotation, create_annotation_module
-from rm_gallery.core.data.base import BaseDataModule, DataModuleType
-from rm_gallery.core.data.load import DataLoad, create_load_module
-from rm_gallery.core.data.process import (
-    DataProcess,
-    OperatorFactory,
-    create_process_module,
+from rm_gallery.core.data.annotation.annotation import (
+    DataAnnotator,
+    create_annotation_module,
 )
+from rm_gallery.core.data.base import BaseDataModule, DataModuleType
+from rm_gallery.core.data.export import DataExport, create_export_module
+from rm_gallery.core.data.load.base import DataLoad, create_load_module
+from rm_gallery.core.data.process.ops.base import OperatorFactory
+from rm_gallery.core.data.process.process import DataProcess, create_process_module
 from rm_gallery.core.data.schema import BaseDataSet, DataSample
+from rm_gallery.core.utils.file import read_yaml
 
 
 class DataBuild(BaseDataModule):
@@ -24,7 +25,8 @@ class DataBuild(BaseDataModule):
 
     load_module: Optional[DataLoad] = Field(default=None)
     process_module: Optional[DataProcess] = Field(default=None)
-    annotation_module: Optional[DataAnnotation] = Field(default=None)
+    annotation_module: Optional[DataAnnotator] = Field(default=None)
+    export_module: Optional[DataExport] = Field(default=None)
 
     def __init__(
         self,
@@ -54,6 +56,7 @@ class DataBuild(BaseDataModule):
                 ("Loading", self.load_module),
                 ("Processing", self.process_module),
                 ("Annotation", self.annotation_module),
+                ("Export", self.export_module),
             ]
 
             for stage_name, module in stages:
@@ -83,8 +86,7 @@ def create_build_module_from_yaml(config_path: str) -> DataBuild:
     if not config_path.exists():
         raise FileNotFoundError(f"Configuration file not found: {config_path}")
 
-    with open(config_path, "r", encoding="utf-8") as f:
-        config = yaml.safe_load(f)
+    config = read_yaml(config_path)
 
     # Support new dataset structure
     if "dataset" in config:
@@ -100,14 +102,13 @@ def _create_from_dataset_config(dataset_config: Dict[str, Any]) -> DataBuild:
     modules = {}
 
     # Create load module
-    configs = dataset_config.get("configs", {})
-    if configs:
+    load_config = dataset_config.get("configs", {})
+    if load_config:
         modules["load_module"] = create_load_module(
             name=f"{dataset_name}-loader",
-            config={"description": f"Load {dataset_name} data"},
-            load_strategy_type=configs.get("type", "local"),
-            data_source=configs.get("source", "*"),
-            load_config={"path": configs.get("path"), "limit": configs.get("limit")},
+            load_strategy_type=load_config.get("type", "local"),
+            data_source=load_config.get("source", "*"),
+            config={"path": load_config.get("path"), "limit": load_config.get("limit")},
             metadata=metadata,
         )
 
@@ -122,23 +123,30 @@ def _create_from_dataset_config(dataset_config: Dict[str, Any]) -> DataBuild:
                 logger.error(f"Failed to create operator {proc_config}: {str(e)}")
 
         modules["process_module"] = create_process_module(
-            name=f"{dataset_name}-processor",
-            config={"description": f"Process {dataset_name} data"},
-            operators=operators,
-            metadata=metadata,
+            name=f"{dataset_name}-processor", operators=operators, metadata=metadata
         )
 
     # Create annotation module
-    if dataset_config.get("annotation", False):
+    annotation_config = dataset_config.get("annotation", {})
+    if annotation_config:
         modules["annotation_module"] = create_annotation_module(
             name=f"{dataset_name}-annotator",
-            config={"description": f"Annotate {dataset_name} data"},
-            label_config=dataset_config.get("label_config", ""),
-            project_title=dataset_config.get("project_title", ""),
-            project_description=dataset_config.get("project_description", ""),
-            server_url=dataset_config.get("server_url", ""),
-            api_token=dataset_config.get("api_token", ""),
-            export_processor=dataset_config.get("export_processor", ""),
+            label_config=annotation_config.get("label_config"),
+            template_name=annotation_config.get("template_name"),
+            project_title=annotation_config.get("project_title"),
+            project_description=annotation_config.get("project_description"),
+            server_url=annotation_config.get("server_url"),
+            api_token=annotation_config.get("api_token"),
+            export_processor=annotation_config.get("export_processor"),
+            metadata=metadata,
+        )
+
+    # Create export module
+    export_config = dataset_config.get("export", {})
+    if export_config:
+        modules["export_module"] = create_export_module(
+            name=f"{dataset_name}-exporter",
+            config=export_config,
             metadata=metadata,
         )
 
