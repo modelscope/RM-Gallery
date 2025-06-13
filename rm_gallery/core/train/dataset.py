@@ -93,40 +93,36 @@ class BaseTrainDataset(Dataset, ABC):
 
         # Filter overlong prompts if enabled
 
-    #     if self.filter_overlong_prompts:
-    #         self._filter_long_prompts()
+        if self.filter_overlong_prompts:
+            self._filter_long_prompts()
 
-    # def _filter_long_prompts(self):
-    #     """Filter out overlong prompts using the same logic as runtime processing"""
+    def _filter_long_prompts(self):
+        """Filter out overlong prompts using the same logic as runtime processing"""
 
-    #     def is_prompt_valid(doc):
-    #         try:
-    #             # Use the same logic as runtime processing
-    #             messages = self._build_messages(doc)
-    #             formatted_messages = self._format_messages(messages)
-    #             raw_prompt = self._apply_chat_template(formatted_messages)
-    #             raw_prompt_ids = self.tokenizer.encode(raw_prompt, add_special_tokens=False)
-    #             return len(raw_prompt_ids) <= self.max_prompt_length
-    #         except Exception as e:
-    #             print(f"Error processing sample during filtering: {e}")
-    #             return False
+        def is_prompt_valid(doc):
+            try:
+                # Use the same logic as runtime processing
+                messages = self._build_messages(doc)
+                raw_prompt = self._apply_chat_template(messages)
+                raw_prompt_ids = self.tokenizer.encode(
+                    raw_prompt, add_special_tokens=False
+                )
+                return len(raw_prompt_ids) <= self.max_prompt_length
+            except Exception as e:
+                print(f"Error processing sample during filtering: {e}")
+                return False
 
-    #     print(f"Starting prompt length filtering...")
-    #     self.dataframe = self.dataframe.filter(
-    #         is_prompt_valid,
-    #         num_proc=self.num_workers,
-    #         desc=f"filter out prompts longer than {self.max_prompt_length} tokens",
-    #     )
-    #     print(f"filtered dataset length: {len(self.dataframe)}")
+        print("Starting prompt length filtering...")
+        self.dataframe = self.dataframe.filter(
+            is_prompt_valid,
+            num_proc=self.num_workers,
+            desc=f"filter out prompts longer than {self.max_prompt_length} tokens",
+        )
+        print(f"filtered dataset length: {len(self.dataframe)}")
 
     @abstractmethod
     def _build_messages(self, example: Dict[str, Any]) -> List[Dict[str, str]]:
         """Build chat messages from example - must be implemented by subclasses"""
-        pass
-
-    @abstractmethod
-    def _format_messages(self, messages: List[Dict[str, str]]) -> List[Dict[str, str]]:
-        """Format messages for the specific task - must be implemented by subclasses"""
         pass
 
     @abstractmethod
@@ -148,8 +144,7 @@ class BaseTrainDataset(Dataset, ABC):
         """Get an item from dataset"""
         row_dict = dict(self.dataframe[item])
         messages = self._build_messages(row_dict)
-        formatted_messages = self._format_messages(messages)
-        raw_prompt = self._apply_chat_template(formatted_messages)
+        raw_prompt = self._apply_chat_template(messages)
 
         # Tokenize
         model_inputs = self.tokenizer(

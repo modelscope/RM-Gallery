@@ -1,4 +1,5 @@
 import hashlib
+from pathlib import Path
 from typing import Any, Dict, List
 
 from loguru import logger
@@ -16,7 +17,9 @@ class RMBBenchmarkBestOfNDataLoadStrategy(FileDataLoadStrategy):
     Strategy for loading conversation data with conversation_input, bon_best and loser_list responses
     """
 
-    def _convert_to_data_sample(self, data_dict: Dict[str, Any]) -> DataSample:
+    def _convert_to_data_sample(
+        self, data_dict: Dict[str, Any], source_file_path: Path
+    ) -> DataSample:
         """Convert conversation data to DataSample format"""
         # Generate unique id using bon_uid
         if "bon_uid" in data_dict:
@@ -61,6 +64,7 @@ class RMBBenchmarkBestOfNDataLoadStrategy(FileDataLoadStrategy):
                         if isinstance(item, dict)
                     ],
                     "num_losers": len(data_dict.get("loser_list", [])),
+                    "source_file_path": str(source_file_path),
                 },
             )
 

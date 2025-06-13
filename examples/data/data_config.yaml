@@ -1,10 +1,10 @@
 dataset:
-    name: "rewardbench-test"
+    name: "RMB-BoN-test"
     configs:
         type: local # required, support remote, local
-        source: rewardbench # required, local support rewardbench, chatmessage, prmbench
-        path: ./data/reward-bench/data/train-00000-of-00001.parquet # required, must be local path or url
-        limit: 2000 # optional, random sample dataset size
+        source: rmbbenchmark_pairwise # required, local support rewardbench, chatmessage, prmbench
+        path: /Users/xielipeng/RM-Gallery/data/RMB-Reward-Model-Benchmark/RMB_dataset/Pairwise_set/Harmlessness/multi.json # required, must be local path or url
+        #limit: 2000 # optional, random sample dataset size
     processors:
         - type: filter
           name: conversation_turn_filter
@@ -23,17 +23,18 @@ dataset:
             min_ratio: 0.0
             max_ratio: 0.5
     annotation:
-        template_name: "reward_bench"
+        template_name: "rewardbench"
         project_title: "Reward Bench Evaluation"
         project_description: "Reward model evaluation using reward bench template"
         server_url: "http://localhost:8080"
         api_token: "8c2f03e74b5700bf5e3cadd6fe073dbbb88caebe"
 
     export:
-        output_dir: ./rm_gallery/examples/data/exports
-        formats: ["parquet"]
-        split_ratio: {"train": 0.8, "test": 0.2}
+        output_dir: ./examples/data/exports
+        formats: ["jsonl"]
+        preserve_structure: true
+        #split_ratio: {"train": 1, "test": 0}
     metadata:
-        source: "rewardbench"
+        source: "rmbbenchmark_pairwise"
 
 

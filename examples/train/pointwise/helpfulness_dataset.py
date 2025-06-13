@@ -1,56 +1,21 @@
 from typing import Any, Dict, List
 
+from examples.train.pointwise.helpfulness_template import HelperfulnessTrainTemplate
 from rm_gallery.core.train.dataset import BaseTrainDataset
-from rm_gallery.examples.train.pointwise.helpfulness_template import (
-    HelperfulnessTrainTemplate,
-)
-from rm_gallery.gallery.rm.alignment.helpfulness import HelpfulnessPointWiseReward
+from rm_gallery.gallery.alignment.helpfulness import HelpfulnessPointWiseReward
 
 
-class DictToAttrAdapter:
-    """Adapter to allow dictionary access using attribute syntax"""
-
-    def __init__(self, data_dict):
-        self._data = data_dict
-
-    def __getattr__(self, name):
-        if name in self._data:
-            value = self._data[name]
-            # If the value is a list of dicts, wrap each dict as well
-            if isinstance(value, list):
-                return [
-                    DictToAttrAdapter(item) if isinstance(item, dict) else item
-                    for item in value
-                ]
-            elif isinstance(value, dict):
-                return DictToAttrAdapter(value)
-            return value
-        raise AttributeError(
-            f"'{type(self).__name__}' object has no attribute '{name}'"
-        )
-
-    def __getitem__(self, key):
-        return self._data[key]
-
-    def __contains__(self, key):
-        return key in self._data
-
-
-class HelpSteer2TrainDataset(BaseTrainDataset):
+class HelpfulnessTrainDataset(BaseTrainDataset):
     """Specialized dataset for principle-based pointwise evaluation tasks"""
 
     def __init__(self, *args, **kwargs):
-        # Initialize the reward module BEFORE calling parent init
-        # This ensures it's available during dataset loading and filtering
         self.helpfulness_reward = HelpfulnessPointWiseReward(
             name="helpfulness_train",
             template=HelperfulnessTrainTemplate,
             examples=self._get_examples(),
-            llm=None,  # Dummy LLM for format mode
-            to_format=True,  # Enable format mode to generate prompts without LLM calls
+            llm=None,
         )
 
-        # Now call parent initialization
         super().__init__(*args, **kwargs)
 
     def _get_examples(self) -> List[str]:
@@ -110,18 +75,14 @@ helpfulness score: 4""",
 
     def _build_messages(self, example: Dict[str, Any]) -> List[Dict[str, str]]:
         """Build formatted messages directly from DataSample using reward module"""
-        # Wrap the dictionary to provide attribute access
-        adapted_sample = DictToAttrAdapter(example)
-
-        # Use the reward module's evaluation framework to generate the formatted prompt
-        result = self.helpfulness_reward._evaluate(sample=adapted_sample, context="")
-        formatted_prompt = result.extra_data.get("prompt", "")
+        result = self.helpfulness_reward.format(sample=example, context="")
+        formatted_prompt = (
+            result.output[0]
+            .answer.additional_kwargs[self.helpfulness_reward.name]
+            .get("prompt", "")
+        )
 
         return [{"role": "user", "content": formatted_prompt}]
-
-    def _format_messages(self, messages: List[Dict[str, str]]) -> List[Dict[str, str]]:
-        """Pass through - formatting is already done in _build_messages"""
-        return messages
 
     def _extract_ground_truth(self, row_dict: Dict[str, Any]) -> str:
         """Extract ground truth for principle evaluation"""
@@ -133,11 +94,6 @@ helpfulness score: 4""",
                     label_data = answer_data.get("label", {})
                     if isinstance(label_data, dict):
                         return str(label_data.get("helpfulness", "")) or str(label_data)
-
-            # Fallback options
-            return str(row_dict.get("ground_truth", "")) or str(
-                row_dict.get("answer", "")
-            )
         except:
             return ""
 

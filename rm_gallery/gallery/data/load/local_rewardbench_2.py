@@ -1,4 +1,5 @@
 import hashlib
+from pathlib import Path
 from typing import Any, Dict, List
 
 from loguru import logger
@@ -16,7 +17,9 @@ class RewardBench2DataLoadStrategy(FileDataLoadStrategy):
     Strategy for loading conversation data with prompt, chosen and rejected responses
     """
 
-    def _convert_to_data_sample(self, data_dict: Dict[str, Any]) -> DataSample:
+    def _convert_to_data_sample(
+        self, data_dict: Dict[str, Any], source_file_path: Path
+    ) -> DataSample:
         """Convert conversation data to DataSample format"""
         # generate unique id using id field if available, otherwise use prompt content
         if "id" in data_dict:
@@ -46,6 +49,7 @@ class RewardBench2DataLoadStrategy(FileDataLoadStrategy):
                     "num_rejected": data_dict.get("num_rejected"),
                     "total_completions": data_dict.get("total_completions"),
                     "models": data_dict.get("models"),
+                    "source_file_path": str(source_file_path),
                 },
             )
 

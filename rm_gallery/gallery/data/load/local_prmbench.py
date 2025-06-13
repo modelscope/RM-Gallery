@@ -1,4 +1,5 @@
 import hashlib
+from pathlib import Path
 from typing import Any, ClassVar, Dict, List
 
 from loguru import logger
@@ -57,7 +58,9 @@ class PRMDataLoadStrategy(FileDataLoadStrategy):
 
         return filtered_data
 
-    def _convert_to_data_sample(self, data_dict: Dict[str, Any]) -> DataSample:
+    def _convert_to_data_sample(
+        self, data_dict: Dict[str, Any], source_file_path: Path
+    ) -> DataSample:
         """Convert PRM data to DataSample format
 
         Expected input format:
@@ -107,6 +110,7 @@ class PRMDataLoadStrategy(FileDataLoadStrategy):
                         data_dict.get("modified_process", [])
                     ),
                     "load_strategy": "PRMDataLoadStrategy",
+                    "source_file_path": str(source_file_path),
                 },
             )
 

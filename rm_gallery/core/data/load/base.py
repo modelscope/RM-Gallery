@@ -245,53 +245,135 @@ class FileDataLoadStrategy(DataLoad):
 
         path = Path(config["path"])
         if not path.exists():
-            raise FileNotFoundError(f"Could not find file '{path}'")
+            raise FileNotFoundError(f"Could not find path '{path}'")
 
-        ext = path.suffix.lower()
-        if ext not in [".json", ".jsonl", ".parquet"]:
-            raise ValueError(
-                f"Unsupported file format: {ext}. Supported formats: .json, .jsonl, .parquet"
-            )
+        # If it's a file, validate the file format
+        if path.is_file():
+            ext = path.suffix.lower()
+            if ext not in [".json", ".jsonl", ".parquet"]:
+                raise ValueError(
+                    f"Unsupported file format: {ext}. Supported formats: .json, .jsonl, .parquet"
+                )
+        # If it's a directory, check if it contains any supported files
+        elif path.is_dir():
+            supported_files = self._find_supported_files(path)
+            if not supported_files:
+                raise ValueError(
+                    f"Directory '{path}' contains no supported files. Supported formats: .json, .jsonl, .parquet"
+                )
+        else:
+            raise ValueError(f"Path '{path}' is neither a file nor a directory")
+
+    def _find_supported_files(self, directory: Path) -> List[Path]:
+        """Find all supported files (json, jsonl, parquet) in the directory and subdirectories"""
+        supported_extensions = {".json", ".jsonl", ".parquet"}
+        supported_files = []
+
+        # Walk through directory and all subdirectories
+        for file_path in directory.rglob("*"):
+            if file_path.is_file() and file_path.suffix.lower() in supported_extensions:
+                supported_files.append(file_path)
+
+        # Sort files for consistent ordering
+        return sorted(supported_files)
 
     def _load_data_impl(self, **kwargs) -> List[DataSample]:
         path = Path(self.config["path"])
-        ext = path.suffix.lower()
 
         try:
-            if ext == ".json":
-                return self._load_json(path)
-            elif ext == ".jsonl":
-                return self._load_jsonl(path)
-            elif ext == ".parquet":
-                return self._load_parquet(path)
+            all_data_samples = []
+
+            # If it's a single file, load it directly
+            if path.is_file():
+                ext = path.suffix.lower()
+                if ext == ".json":
+                    file_data = self._load_json(path, source_file_path=path)
+                elif ext == ".jsonl":
+                    file_data = self._load_jsonl(path, source_file_path=path)
+                elif ext == ".parquet":
+                    file_data = self._load_parquet(path, source_file_path=path)
+                else:
+                    raise ValueError(f"Unsupported file format: {ext}")
+                all_data_samples.extend(file_data)
+                logger.info(f"Loaded {len(file_data)} samples from file: {path}")
+
+            # If it's a directory, load all supported files
+            elif path.is_dir():
+                supported_files = self._find_supported_files(path)
+                logger.info(
+                    f"Found {len(supported_files)} supported files in directory: {path}"
+                )
+
+                for file_path in supported_files:
+                    try:
+                        ext = file_path.suffix.lower()
+                        if ext == ".json":
+                            file_data = self._load_json(
+                                file_path, source_file_path=file_path
+                            )
+                        elif ext == ".jsonl":
+                            file_data = self._load_jsonl(
+                                file_path, source_file_path=file_path
+                            )
+                        elif ext == ".parquet":
+                            file_data = self._load_parquet(
+                                file_path, source_file_path=file_path
+                            )
+                        else:
+                            logger.warning(
+                                f"Skipping unsupported file format: {file_path}"
+                            )
+                            continue
+
+                        all_data_samples.extend(file_data)
+                        logger.info(
+                            f"Loaded {len(file_data)} samples from file: {file_path}"
+                        )
+
+                    except Exception as e:
+                        logger.error(f"Failed to load data from {file_path}: {str(e)}")
+                        # Continue with other files instead of failing completely
+                        continue
+
+                logger.info(
+                    f"Total loaded {len(all_data_samples)} samples from {len(supported_files)} files"
+                )
+
             else:
-                raise ValueError(f"Unsupported file format: {ext}")
+                raise ValueError(f"Path '{path}' is neither a file nor a directory")
+
+            return all_data_samples
+
         except Exception as e:
             raise RuntimeError(f"Failed to load data from {path}: {str(e)}")
 
-    def _load_json(self, path: Path) -> List[DataSample]:
+    def _load_json(self, path: Path, source_file_path: Path) -> List[DataSample]:
         """Load data from JSON file"""
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         if isinstance(data, list):
-            return [self._convert_to_data_sample(item) for item in data]
+            return [
+                self._convert_to_data_sample(item, source_file_path) for item in data
+            ]
         elif isinstance(data, dict):
-            return [self._convert_to_data_sample(data)]
+            return [self._convert_to_data_sample(data, source_file_path)]
         else:
             raise ValueError("Invalid JSON format: expected list or dict")
 
-    def _load_jsonl(self, path: Path) -> List[DataSample]:
+    def _load_jsonl(self, path: Path, source_file_path: Path) -> List[DataSample]:
         """Load data from JSONL file"""
         data_list = []
         with open(path, "r", encoding="utf-8") as f:
             for line in f:
                 if line.strip():  # Skip empty lines
                     data = json.loads(line)
-                    data_list.append(self._convert_to_data_sample(data))
+                    data_list.append(
+                        self._convert_to_data_sample(data, source_file_path)
+                    )
         return data_list
 
-    def _load_parquet(self, path: Path) -> List[DataSample]:
+    def _load_parquet(self, path: Path, source_file_path: Path) -> List[DataSample]:
         """Load data from Parquet file"""
         try:
             df = pd.read_parquet(path)
@@ -325,7 +407,7 @@ class FileDataLoadStrategy(DataLoad):
                     continue
 
                 # convert data to DataSample object
-                data_sample = self._convert_to_data_sample(data_dict)
+                data_sample = self._convert_to_data_sample(data_dict, source_file_path)
                 if data_sample is not None:
                     data_list.append(data_sample)
             except Exception as e:
@@ -335,7 +417,9 @@ class FileDataLoadStrategy(DataLoad):
         return data_list
 
     @abstractmethod
-    def _convert_to_data_sample(self, data_dict: Dict[str, Any]) -> DataSample:
+    def _convert_to_data_sample(
+        self, data_dict: Dict[str, Any], source_file_path: Path
+    ) -> DataSample:
         """Convert raw data dictionary to DataSample format"""
         pass
 

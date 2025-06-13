@@ -1,8 +1,6 @@
 import math
 
-from rm_gallery.examples.train.pointwise.helpfulness_template import (
-    HelperfulnessTrainTemplate,
-)
+from examples.train.pointwise.helpfulness_template import HelperfulnessTrainTemplate
 
 
 def calculate_helpfulness_reward(predicted_score, true_score):

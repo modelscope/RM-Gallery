@@ -4,21 +4,22 @@ ORM Data Loading and Processing Script
 Load and process ORM dataset using YAML configuration with integrated export functionality.
 
 Usage:
-    python orm_data_load.py
+    python data_from_yaml.py
 """
 
 from loguru import logger
 
-import rm_gallery.core.data  # noqa: F401 - needed for strategy registration
+import rm_gallery.core.data  # noqa: F401 - needed for core strategy registration
+import rm_gallery.gallery.data  # noqa: F401 - needed for gallery strategy registration
 from rm_gallery.core.data.build import create_build_module_from_yaml
 
 
 def load_and_process_dataset():
     """Load and process ORM dataset using YAML configuration"""
-    config_path = "./rm_gallery/examples/data/data_config.yaml"
+    config_path = "./examples/data/data_config.yaml"
 
     try:
-        logger.info("🚀 Starting ORM data processing...")
+        logger.info("🚀 Starting data processing...")
         logger.info(f"📄 Loading config: {config_path}")
 
         # Create builder from YAML config
@@ -45,19 +46,18 @@ def load_and_process_dataset():
 
 def main():
     """Main function"""
-    logger.info("🎯 ORM Data Processing Pipeline")
-    logger.info("=" * 50)
+    logger.info("🎯 Data Processing Pipeline")
 
     dataset = load_and_process_dataset()
 
     if dataset:
-        logger.success("\n🎉 ORM data processing completed successfully!")
+        logger.success("\n🎉 data processing completed successfully!")
         logger.info(
             "💡 Export files should be available in the configured export directory"
         )
         logger.info("📁 Check your YAML config for export settings")
     else:
-        logger.error("\n❌ ORM data processing failed!")
+        logger.error("\n❌ data processing failed!")
         logger.info("💡 Check the error messages above for troubleshooting")
 
 

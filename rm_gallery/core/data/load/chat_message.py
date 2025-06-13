@@ -1,4 +1,5 @@
 import hashlib
+from pathlib import Path
 from typing import Any, Dict, List
 
 from loguru import logger
@@ -10,13 +11,15 @@ from rm_gallery.core.data.load.base import (
 from rm_gallery.core.data.schema import ChatMessage, DataOutput, DataSample, Step
 
 
-@DataLoadStrategyRegistry.register("local", "chatmessage")
+@DataLoadStrategyRegistry.register("local", "chat_message")
 class ChatMessageDataLoadStrategy(FileDataLoadStrategy):
     """
-    Strategy for loading chat message data
+    Strategy for loading chat message data format
     """
 
-    def _convert_to_data_sample(self, data_dict: Dict[str, Any]) -> DataSample:
+    def _convert_to_data_sample(
+        self, data_dict: Dict[str, Any], source_file_path: Path
+    ) -> DataSample:
         """Convert chat message data to DataSample format"""
         # generate unique id
         content = str(data_dict)
@@ -24,27 +27,35 @@ class ChatMessageDataLoadStrategy(FileDataLoadStrategy):
 
         try:
             # Create input from messages
-            data_input = self._create_chat_input(data_dict)
+            data_input = []
+            messages = data_dict.get("messages", [])
+            if isinstance(messages, list):
+                for msg in messages:
+                    if isinstance(msg, dict):
+                        role = msg.get("role", "user")
+                        content = msg.get("content", "")
+                        data_input.append(ChatMessage(role=role, content=content))
 
-            # Create output from response
-            data_output = self._create_chat_output(data_dict)
+            # Create simple output
+            data_output = []
 
             data_sample = DataSample(
                 unique_id=unique_id,
                 input=data_input,
                 output=data_output,
-                source="chatmessage",
-                task_category=data_dict.get("task_category", "chat"),
+                source="chat_message",
+                task_category="chat",
                 metadata={
                     "raw_data": data_dict,
                     "load_strategy": "ChatMessageDataLoadStrategy",
+                    "source_file_path": str(source_file_path),
                 },
             )
 
             return data_sample
 
         except Exception as e:
-            logger.error(f"Error creating chat DataSample: {str(e)}")
+            logger.error(f"Error creating ChatMessage DataSample: {str(e)}")
             return None
 
     def _create_chat_input(self, data_dict: Dict[str, Any]) -> List[ChatMessage]:

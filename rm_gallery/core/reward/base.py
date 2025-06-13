@@ -520,7 +520,7 @@ class BaseLLMReward(BaseReward):
         """
         params = self._before_evaluate(**kwargs)
         prompt = self.template.format(**params)
-        logger.info(f"prompt: {prompt}")
+        # logger.info(f"prompt: {prompt}")
         return RewardResult(name=self.name, details=[], extra_data={"prompt": prompt})
 
     def _evaluate(self, **kwargs) -> RewardResult:

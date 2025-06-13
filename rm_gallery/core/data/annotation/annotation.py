@@ -25,7 +25,7 @@ class DataAnnotator(BaseDataModule):
     """Data annotation module using Label Studio
 
     Note: Before using this module, please start Label Studio service:
-    python rm_gallery/scripts/start_label_studio.py start
+    python examples/data/data_pipeline.py start
     """
 
     client: Optional[LabelStudioClient] = Field(
@@ -45,7 +45,7 @@ class DataAnnotator(BaseDataModule):
     )
     api_token: Optional[str] = Field(default=None, description="Label Studio API token")
     export_processor: Optional[str] = Field(
-        default=None, description="Config-specific processor name (e.g. 'reward_bench')"
+        default=None, description="Config-specific processor name (e.g. 'rewardbench')"
     )
 
     class Config:

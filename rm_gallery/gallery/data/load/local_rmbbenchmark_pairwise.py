@@ -1,4 +1,5 @@
 import hashlib
+from pathlib import Path
 from typing import Any, Dict, List
 
 from loguru import logger
@@ -16,7 +17,9 @@ class RMBBenchmarkPairwiseDataLoadStrategy(FileDataLoadStrategy):
     Strategy for loading conversation data with conversation_input, chosen and reject responses
     """
 
-    def _convert_to_data_sample(self, data_dict: Dict[str, Any]) -> DataSample:
+    def _convert_to_data_sample(
+        self, data_dict: Dict[str, Any], source_file_path: Path
+    ) -> DataSample:
         """Convert conversation data to DataSample format"""
         # Generate unique id using pair_uid
         if "pair_uid" in data_dict:
@@ -58,6 +61,7 @@ class RMBBenchmarkPairwiseDataLoadStrategy(FileDataLoadStrategy):
                     "reject_model": data_dict.get("reject", {}).get("llm_name")
                     if data_dict.get("reject")
                     else None,
+                    "source_file_path": str(source_file_path),
                 },
             )
 

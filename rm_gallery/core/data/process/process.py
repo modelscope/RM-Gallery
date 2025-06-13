@@ -44,6 +44,11 @@ class DataProcess(BaseDataModule):
             data_samples = self._prepare_data(input_data)
             processed_data = data_samples
 
+            # Preserve original dataset metadata if available
+            original_metadata = {}
+            if isinstance(input_data, BaseDataSet):
+                original_metadata = input_data.metadata or {}
+
             logger.info(
                 f"Processing {len(data_samples)} items with {len(self.operators)} operators"
             )
@@ -62,14 +67,20 @@ class DataProcess(BaseDataModule):
                     logger.error(f"Error in operator {operator.name}: {str(e)}")
                     continue
 
-            # Create output dataset
-            output_dataset = BaseDataSet(
-                name=f"{self.name}_processed",
-                extra_metadata={
+            # Merge original metadata with processing metadata
+            combined_metadata = original_metadata.copy()
+            combined_metadata.update(
+                {
                     "original_count": len(data_samples),
                     "processed_count": len(processed_data),
                     "operators_applied": [op.name for op in self.operators],
-                },
+                }
+            )
+
+            # Create output dataset with preserved metadata
+            output_dataset = BaseDataSet(
+                name=f"{self.name}_processed",
+                metadata=combined_metadata,
                 datas=processed_data,
             )
 

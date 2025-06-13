@@ -3,6 +3,7 @@ Data Export Module - export data to various formats with train/test split suppor
 """
 import json
 import random
+from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple, Union
 
@@ -53,6 +54,7 @@ class DataExport(BaseDataModule):
             split_ratio = export_config.get(
                 "split_ratio", None
             )  # e.g., {"train": 0.8, "test": 0.2}
+            preserve_structure = export_config.get("preserve_structure", False)
             filename_prefix = self.name
 
             # Create output directory
@@ -76,16 +78,24 @@ class DataExport(BaseDataModule):
             else:
                 datasets_to_export = {"full": dataset}
 
-            # Export in requested formats
-            for split_name, split_dataset in datasets_to_export.items():
-                for format_type in formats:
-                    self._export_format(
-                        split_dataset,
-                        output_dir,
-                        format_type,
-                        filename_prefix,
-                        split_name,
+            # Export data
+            if preserve_structure:
+                # Export with preserved directory structure
+                for split_name, split_dataset in datasets_to_export.items():
+                    self._export_with_structure(
+                        split_dataset, output_dir, formats, filename_prefix, split_name
                     )
+            else:
+                # Export in traditional way (all data in single files)
+                for split_name, split_dataset in datasets_to_export.items():
+                    for format_type in formats:
+                        self._export_format(
+                            split_dataset,
+                            output_dir,
+                            format_type,
+                            filename_prefix,
+                            split_name,
+                        )
 
             logger.info(
                 f"Successfully exported {len(dataset.datas)} samples to {output_dir}"
@@ -95,6 +105,122 @@ class DataExport(BaseDataModule):
         except Exception as e:
             logger.error(f"Error during data export: {str(e)}")
             raise
+
+    def _export_with_structure(
+        self,
+        dataset: BaseDataSet,
+        output_dir: Path,
+        formats: List[str],
+        filename_prefix: str,
+        split_name: str,
+    ):
+        """Export data preserving original directory structure"""
+        # Group samples by source file path
+        file_groups = defaultdict(list)
+        base_path = None
+
+        # Try to get the base path from dataset metadata
+        if dataset.metadata and "config" in dataset.metadata:
+            config = dataset.metadata["config"]
+            if "path" in config:
+                base_path = Path(config["path"])
+
+        for sample in dataset.datas:
+            source_file_path = (
+                sample.metadata.get("source_file_path") if sample.metadata else None
+            )
+            if source_file_path:
+                file_groups[source_file_path].append(sample)
+            else:
+                # If no source file path, put in a default group
+                file_groups["unknown"].append(sample)
+
+        logger.info(
+            f"Exporting {len(file_groups)} file groups with preserved structure"
+        )
+        logger.info(f"Base path for relative calculation: {base_path}")
+
+        # Export each file group
+        for source_path, samples in file_groups.items():
+            try:
+                # Create a mini dataset for this file group
+                file_dataset = BaseDataSet(
+                    name=f"{dataset.name}_file_group",
+                    datas=samples,
+                    metadata=dataset.metadata,
+                )
+
+                # Determine output path structure
+                if source_path == "unknown":
+                    # Handle samples without source file path
+                    if split_name == "full":
+                        relative_path = Path(f"{filename_prefix}_unknown")
+                    else:
+                        relative_path = Path(f"{filename_prefix}_{split_name}_unknown")
+                else:
+                    source_path_obj = Path(source_path)
+
+                    # Calculate relative path from base path
+                    if base_path and base_path.is_dir():
+                        try:
+                            # Get relative path from the base directory
+                            relative_to_base = source_path_obj.relative_to(base_path)
+                            # Remove the file extension and add split suffix if needed
+                            file_stem = relative_to_base.stem
+                            if split_name != "full":
+                                file_stem = f"{file_stem}_{split_name}"
+                            # Preserve the directory structure relative to base
+                            relative_path = relative_to_base.parent / file_stem
+                        except ValueError:
+                            # If source_path is not relative to base_path, fall back to simple filename
+                            logger.warning(
+                                f"Source path {source_path_obj} is not relative to base path {base_path}, using filename only"
+                            )
+                            file_stem = source_path_obj.stem
+                            if split_name != "full":
+                                file_stem = f"{file_stem}_{split_name}"
+                            relative_path = Path(file_stem)
+                    else:
+                        # If no base path or it's not a directory, use just the filename
+                        file_stem = source_path_obj.stem
+                        if split_name != "full":
+                            file_stem = f"{file_stem}_{split_name}"
+                        relative_path = Path(file_stem)
+
+                # Export in each requested format
+                for format_type in formats:
+                    self._export_structured_format(
+                        file_dataset, output_dir, format_type, relative_path
+                    )
+
+            except Exception as e:
+                logger.error(f"Failed to export file group {source_path}: {str(e)}")
+                continue
+
+    def _export_structured_format(
+        self,
+        dataset: BaseDataSet,
+        output_dir: Path,
+        format_type: str,
+        relative_path: Path,
+    ):
+        """Export dataset in specified format with structured path"""
+        # Create the full file path with extension
+        filename = f"{relative_path.name}.{format_type}"
+        full_output_dir = output_dir / relative_path.parent
+        filepath = full_output_dir / filename
+
+        # Create directory structure
+        full_output_dir.mkdir(parents=True, exist_ok=True)
+
+        if format_type.lower() == "json":
+            self._export_json(dataset, filepath)
+        elif format_type.lower() == "jsonl":
+            self._export_jsonl(dataset, filepath)
+        elif format_type.lower() == "parquet":
+            self._export_parquet(dataset, filepath)
+        else:
+            logger.warning(f"Unsupported format: {format_type}")
 
     def _split_dataset(
         self, data_samples: List[DataSample], split_ratio: Dict[str, float]

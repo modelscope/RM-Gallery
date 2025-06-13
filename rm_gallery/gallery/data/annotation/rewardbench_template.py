@@ -6,8 +6,8 @@ from rm_gallery.core.data.annotation.template import (
 )
 
 
-@AnnotationTemplateRegistry.register("reward_bench")
-class RewardBenchTemplate(BaseAnnotationTemplate):
+@AnnotationTemplateRegistry.register("rewardbench")
+class RewardBenchAnnotationTemplate(BaseAnnotationTemplate):
     """Reward Bench annotation template implementation"""
 
     def __init__(self, name: str):

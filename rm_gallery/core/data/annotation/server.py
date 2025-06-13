@@ -24,7 +24,7 @@ class LabelStudioManager:
         port: int = 8080,
         username: str = "admin@example.com",
         password: str = "admin123",
-        data_dir: str = "./label_studio_data",
+        data_dir: str = "./log",
         use_docker: bool = True,
         container_name: str = "rm-gallery-label-studio",
         image: str = "heartexlabs/label-studio:latest",
@@ -47,7 +47,7 @@ class LabelStudioManager:
     def _setup_logging(self):
         """Setup logging system"""
         # Create logs directory
-        logs_dir = os.path.join(os.path.abspath(self.data_dir), "logs")
+        logs_dir = os.path.join(os.path.abspath(self.data_dir), "label_studio_logs")
         os.makedirs(logs_dir, exist_ok=True)
 
         # Setup loguru logger
@@ -386,38 +386,223 @@ class LabelStudioManager:
         except:
             pass
 
+    def _stop_pip_service(self):
+        """Stop pip-based Label Studio service"""
+        stopped = False
+
+        # Method 1: Try to stop the process if we have it
+        if self.process:
+            try:
+                self.process.terminate()
+                self.process.wait(timeout=10)
+                loguru_logger.info("Label Studio service stopped (via process object)")
+                stopped = True
+            except Exception as e:
+                loguru_logger.warning(f"Failed to stop via process object: {e}")
+
+        # Method 2: Find and kill by port usage (most reliable)
+        if not stopped:
+            try:
+                # Find process using the port
+                result = subprocess.run(
+                    ["lsof", "-ti", f":{self.port}"],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+
+                if result.returncode == 0 and result.stdout.strip():
+                    pids = result.stdout.strip().split("\n")
+                    loguru_logger.info(
+                        f"Found processes using port {self.port}: {pids}"
+                    )
+
+                    # Kill each process
+                    for pid in pids:
+                        if pid.strip():
+                            try:
+                                subprocess.run(
+                                    ["kill", "-TERM", pid.strip()], check=False
+                                )
+                                loguru_logger.info(f"Sent SIGTERM to process {pid}")
+                                stopped = True
+                            except Exception as e:
+                                loguru_logger.warning(
+                                    f"Failed to kill process {pid}: {e}"
+                                )
+
+                    # Wait a moment, then force kill if needed
+                    if stopped:
+                        time.sleep(3)
+                        # Check if processes are still running
+                        result2 = subprocess.run(
+                            ["lsof", "-ti", f":{self.port}"],
+                            capture_output=True,
+                            text=True,
+                            check=False,
+                        )
+                        if result2.returncode == 0 and result2.stdout.strip():
+                            loguru_logger.warning(
+                                "Processes still using port, force killing..."
+                            )
+                            for pid in result2.stdout.strip().split("\n"):
+                                if pid.strip():
+                                    subprocess.run(
+                                        ["kill", "-9", pid.strip()], check=False
+                                    )
+                                    loguru_logger.info(f"Force killed process {pid}")
+                else:
+                    loguru_logger.info(f"No processes found using port {self.port}")
+
+            except Exception as e:
+                loguru_logger.error(f"Error finding processes by port: {e}")
+
+        # Method 3: Find by command pattern
+        if not stopped:
+            try:
+                # Try different patterns
+                patterns = [
+                    "annotation.server start",
+                    "label-studio start",
+                    "rm_gallery.core.data.annotation.server",
+                ]
+
+                for pattern in patterns:
+                    result = subprocess.run(
+                        ["pgrep", "-f", pattern],
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                    )
+
+                    if result.returncode == 0 and result.stdout.strip():
+                        pids = result.stdout.strip().split("\n")
+                        loguru_logger.info(
+                            f"Found processes matching '{pattern}': {pids}"
+                        )
+
+                        for pid in pids:
+                            if pid.strip():
+                                try:
+                                    subprocess.run(
+                                        ["kill", "-TERM", pid.strip()], check=False
+                                    )
+                                    loguru_logger.info(f"Sent SIGTERM to process {pid}")
+                                    stopped = True
+                                except Exception as e:
+                                    loguru_logger.warning(
+                                        f"Failed to kill process {pid}: {e}"
+                                    )
+
+                        if stopped:
+                            break
+
+                if not stopped:
+                    loguru_logger.info("No matching processes found by command pattern")
+
+            except Exception as e:
+                loguru_logger.error(f"Error finding processes by pattern: {e}")
+
+        # Final check
+        if self._is_service_running():
+            loguru_logger.warning(
+                "⚠️  Service may still be running, please check manually"
+            )
+            loguru_logger.info("You can check with: ps aux | grep label-studio")
+            loguru_logger.info("Or check port usage: lsof -i :{}".format(self.port))
+        else:
+            if stopped:
+                loguru_logger.info("✅ Label Studio service stopped successfully")
+            else:
+                loguru_logger.info("✅ Label Studio service was not running")
+
     def stop_service(self):
         """Stop service"""
         if self.use_docker:
             self._stop_container()
         else:
-            if self.process:
-                self.process.terminate()
-                self.process.wait()
-                loguru_logger.info("Label Studio service stopped")
+            self._stop_pip_service()
 
         # Clear configuration file
-        if self.config_file.exists():
-            self.config_file.unlink()
-            loguru_logger.info("Configuration file removed")
+        try:
+            if self.config_file.exists():
+                self.config_file.unlink()
+                loguru_logger.info("Configuration file removed")
+            else:
+                loguru_logger.info("Configuration file not found")
+        except Exception as e:
+            loguru_logger.error(f"Error removing configuration file: {e}")
 
     def get_status(self) -> dict:
         """Get service status"""
         config = self.load_config()
-        if config:
-            return {"running": self._is_service_running(), "config": config}
-        else:
-            return {"running": False, "config": None}
+        is_running = self._is_service_running()
+
+        # Additional status info for pip mode
+        pip_processes = []
+        port_processes = []
+        if not self.use_docker:
+            try:
+                # Check by port
+                result = subprocess.run(
+                    ["lsof", "-ti", f":{self.port}"],
+                    capture_output=True,
+                    text=True,
+                    check=False,
+                )
+                if result.returncode == 0 and result.stdout.strip():
+                    port_processes = result.stdout.strip().split("\n")
+
+                # Check by command pattern
+                patterns = [
+                    "annotation.server start",
+                    "rm_gallery.core.data.annotation.server",
+                ]
+                for pattern in patterns:
+                    result = subprocess.run(
+                        ["pgrep", "-f", pattern],
+                        capture_output=True,
+                        text=True,
+                        check=False,
+                    )
+                    if result.returncode == 0 and result.stdout.strip():
+                        pip_processes.extend(result.stdout.strip().split("\n"))
+            except:
+                pass
+
+        status = {
+            "running": is_running,
+            "config": config,
+            "deployment_method": "docker" if self.use_docker else "pip",
+            "port": self.port,
+            "server_url": self.server_url,
+        }
+
+        if not self.use_docker:
+            if pip_processes:
+                status["pip_processes"] = pip_processes
+            if port_processes:
+                status["port_processes"] = port_processes
+
+        return status
 
     def load_config(self) -> Optional[dict]:
         """Load configuration"""
-        if self.config_file.exists():
-            try:
+        try:
+            if self.config_file.exists():
                 with open(self.config_file) as f:
-                    return json.load(f)
-            except Exception as e:
-                loguru_logger.error(f"Error loading config: {e}")
-        return None
+                    config = json.load(f)
+                    loguru_logger.debug(f"Loaded configuration from {self.config_file}")
+                    return config
+            else:
+                loguru_logger.debug(f"Configuration file {self.config_file} not found")
+                return None
+        except json.JSONDecodeError as e:
+            loguru_logger.error(f"Invalid JSON in config file: {e}")
+            return None
+        except Exception as e:
+            loguru_logger.error(f"Error loading config: {e}")
+            return None
 
 
 def main():
@@ -434,7 +619,7 @@ def main():
     parser.add_argument("--password", default="admin123", help="Admin password")
     parser.add_argument(
         "--data-dir",
-        default="./label_studio_data",
+        default="./log",
         help="Data directory for Label Studio",
     )
     parser.add_argument(
@@ -486,20 +671,35 @@ def main():
 
     elif args.action == "status":
         status = manager.get_status()
+        print("\n" + "=" * 50)
+        print("📊 Label Studio Status")
+        print("=" * 50)
+        print(f"🌐 Server URL: {status['server_url']}")
+        print(f"🚀 Deployment: {status['deployment_method'].upper()}")
+        print(f"🔌 Port: {status['port']}")
+        print(f"{'✅ Running' if status['running'] else '❌ Stopped'}")
+
         if status["config"]:
-            print("\n" + "=" * 40)
-            print("📊 Label Studio Status")
-            print("=" * 40)
-            print(f"🌐 Server: {status['config']['server_url']}")
             print(f"🔑 API Token: {status['config']['api_token']}")
             print(f"📁 Data Dir: {status['config']['data_dir']}")
-            print(
-                f"🐳 Deployment: {'Docker' if status['config']['use_docker'] else 'Pip'}"
-            )
-            print(f"✅ Status: {'Running' if status['running'] else 'Stopped'}")
-            print("=" * 40)
+            print(f"👤 Username: {status['config']['username']}")
         else:
-            print("❌ Label Studio is not running or not configured")
+            print("⚠️  No configuration file found")
+
+        if status.get("pip_processes"):
+            print(f"🔄 Process PIDs: {', '.join(status['pip_processes'])}")
+        if status.get("port_processes"):
+            print(f"🔌 Port PIDs: {', '.join(status['port_processes'])}")
+
+        print("=" * 50)
+
+        # Additional diagnostic info
+        if not status["running"] and status["config"]:
+            print("\n💡 Service appears to be stopped but config exists.")
+            print("   Try running 'python server.py start' to restart.")
+        elif status["running"] and not status["config"]:
+            print("\n⚠️  Service is running but no config found.")
+            print("   This might be a manually started instance.")
 
 
 if __name__ == "__main__":

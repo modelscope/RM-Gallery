@@ -10,9 +10,9 @@ MODEL_PATH=./models/Qwen3-14B
 PROJECT_NAME=warmup_train
 EXPERIMENT_NAME=rm-gallery-qwen3-${TIMESTAMP}
 
-CUSTOM_REWARD_FUNCTION_PATH=./rm_gallery/examples/train/pointwise/reward_fn.py
-CUSTOM_CHAT_RL_DATASET_PATH=./rm_gallery/examples/train/pointwise/dataset_helpsteer2.py
-CUSTOM_CHAT_RL_DATASET_NAME=HelpSteer2TrainDataset
+CUSTOM_REWARD_FUNCTION_PATH=./examples/train/pointwise/reward_fn.py
+CUSTOM_CHAT_RL_DATASET_PATH=./examples/train/pointwise/helpfulness_dataset.py
+CUSTOM_CHAT_RL_DATASET_NAME=HelpfulnessTrainDataset
 REWARD_MANAGER=naive
 REWARD_FUNCTION_NAME=compute_score
 
@@ -25,7 +25,7 @@ N_NODES=3
 set -x
 
 ray job submit --address="http://127.0.0.1:8265" \
-    --runtime-env=./rm_gallery/examples/train/pointwise/runtime_env.yaml \
+    --runtime-env=./examples/train/pointwise/runtime_env.yaml \
     -- \
     python3 -m verl.trainer.main_ppo \
     algorithm.adv_estimator=grpo \

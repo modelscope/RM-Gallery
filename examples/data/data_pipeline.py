@@ -32,7 +32,8 @@ import argparse
 import requests
 from loguru import logger
 
-import rm_gallery.core.data  # noqa: F401 - needed for strategy registration
+import rm_gallery.core.data  # noqa: F401 - needed for core strategy registration
+import rm_gallery.gallery.data  # noqa: F401 - needed for example strategy registration
 from rm_gallery.core.data.annotation.annotation import create_annotation_module
 from rm_gallery.core.data.build import create_build_module
 from rm_gallery.core.data.export import create_export_module
@@ -106,7 +107,7 @@ class DataPipelineValidator:
             api_token=api_token,
             server_url="http://localhost:8080",
             project_title="Test Annotation",
-            template_name="reward_bench",
+            template_name="rewardbench",
         )
 
     def test_load_only(self, limit: int = None) -> bool:

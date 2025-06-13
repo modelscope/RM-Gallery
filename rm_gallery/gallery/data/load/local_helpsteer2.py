@@ -1,4 +1,5 @@
 import hashlib
+from pathlib import Path
 from typing import Any, Dict, List
 
 from loguru import logger
@@ -16,7 +17,9 @@ class HelpSteer2DataLoadStrategy(FileDataLoadStrategy):
     Strategy for loading HelpSteer2 data format
     """
 
-    def _convert_to_data_sample(self, data_dict: Dict[str, Any]) -> DataSample:
+    def _convert_to_data_sample(
+        self, data_dict: Dict[str, Any], source_file_path: Path
+    ) -> DataSample:
         """Convert HelpSteer2 data to DataSample format"""
         # generate unique id
         content = str(data_dict)
@@ -53,6 +56,7 @@ class HelpSteer2DataLoadStrategy(FileDataLoadStrategy):
                 metadata={
                     "raw_data": data_dict,
                     "load_strategy": "HelpSteer2DataLoadStrategy",
+                    "source_file_path": str(source_file_path),
                 },
             )
 
