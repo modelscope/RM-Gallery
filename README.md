@@ -1,16 +1,26 @@
-# RM-Gallery: A One-Stop Reward Model Platform
+<!-- # RM-Gallery: A One-Stop Reward Model Platform -->
+English | [**中文**](./README_ZH.md)
+<h2 align="center">RM-Gallery: A One-Stop Reward Model Platform</h2>
+
+[![](https://img.shields.io/badge/python-3.10+-blue)](https://pypi.org/project/memoryscope/)
+[![](https://img.shields.io/badge/pypi-v0.1.1.0-blue?logo=pypi)](https://pypi.org/project/memoryscope/)
+[![](https://img.shields.io/badge/license-Apache--2.0-black)](./LICENSE)
+[![](https://img.shields.io/badge/Docs-English%7C%E4%B8%AD%E6%96%87-blue?logo=markdown)](https://modelscope.github.io/MemoryScope/en/index.html#welcome-to-memoryscope-tutorial)
+[![](https://img.shields.io/badge/Docs-API_Reference-blue?logo=markdown)](https://modelscope.github.io/MemoryScope/en/docs/api.html)
+[![](https://img.shields.io/badge/Contribute-Welcome-green)](https://modelscope.github.io/MemoryScope/en/docs/contribution.html)
+
+----
+## 📢 News
+- **[2025-06-XX]** We release RM Gallery vXX now, which is also available in [PyPI](https://pypi.org/simple/rm-gallery/)!
+----
+
+## 🌟 Why RM-Gallery?
 
 RM-Gallery is a one-stop platform for training, building and deploying reward models. It provides a comprehensive solution for implementing reward models at both task-level and component-level, with high-throughput and fault-tolerant capabilities.
-
-## 📢 News
-
-## 🤔 Why RM-Gallery?
 
 <p align="center">
  <img src="./docs/images/framework.png" alt="Framework" width="75%">
 </p>
-
-framework being optimized
 
 ### Training RM
 - **Integrated RM Training Pipeline**: Provides an RL-based framework for training reasoning reward models, compatible with popular frameworks (e.g., verl, OpenRLHF), and offers examples for integrating RM-Gallery into the framework.
@@ -28,19 +38,25 @@ framework being optimized
 
 - **High-Performance RM Serving**: Leverages the New API platform to deliver high-throughput, fault-tolerant reward model serving, enhancing feedback efficiency.
 
+
+
 ## 📥 Installation
 For installation, please refer to [Installation.md](docs/installation.md).
 
+## 🚀 Quick Start
+For quick start, please refer to [Quick Start.md](docs/quickstart.md).
+
 ## 📚 Documentation
 - Tutorial:
-    - [installation](docs/tutorial/installation.md)
-    - [quickstart](docs/tutorial/quickstart.md)
-    - [rm_server](docs/tutorial/rm_server.md)
-- Ready-to-use RMs & RMCompositions:
-    - [RM Zoo](docs/RMs.md)
-    - [RMComposition Zoo](docs/RMCompositions.md)
-- RM Scenario Cases:
-    - [RM Scenario Cases](docs/rm_scenario_cases.md)
+    - [ready-to-use RMs](docs/tutorial/ready_to_use_rms.ipynb)
+    - [build custom RMs](docs/tutorial/build_custom_rms.ipynb)
+    - [auto princile generation](docs/tutorial/auto_principle_generation.ipynb)
+    - [data annotation](docs/tutorial/data_annotation.ipynb)
+    - [RM related data processors](docs/tutorial/rm_related_data_processors.ipynb)
+    - [training RM](docs/tutorial/training_rm.ipynb)
+    - [high performance RM Serving](docs/tutorial/high_performance_rm_serving.ipynb)
+    - [adapte huggingface RMs](docs/tutorial/adapte_huggingface_rms.ipynb)
+
 - useful docs:
     - [RM-Gallery's Rankings in Popular Benchmark](docs/leaderboard.md)
 
