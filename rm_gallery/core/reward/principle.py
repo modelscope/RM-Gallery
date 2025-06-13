@@ -50,37 +50,42 @@ class PrincipleGenerateTempalte(BaseGeneratorTemplate):
     @classmethod
     def format(
         cls,
-        desc: str,
+        scenario: str,
         instruction: str,
         completions: List[str],
         preference: str | int,
+        number: int,
         **kwargs,
     ) -> str:
         completion_str = ""
         for i, completion in enumerate(completions):
-            completion_str += f"### Completion {i + 1}\n{completion}\n\n\n"
+            completion_str += (
+                f"<completion_{i + 1}>\n{completion}\n</completion_{i + 1}>\n\n"
+            )
 
         return f"""## Overview
-Please propose some concise principles about why one completion is superior to the others in the scenario.
-Another assistant will evaluate the output based on these principles.
+You will be provided with an example of instruction and completions in a task scenario.
+Please propose some general principles from the scenario that can help another assistant to determine which one completion is superior to the others in the scenario.
 
-## Requirements for Principles:
-(1) The principles should target some general standards of the "scenario" that may revolve around key points of the instruction.
+## Requirements for Principles
+(1) Principles target some general standards of the "scenario".
 (2) Principles are presented from most important to least important.
-(3) The principles should be as critical as possible.
+(3) Principles should be as critical as possible.
 (4) Each principle should consist of a brief phrase accompanied by a single sentence description.
-(5) The number of principles should be LESS THAN OR EQUAL TO 10.
+(5) The number of principles should be LESS THAN OR EQUAL TO {number}.
 
 ## Input
 ### Scenario
-{desc}
+{scenario}
 
-### Instruction:
+### Instruction
 {instruction}
 
+### Completions
 {completion_str}
-### Preference:
-Completion {preference}
+
+### Preference
+Completion {preference} is the best.
 
 ## Output Format Requirements
 {cls.schema(**kwargs)}
@@ -89,24 +94,24 @@ Completion {preference}
 
 class PrincipleClusterTemplate(BaseGeneratorTemplate):
     @classmethod
-    def format(cls, principles: str, desc: str, **kwargs) -> str:
+    def format(cls, examples: str, scenario: str, number: int, **kwargs) -> str:
         return f"""## Overview
-Please summarize some concise principles from the candicates that tackle the scenario.
-Another assistant will evaluate the completion based on these principles.
+You will be provided with a set of examples with instruction and pre-generated principles in the scenario.
+Please summarize some general principles from the examples that can help another assistant to determine which one completion is superior to the others in the scenario.
 
-## Requirements for Principles:
-(1) The principles should **specifically** target some general standards of the "scenario".
-(2) Principles are presented from most important to least important.
-(3) The principles should be as critical as possible.
-(4) Each principle should consist of a brief phrase accompanied by a single sentence description.
-(5) The number of principles should be LESS THAN OR EQUAL TO 10.
-(6) Focus on summarizing recurring candidate principles.
+## Requirements for Principles
+(1) Principles are presented from most important to least important.
+(2) Principles should be as critical as possible.
+(3) Each principle should consist of a brief phrase accompanied by a single sentence description.
+(4) The number of principles should be LESS THAN OR EQUAL TO {number}.
+(5) Focus on summarizing recurring candidate principles.
 
 ## Input
 ### Scenario
-{desc}
+{scenario}
 
-{principles}
+### Examples
+{examples}
 
 ## Output Format Requirements
 {cls.schema(**kwargs)}
@@ -115,7 +120,11 @@ Another assistant will evaluate the completion based on these principles.
 
 class PrincipleGenerator(BaseModel):
     llm: BaseLLM = Field(default=..., description="llm client")
-    desc: str = Field(default=..., description="description")
+    scenario: str = Field(default=..., description="assitant scenario")
+    generate_number: int = Field(
+        default=10, description="number of generated principles"
+    )
+    cluster_number: int = Field(default=1, description="number of clustered principles")
 
     def generate(self, sample: DataSample):
         sample = copy.deepcopy(sample)
@@ -135,7 +144,8 @@ class PrincipleGenerator(BaseModel):
             completions=completions,
             preference=best,
             enable_thinking=self.llm.enable_thinking,
-            desc=self.desc,
+            scenario=self.scenario,
+            number=self.generate_number,
         )
 
         logger.info(f"prompt: {prompt}")
@@ -148,21 +158,31 @@ class PrincipleGenerator(BaseModel):
         return sample
 
     def cluster(self, samples: List[DataSample]):
-        str_principles = []
-        for sample in samples:
+        examples = []
+        for i, sample in enumerate(samples):
+            sample_principles = []
             for key, value in (
                 sample.input[-1].additional_kwargs["generate"]["principles"].items()
             ):
-                str_principles.append(f"{key}: {value}")
+                sample_principles.append(f"{key}: {value}")
+            str_principles = "\n".join(sample_principles)
+            str_principles = (
+                f"<principles_{i+1}>\n{str_principles}\n</principles_{i+1}>"
+            )
+            str_instruction = f"<instruction_{i+1}>\n{format_messages(sample.input)}\n</instruction_{i+1}>"
+            examples.append(
+                f"<example_{i+1}>\n{str_instruction}\n{str_principles}\n</example_{i+1}>\n\n"
+            )
 
-        principles = "\n".join(str_principles)
-        logger.info("===RAW PRINCIPLES===\n" + principles)
+        str_examples = "\n".join(examples)
+        logger.info("===RAW EXAMPLES===\n" + str_examples)
 
         response = self.llm.simple_chat(
             PrincipleClusterTemplate.format(
-                desc=self.desc,
-                principles=principles,
+                scenario=self.scenario,
+                examples=str_examples,
                 enable_thinking=self.llm.enable_thinking,
+                number=self.cluster_number,
             ),
             sys_prompt="You are a skilled professional assistant focusing on induction and summarization.",
         )

@@ -12,12 +12,17 @@ from rm_gallery.core.utils.file import read_json, read_jsonl, write_json
 from rm_gallery.gallery import *  # ignore [E402]
 
 
-def generate(samples: List[DataSample], desc):
+def generate(samples: List[DataSample], scenario, generator_number, cluster_number):
     llm = OpenaiLLM(model="qwen3-235b-a22b", enable_thinking=True)
 
-    generator = PrincipleGenerator(llm=llm, desc=desc)
+    generator = PrincipleGenerator(
+        llm=llm,
+        scenario=scenario,
+        generate_number=generator_number,
+        cluster_number=cluster_number,
+    )
     principles = generator.run_batch(
-        samples, thread_pool=ThreadPoolExecutor(max_workers=128)
+        samples, thread_pool=ThreadPoolExecutor(max_workers=256)
     )
     return principles
 
