@@ -104,11 +104,30 @@ def _create_from_dataset_config(dataset_config: Dict[str, Any]) -> DataBuild:
     # Create load module
     load_config = dataset_config.get("configs", {})
     if load_config:
+        # define supported fields
+        SUPPORTED_CONFIG_FIELDS = {
+            "path",
+            "limit",
+            "split",
+            "dataset_config",
+            "streaming",
+            "trust_remote_code",
+        }
+        # build config
+        config = {
+            "name": dataset_name,
+            **{
+                k: v
+                for k, v in load_config.items()
+                if k in SUPPORTED_CONFIG_FIELDS and v is not None
+            },
+        }
+
         modules["load_module"] = create_load_module(
             name=f"{dataset_name}-loader",
             load_strategy_type=load_config.get("type", "local"),
             data_source=load_config.get("source", "*"),
-            config={"path": load_config.get("path"), "limit": load_config.get("limit")},
+            config=config,
             metadata=metadata,
         )
 

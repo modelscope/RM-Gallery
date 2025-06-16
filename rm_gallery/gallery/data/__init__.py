@@ -1,26 +1,24 @@
 from rm_gallery.gallery.data.annotation.rewardbench_template import (
     RewardBenchAnnotationTemplate,
 )
-from rm_gallery.gallery.data.load.local_helpsteer2 import HelpSteer2DataLoadStrategy
-from rm_gallery.gallery.data.load.local_prmbench import PRMDataLoadStrategy
-from rm_gallery.gallery.data.load.local_rewardbench import RewardBenchDataLoadStrategy
-from rm_gallery.gallery.data.load.local_rewardbench_2 import (
-    RewardBench2DataLoadStrategy,
+from rm_gallery.gallery.data.load.helpsteer2 import HelpSteer2Converter
+from rm_gallery.gallery.data.load.prmbench import PRMBenchConverter
+from rm_gallery.gallery.data.load.rewardbench import RewardBenchConverter
+from rm_gallery.gallery.data.load.rewardbench2 import RewardBench2Converter
+from rm_gallery.gallery.data.load.rmbbenchmark_bestofn import (
+    RMBBenchmarkBestOfNConverter,
 )
-from rm_gallery.gallery.data.load.local_rmbbenchmark_bestofn import (
-    RMBBenchmarkBestOfNDataLoadStrategy,
-)
-from rm_gallery.gallery.data.load.local_rmbbenchmark_pairwise import (
-    RMBBenchmarkPairwiseDataLoadStrategy,
+from rm_gallery.gallery.data.load.rmbbenchmark_pairwise import (
+    RMBBenchmarkPairwiseConverter,
 )
 
 LOAD_STRATEGIES = {
-    "rewardbench": RewardBenchDataLoadStrategy,
-    "prmbench": PRMDataLoadStrategy,
-    "helpsteer2": HelpSteer2DataLoadStrategy,
-    "rewardbench-2": RewardBench2DataLoadStrategy,
-    "rmbbenchmark_bestofn": RMBBenchmarkBestOfNDataLoadStrategy,
-    "rmbbenchmark_pairwise": RMBBenchmarkPairwiseDataLoadStrategy,
+    "rewardbench": RewardBenchConverter,
+    "prmbench": PRMBenchConverter,
+    "helpsteer2": HelpSteer2Converter,
+    "rewardbench2": RewardBench2Converter,
+    "rmbbenchmark_bestofn": RMBBenchmarkBestOfNConverter,
+    "rmbbenchmark_pairwise": RMBBenchmarkPairwiseConverter,
 }
 
 ANNOTATION_TEMPLATES = {

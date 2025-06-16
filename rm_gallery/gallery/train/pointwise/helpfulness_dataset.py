@@ -1,8 +1,10 @@
 from typing import Any, Dict, List
 
-from examples.train.pointwise.helpfulness_template import HelperfulnessTrainTemplate
 from rm_gallery.core.train.dataset import BaseTrainDataset
 from rm_gallery.gallery.alignment.helpfulness import HelpfulnessPointWiseReward
+from rm_gallery.gallery.train.pointwise.helpfulness_template import (
+    HelpfulnessTrainTemplate,
+)
 
 
 class HelpfulnessTrainDataset(BaseTrainDataset):
@@ -11,7 +13,7 @@ class HelpfulnessTrainDataset(BaseTrainDataset):
     def __init__(self, *args, **kwargs):
         self.helpfulness_reward = HelpfulnessPointWiseReward(
             name="helpfulness_train",
-            template=HelperfulnessTrainTemplate,
+            template=HelpfulnessTrainTemplate,
             examples=self._get_examples(),
             llm=None,
         )
@@ -75,7 +77,7 @@ helpfulness score: 4""",
 
     def _build_messages(self, example: Dict[str, Any]) -> List[Dict[str, str]]:
         """Build formatted messages directly from DataSample using reward module"""
-        result = self.helpfulness_reward.format(sample=example, context="")
+        result = self.helpfulness_reward.format(sample=example, enable_thinking=False)
         formatted_prompt = (
             result.output[0]
             .answer.additional_kwargs[self.helpfulness_reward.name]

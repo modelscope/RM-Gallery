@@ -4,41 +4,50 @@ from typing import Any, Dict
 from loguru import logger
 
 from rm_gallery.core.data.load.base import DataConverter, DataConverterRegistry
-from rm_gallery.core.data.schema import ChatMessage, DataSample
+from rm_gallery.core.data.schema import ChatMessage, DataOutput, DataSample, Step
 
 
-@DataConverterRegistry.register("chat_message")
-class ChatMessageConverter(DataConverter):
+@DataConverterRegistry.register("helpsteer2")
+class HelpSteer2Converter(DataConverter):
     """
-    Unified converter for chat message data format
+    Unified converter for HelpSteer2 data format
+    Can handle data from both local files and HuggingFace Hub
     """
 
     def convert_to_data_sample(
         self, data_dict: Dict[str, Any], source_info: Dict[str, Any]
     ) -> DataSample:
-        """Convert chat message data to DataSample format"""
-        # generate unique id
+        """Convert HelpSteer2 data to DataSample format"""
+        # Generate unique id
         content = str(data_dict)
         unique_id = hashlib.md5(content.encode()).hexdigest()
 
         try:
-            # Create input from messages
-            data_input = []
-            messages = data_dict.get("messages", [])
-            if isinstance(messages, list):
-                for msg in messages:
-                    if isinstance(msg, dict):
-                        role = msg.get("role", "user")
-                        content = msg.get("content", "")
-                        data_input.append(ChatMessage(role=role, content=content))
+            # Create input from prompt
+            data_input = [ChatMessage(role="user", content=data_dict["prompt"])]
 
-            # Create simple output
-            data_output = []
+            # Extract evaluation metrics for label
+            label = {
+                "helpfulness": data_dict.get("helpfulness"),
+                "correctness": data_dict.get("correctness"),
+                "coherence": data_dict.get("coherence"),
+                "complexity": data_dict.get("complexity"),
+                "verbosity": data_dict.get("verbosity"),
+            }
+
+            # Create output from response
+            data_output = [
+                DataOutput(
+                    answer=Step(
+                        role="assistant", content=data_dict["response"], label=label
+                    )
+                )
+            ]
 
             # Build metadata based on source type
             metadata = {
                 "raw_data": data_dict,
-                "load_strategy": "ChatMessageConverter",
+                "load_strategy": "HelpSteer2Converter",
             }
 
             # Add source-specific metadata
@@ -52,7 +61,9 @@ class ChatMessageConverter(DataConverter):
             elif source_info.get("load_type") == "huggingface":
                 metadata.update(
                     {
-                        "dataset_name": source_info.get("dataset_name"),
+                        "dataset_name": source_info.get(
+                            "dataset_name", "nvidia/HelpSteer2"
+                        ),
                         "dataset_config": source_info.get("dataset_config"),
                         "split": source_info.get("split", "train"),
                         "load_type": "huggingface",
@@ -63,7 +74,7 @@ class ChatMessageConverter(DataConverter):
                 unique_id=unique_id,
                 input=data_input,
                 output=data_output,
-                source="chat_message",
+                source="helpsteer2",
                 task_category="chat",
                 metadata=metadata,
             )
@@ -71,5 +82,5 @@ class ChatMessageConverter(DataConverter):
             return data_sample
 
         except Exception as e:
-            logger.error(f"Error creating ChatMessage DataSample: {str(e)}")
+            logger.error(f"Error creating HelpSteer2 DataSample: {str(e)}")
             return None

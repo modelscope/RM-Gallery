@@ -1,5 +1,5 @@
-from rm_gallery.core.data.load.chat_message import ChatMessageDataLoadStrategy
-from rm_gallery.core.data.load.huggingface import HuggingfaceDataLoadStrategy
+from rm_gallery.core.data.load.chat_message import ChatMessageConverter
+from rm_gallery.core.data.load.huggingface import GenericConverter
 from rm_gallery.core.data.process.ops.filter.conversation_turn_filter import (
     ConversationTurnFilter,
 )
@@ -11,6 +11,6 @@ OPERATORS = {
 }
 
 LOAD_STRATEGIES = {
-    "chatmessage": ChatMessageDataLoadStrategy,
-    "huggingface": HuggingfaceDataLoadStrategy,
+    "chat_message": ChatMessageConverter,
+    "huggingface": GenericConverter,
 }

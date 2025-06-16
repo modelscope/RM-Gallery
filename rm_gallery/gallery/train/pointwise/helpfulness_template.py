@@ -3,7 +3,7 @@ from pydantic import Field
 from rm_gallery.core.reward.template import BasePromptTemplate
 
 
-class HelperfulnessTrainTemplate(BasePromptTemplate):
+class HelpfulnessTrainTemplate(BasePromptTemplate):
     """
     The PrincipleTemplate class inherits from BasePromptTemplate and is used to define the template for principles reasoning.
     """

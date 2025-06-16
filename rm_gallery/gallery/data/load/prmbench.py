@@ -1,20 +1,16 @@
 import hashlib
-from pathlib import Path
-from typing import Any, ClassVar, Dict, List
+from typing import Any, ClassVar, Dict
 
 from loguru import logger
 
-from rm_gallery.core.data.load.base import (
-    DataLoadStrategyRegistry,
-    FileDataLoadStrategy,
-)
+from rm_gallery.core.data.load.base import DataConverter, DataConverterRegistry
 from rm_gallery.core.data.schema import ChatMessage, DataOutput, DataSample, Step
 
 
-@DataLoadStrategyRegistry.register("local", "prmbench")
-class PRMDataLoadStrategy(FileDataLoadStrategy):
+@DataConverterRegistry.register("prmbench")
+class PRMBenchConverter(DataConverter):
     """
-    Strategy for loading Process Reward Model (PRM) data
+    Unified converter for Process Reward Model (PRM) data
     Handles mathematical reasoning data with step-wise processes
     """
 
@@ -24,42 +20,8 @@ class PRMDataLoadStrategy(FileDataLoadStrategy):
         "*": None,  # wildcard, means no filtering
     }
 
-    def load_data(self, **kwargs) -> List[DataSample]:
-        """Override load_data method, add dimension filtering"""
-        # first call parent class method to load all data
-        all_data = super().load_data(**kwargs)
-
-        # get current dimension config
-        current_dimension = self.metadata.get("dimension", "*")
-
-        # if wildcard or no mapping, return all data
-        if (
-            current_dimension == "*"
-            or current_dimension not in self.DIMENSION_CLASSIFICATION_MAPPING
-        ):
-            logger.info(f"No filtering applied for dimension: {current_dimension}")
-            return all_data
-
-        # get corresponding classification
-        target_classification = self.DIMENSION_CLASSIFICATION_MAPPING[current_dimension]
-
-        # filter data
-        filtered_data = []
-        for data_sample in all_data:
-            if data_sample and data_sample.metadata:
-                data_classification = data_sample.metadata.get("classification")
-                if data_classification == target_classification:
-                    filtered_data.append(data_sample)
-
-        logger.info(
-            f"Filtered data by dimension '{current_dimension}' -> classification '{target_classification}': "
-            f"{len(all_data)} -> {len(filtered_data)} items"
-        )
-
-        return filtered_data
-
-    def _convert_to_data_sample(
-        self, data_dict: Dict[str, Any], source_file_path: Path
+    def convert_to_data_sample(
+        self, data_dict: Dict[str, Any], source_info: Dict[str, Any]
     ) -> DataSample:
         """Convert PRM data to DataSample format
 
@@ -90,6 +52,36 @@ class PRMDataLoadStrategy(FileDataLoadStrategy):
             # Create outputs from processes
             data_output = self._create_prm_output(data_dict)
 
+            # Build metadata based on source type
+            metadata = {
+                "classification": data_dict.get("classification"),
+                "modified_steps": data_dict.get("modified_steps", []),
+                "error_steps": data_dict.get("error_steps", []),
+                "reason": data_dict.get("reason"),
+                "idx": data_dict.get("idx"),
+                "original_process_length": len(data_dict.get("original_process", [])),
+                "modified_process_length": len(data_dict.get("modified_process", [])),
+                "load_strategy": "PRMBenchConverter",
+            }
+
+            # Add source-specific metadata
+            if source_info.get("load_type") == "local":
+                metadata.update(
+                    {
+                        "source_file_path": source_info.get("source_file_path"),
+                        "load_type": "local",
+                    }
+                )
+            elif source_info.get("load_type") == "huggingface":
+                metadata.update(
+                    {
+                        "dataset_name": source_info.get("dataset_name"),
+                        "dataset_config": source_info.get("dataset_config"),
+                        "split": source_info.get("split", "train"),
+                        "load_type": "huggingface",
+                    }
+                )
+
             # Create DataSample object
             data_sample = DataSample(
                 unique_id=str(unique_id),
@@ -97,21 +89,7 @@ class PRMDataLoadStrategy(FileDataLoadStrategy):
                 output=data_output,
                 source="prmbench",
                 task_category=data_dict.get("classification", "reasoning"),
-                metadata={
-                    "classification": data_dict.get("classification"),
-                    "modified_steps": data_dict.get("modified_steps", []),
-                    "error_steps": data_dict.get("error_steps", []),
-                    "reason": data_dict.get("reason"),
-                    "idx": data_dict.get("idx"),
-                    "original_process_length": len(
-                        data_dict.get("original_process", [])
-                    ),
-                    "modified_process_length": len(
-                        data_dict.get("modified_process", [])
-                    ),
-                    "load_strategy": "PRMDataLoadStrategy",
-                    "source_file_path": str(source_file_path),
-                },
+                metadata=metadata,
             )
 
             return data_sample
@@ -120,13 +98,12 @@ class PRMDataLoadStrategy(FileDataLoadStrategy):
             logger.error(f"Error creating DataSample from PRM data: {str(e)}")
             return None
 
-    def _create_prm_input(self, data_dict: Dict[str, Any]) -> List[ChatMessage]:
+    def _create_prm_input(self, data_dict: Dict[str, Any]) -> list[ChatMessage]:
         """Create DataInput from PRM question"""
         question = data_dict.get("question") or data_dict.get("original_question", "")
-
         return [ChatMessage(role="user", content=question)]
 
-    def _create_prm_output(self, data_dict: Dict[str, Any]) -> List[DataOutput]:
+    def _create_prm_output(self, data_dict: Dict[str, Any]) -> list[DataOutput]:
         """Create DataOutput list from PRM processes"""
         outputs = []
 

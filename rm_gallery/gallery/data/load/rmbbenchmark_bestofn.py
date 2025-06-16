@@ -1,24 +1,20 @@
 import hashlib
-from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from loguru import logger
 
-from rm_gallery.core.data.load.base import (
-    DataLoadStrategyRegistry,
-    FileDataLoadStrategy,
-)
+from rm_gallery.core.data.load.base import DataConverter, DataConverterRegistry
 from rm_gallery.core.data.schema import ChatMessage, DataOutput, DataSample, Step
 
 
-@DataLoadStrategyRegistry.register("local", "rmbbenchmark_bestofn")
-class RMBBenchmarkBestOfNDataLoadStrategy(FileDataLoadStrategy):
+@DataConverterRegistry.register("rmbbenchmark_bestofn")
+class RMBBenchmarkBestOfNConverter(DataConverter):
     """
-    Strategy for loading conversation data with conversation_input, bon_best and loser_list responses
+    Unified converter for conversation data with conversation_input, bon_best and loser_list responses
     """
 
-    def _convert_to_data_sample(
-        self, data_dict: Dict[str, Any], source_file_path: Path
+    def convert_to_data_sample(
+        self, data_dict: Dict[str, Any], source_info: Dict[str, Any]
     ) -> DataSample:
         """Convert conversation data to DataSample format"""
         # Generate unique id using bon_uid
@@ -44,28 +40,48 @@ class RMBBenchmarkBestOfNDataLoadStrategy(FileDataLoadStrategy):
         data_output = self._create_conversation_output(data_dict)
 
         try:
+            # Build metadata based on source type
+            metadata = {
+                "raw_data": data_dict,
+                "load_strategy": "RMBBenchmarkBestOfNConverter",
+                "category_path": data_dict.get("category_path"),
+                "bon_uid": data_dict.get("bon_uid"),
+                "bon_best_model": data_dict.get("bon_best", {}).get("llm_name")
+                if data_dict.get("bon_best")
+                else None,
+                "loser_models": [
+                    item.get("llm_name")
+                    for item in data_dict.get("loser_list", [])
+                    if isinstance(item, dict)
+                ],
+                "num_losers": len(data_dict.get("loser_list", [])),
+            }
+
+            # Add source-specific metadata
+            if source_info.get("load_type") == "local":
+                metadata.update(
+                    {
+                        "source_file_path": source_info.get("source_file_path"),
+                        "load_type": "local",
+                    }
+                )
+            elif source_info.get("load_type") == "huggingface":
+                metadata.update(
+                    {
+                        "dataset_name": source_info.get("dataset_name"),
+                        "dataset_config": source_info.get("dataset_config"),
+                        "split": source_info.get("split", "train"),
+                        "load_type": "huggingface",
+                    }
+                )
+
             data_sample = DataSample(
                 unique_id=unique_id,
                 input=data_input,
                 output=data_output,
                 source="rewardbench",
-                task_category=self.config.get("task_category", "conversation"),
-                metadata={
-                    "raw_data": data_dict,
-                    "load_strategy": "RMBBenchmarkDataLoadStrategy",
-                    "category_path": data_dict.get("category_path"),
-                    "bon_uid": data_dict.get("bon_uid"),
-                    "bon_best_model": data_dict.get("bon_best", {}).get("llm_name")
-                    if data_dict.get("bon_best")
-                    else None,
-                    "loser_models": [
-                        item.get("llm_name")
-                        for item in data_dict.get("loser_list", [])
-                        if isinstance(item, dict)
-                    ],
-                    "num_losers": len(data_dict.get("loser_list", [])),
-                    "source_file_path": str(source_file_path),
-                },
+                task_category="conversation",
+                metadata=metadata,
             )
 
             return data_sample
@@ -76,7 +92,7 @@ class RMBBenchmarkBestOfNDataLoadStrategy(FileDataLoadStrategy):
 
     def _create_conversation_input(
         self, data_dict: Dict[str, Any]
-    ) -> List[ChatMessage]:
+    ) -> list[ChatMessage]:
         """Create DataInput from conversation_input"""
         conversation_input = data_dict.get("conversation_input", [])
         if isinstance(conversation_input, list):
@@ -94,7 +110,7 @@ class RMBBenchmarkBestOfNDataLoadStrategy(FileDataLoadStrategy):
 
     def _create_conversation_output(
         self, data_dict: Dict[str, Any]
-    ) -> List[DataOutput]:
+    ) -> list[DataOutput]:
         """Create DataOutput list from bon_best and loser_list"""
         outputs = []
 

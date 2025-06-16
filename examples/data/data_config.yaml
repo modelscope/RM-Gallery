@@ -1,33 +1,34 @@
 dataset:
-    name: "RMB-BoN-test"
+    name: rewardbench2
     configs:
         type: local # required, support remote, local
-        source: rmbbenchmark_pairwise # required, local support rewardbench, chatmessage, prmbench
-        path: /Users/xielipeng/RM-Gallery/data/RMB-Reward-Model-Benchmark/RMB_dataset/Pairwise_set/Harmlessness/multi.json # required, must be local path or url
+        source: rewardbench2 # required, local support rewardbench, chatmessage, prmbench, helpsteer2
+        path: /Users/xielipeng/RM-Gallery/data/reward-bench-2/data/test-00000-of-00001.parquet # required, must be local path or url
+        #split: train
         #limit: 2000 # optional, random sample dataset size
-    processors:
-        - type: filter
-          name: conversation_turn_filter
-          config:
-            min_turns: 1
-            max_turns: 6
-        - type: filter
-          name: text_length_filter
-          config:
-            min_length: 10
-            max_length: 1000
-        - type: data_juicer
-          name: character_repetition_filter
-          config:
-            rep_len: 10
-            min_ratio: 0.0
-            max_ratio: 0.5
-    annotation:
-        template_name: "rewardbench"
-        project_title: "Reward Bench Evaluation"
-        project_description: "Reward model evaluation using reward bench template"
-        server_url: "http://localhost:8080"
-        api_token: "8c2f03e74b5700bf5e3cadd6fe073dbbb88caebe"
+    # processors:
+    #     - type: filter
+    #       name: conversation_turn_filter
+    #       config:
+    #         min_turns: 1
+    #         max_turns: 6
+    #     - type: filter
+    #       name: text_length_filter
+    #       config:
+    #         min_length: 10
+    #         max_length: 1000
+    #     - type: data_juicer
+    #       name: character_repetition_filter
+    #       config:
+    #         rep_len: 10
+    #         min_ratio: 0.0
+    #         max_ratio: 0.5
+    # annotation:
+    #     template_name: "rewardbench"
+    #     project_title: "Reward Bench Evaluation"
+    #     project_description: "Reward model evaluation using reward bench template"
+    #     server_url: "http://localhost:8080"
+    #     api_token: "8c2f03e74b5700bf5e3cadd6fe073dbbb88caebe"
 
     export:
         output_dir: ./examples/data/exports
@@ -35,6 +36,6 @@ dataset:
         preserve_structure: true
         #split_ratio: {"train": 1, "test": 0}
     metadata:
-        source: "rmbbenchmark_pairwise"
+        source: "rewardbench2"
 
 

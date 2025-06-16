@@ -51,7 +51,7 @@ class DataPipelineValidator:
         self.data_path = (
             "./data/preference-test-sets/data/anthropic_helpful-00000-of-00001.parquet"
         )
-        self.export_dir = "./rm_gallery/examples/data/exports"
+        self.export_dir = "./examples/data/exports"
         self.data_source = "rewardbench"
         self.format = "parquet"
 

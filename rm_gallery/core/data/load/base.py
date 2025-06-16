@@ -1,11 +1,9 @@
 """
 Data Load Module - load data from various data sources
 """
-import fnmatch
 import json
 import random
 from abc import abstractmethod
-from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type, Union
 
@@ -17,22 +15,58 @@ from rm_gallery.core.data.base import BaseDataModule, DataModuleType
 from rm_gallery.core.data.schema import BaseDataSet, DataSample
 
 
-@dataclass(frozen=True)
-class StrategyKey:
+class DataConverter:
     """
-    Immutable key for strategy registration with wildcard support
+    Base class for data format converters
+    Separates data format conversion logic from data loading logic
     """
 
-    data_type: str
-    data_source: str
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
 
-    def matches(self, other: "StrategyKey") -> bool:
+    @abstractmethod
+    def convert_to_data_sample(
+        self, data_dict: Dict[str, Any], source_info: Dict[str, Any]
+    ) -> DataSample:
         """
-        Check if this key matches another key with wildcard support
+        Convert raw data dictionary to DataSample format
+
+        Args:
+            data_dict: Raw data dictionary
+            source_info: Information about data source (file_path, dataset_name, etc.)
         """
-        return fnmatch.fnmatch(other.data_type, self.data_type) and fnmatch.fnmatch(
-            other.data_source, self.data_source
-        )
+        pass
+
+
+class DataConverterRegistry:
+    """Registry for data format converters"""
+
+    _converters: Dict[str, Type[DataConverter]] = {}
+
+    @classmethod
+    def register(cls, data_source: str):
+        """Decorator for registering data converters"""
+
+        def decorator(converter_class: Type[DataConverter]):
+            cls._converters[data_source] = converter_class
+            return converter_class
+
+        return decorator
+
+    @classmethod
+    def get_converter(
+        cls, data_source: str, config: Optional[Dict[str, Any]] = None
+    ) -> Optional[DataConverter]:
+        """Get converter instance for specified data source"""
+        converter_class = cls._converters.get(data_source)
+        if converter_class:
+            return converter_class(config)
+        return None
+
+    @classmethod
+    def list_sources(cls) -> List[str]:
+        """List all registered data sources"""
+        return list(cls._converters.keys())
 
 
 class DataLoad(BaseDataModule):
@@ -85,27 +119,34 @@ class DataLoad(BaseDataModule):
     def load_data(self, **kwargs) -> List[DataSample]:
         """
         Load data from the source and return a list of DataSample objects
-        Default implementation uses strategy pattern for different data sources
+        Uses built-in strategies based on load_strategy_type
         """
         # If this is a strategy instance (subclass), call the abstract method
         if self.__class__ != DataLoad:
             return self._load_data_impl(**kwargs)
 
-        # Otherwise, use strategy pattern to find appropriate loader
-        strategy_class = DataLoadStrategyRegistry.get_strategy_class(
-            data_type=self.load_strategy_type, data_source=self.data_source
-        )
-
-        if not strategy_class:
-            error_msg = f"No suitable data load strategy found for type: {self.load_strategy_type}, source: {self.data_source}"
+        # Choose strategy based on load_strategy_type
+        if self.load_strategy_type == "local":
+            strategy = FileDataLoadStrategy(
+                name=f"{self.name}_strategy",
+                load_strategy_type=self.load_strategy_type,
+                data_source=self.data_source,
+                config=self.config.copy(),
+                metadata=self.metadata,
+            )
+        elif self.load_strategy_type == "huggingface":
+            strategy = HuggingFaceDataLoadStrategy(
+                name=f"{self.name}_strategy",
+                load_strategy_type=self.load_strategy_type,
+                data_source=self.data_source,
+                config=self.config.copy(),
+                metadata=self.metadata,
+            )
+        else:
+            error_msg = f"Unsupported load strategy type: {self.load_strategy_type}"
             logger.error(error_msg)
             raise ValueError(error_msg)
 
-        # Initialize and use strategy to load data
-        strategy_config = self.config.copy()
-        strategy = strategy_class(
-            name=f"{self.name}_strategy", config=strategy_config, metadata=self.metadata
-        )
         return strategy.load_data(**kwargs)
 
     def _load_data_impl(self, **kwargs) -> List[DataSample]:
@@ -164,78 +205,17 @@ class DataLoad(BaseDataModule):
             raise RuntimeError(error_msg) from e
 
 
-class DataLoadStrategyRegistry:
-    """
-    Registry for data load strategies with wildcard matching
-    """
-
-    _strategies: Dict[StrategyKey, Type[DataLoad]] = {}
-
-    @classmethod
-    def get_strategy_class(
-        cls, data_type: str, data_source: str, metadata: Optional[Dict[str, Any]] = None
-    ) -> Optional[Type[DataLoad]]:
-        """
-        Retrieve the most specific matching strategy
-        """
-        logger.info(
-            f"Getting strategy class for data_type: {data_type}, data_source: {data_source}"
-        )
-
-        # Default to wildcard if not provided
-        data_type = data_type or "*"
-        data_source = data_source or "*"
-
-        # Create the lookup key
-        lookup_key = StrategyKey(data_type=data_type, data_source=data_source)
-
-        # First, check for exact match
-        exact_match = cls._strategies.get(lookup_key)
-        if exact_match:
-            return exact_match
-
-        # Find all matching wildcard strategies
-        matching_strategies = []
-        for registered_key, strategy in cls._strategies.items():
-            if registered_key.matches(lookup_key):
-                matching_strategies.append((registered_key, strategy))
-
-        # Sort matching strategies by specificity
-        if matching_strategies:
-
-            def specificity_score(key: StrategyKey) -> int:
-                return sum(
-                    1 for part in [key.data_type, key.data_source] if part == "*"
-                )
-
-            matching_strategies.sort(key=lambda x: specificity_score(x[0]))
-            found = matching_strategies[0][1]
-            logger.info(f"Found matching strategy: {found}")
-            return found
-
-        logger.warning(
-            f"No matching strategy found for data_type: {data_type}, data_source: {data_source}"
-        )
-        return None
-
-    @classmethod
-    def register(cls, data_type: str, data_source: str):
-        """
-        Decorator for registering data load strategies
-        """
-
-        def decorator(strategy_class: Type[DataLoad]):
-            key = StrategyKey(data_type=data_type, data_source=data_source)
-            cls._strategies[key] = strategy_class
-            return strategy_class
-
-        return decorator
-
-
 class FileDataLoadStrategy(DataLoad):
     """
     File-based data loading strategy for JSON, JSONL, and Parquet files
     """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Initialize data_converter after parent initialization as a normal attribute
+        converter = DataConverterRegistry.get_converter(self.data_source, self.config)
+        # Set as a normal Python attribute, not a Pydantic field
+        object.__setattr__(self, "data_converter", converter)
 
     def validate_config(self, config: Dict[str, Any]) -> None:
         if "path" not in config:
@@ -416,12 +396,128 @@ class FileDataLoadStrategy(DataLoad):
 
         return data_list
 
-    @abstractmethod
     def _convert_to_data_sample(
         self, data_dict: Dict[str, Any], source_file_path: Path
     ) -> DataSample:
         """Convert raw data dictionary to DataSample format"""
-        pass
+        if hasattr(self, "data_converter") and self.data_converter:
+            source_info = {
+                "source_file_path": str(source_file_path),
+                "load_type": "local",
+            }
+            return self.data_converter.convert_to_data_sample(data_dict, source_info)
+        else:
+            # Fallback to abstract method for backward compatibility
+            return self._convert_to_data_sample_impl(data_dict, source_file_path)
+
+    def _convert_to_data_sample_impl(
+        self, data_dict: Dict[str, Any], source_file_path: Path
+    ) -> DataSample:
+        """Abstract method for backward compatibility - override in subclasses if not using converters"""
+        raise NotImplementedError(
+            "Either use a data converter or implement _convert_to_data_sample_impl method"
+        )
+
+
+class HuggingFaceDataLoadStrategy(DataLoad):
+    """
+    HuggingFace-based data loading strategy for datasets from Hugging Face Hub
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        # Initialize data_converter after parent initialization as a normal attribute
+        converter = DataConverterRegistry.get_converter(self.data_source, self.config)
+        # Set as a normal Python attribute, not a Pydantic field
+        object.__setattr__(self, "data_converter", converter)
+
+    def validate_config(self, config: Dict[str, Any]) -> None:
+        """Validate HuggingFace config"""
+        print(f"config: {config}")
+        if "name" not in config:
+            raise ValueError("HuggingFace data strategy requires 'name' in config")
+        if not isinstance(config["name"], str):
+            raise ValueError("'name' must be a string")
+
+    def _load_data_impl(self, **kwargs) -> List[DataSample]:
+        """Load data from HuggingFace dataset"""
+        try:
+            from datasets import load_dataset
+        except ImportError:
+            raise ImportError("Please install datasets package: pip install datasets")
+
+        dataset_name = self.config["name"]
+        dataset_config = self.config.get("dataset_config", None)
+        split = self.config.get("split", "train")
+        streaming = self.config.get("streaming", False)
+        trust_remote_code = self.config.get("trust_remote_code", False)
+
+        try:
+            logger.info(
+                f"Loading dataset: {dataset_name}, config: {dataset_config}, split: {split}"
+            )
+
+            # Load dataset from HuggingFace
+            dataset = load_dataset(
+                dataset_name,
+                dataset_config,
+                split=split,
+                streaming=streaming,
+                trust_remote_code=trust_remote_code,
+            )
+
+            # Convert to list if streaming
+            if streaming:
+                # For streaming datasets, take a limited number of samples
+                limit = self.config.get("limit", 1000)
+                dataset_items = []
+                for i, item in enumerate(dataset):
+                    if i >= limit:
+                        break
+                    dataset_items.append(item)
+            else:
+                dataset_items = dataset
+
+            # Convert to DataSample objects
+            data_samples = []
+            for item in dataset_items:
+                try:
+                    data_sample = self._convert_to_data_sample(item)
+                    if data_sample is not None:
+                        data_samples.append(data_sample)
+                except Exception as e:
+                    logger.error(f"Error converting item to DataSample: {str(e)}")
+                    continue
+
+            logger.info(
+                f"Successfully loaded {len(data_samples)} samples from HuggingFace dataset: {dataset_name}"
+            )
+            return data_samples
+
+        except Exception as e:
+            raise RuntimeError(
+                f"Failed to load data from HuggingFace dataset {dataset_name}: {str(e)}"
+            )
+
+    def _convert_to_data_sample(self, data_dict: Dict[str, Any]) -> DataSample:
+        """Convert raw data dictionary to DataSample format"""
+        if hasattr(self, "data_converter") and self.data_converter:
+            source_info = {
+                "dataset_name": self.config.get("name"),
+                "load_type": "huggingface",
+                "dataset_config": self.config.get("dataset_config"),
+                "split": self.config.get("split", "train"),
+            }
+            return self.data_converter.convert_to_data_sample(data_dict, source_info)
+        else:
+            # Fallback to abstract method for backward compatibility
+            return self._convert_to_data_sample_impl(data_dict)
+
+    def _convert_to_data_sample_impl(self, data_dict: Dict[str, Any]) -> DataSample:
+        """Abstract method for backward compatibility - override in subclasses if not using converters"""
+        raise NotImplementedError(
+            "Either use a data converter or implement _convert_to_data_sample_impl method"
+        )
 
 
 def create_load_module(

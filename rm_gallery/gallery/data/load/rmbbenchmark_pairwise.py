@@ -1,24 +1,20 @@
 import hashlib
-from pathlib import Path
-from typing import Any, Dict, List
+from typing import Any, Dict
 
 from loguru import logger
 
-from rm_gallery.core.data.load.base import (
-    DataLoadStrategyRegistry,
-    FileDataLoadStrategy,
-)
+from rm_gallery.core.data.load.base import DataConverter, DataConverterRegistry
 from rm_gallery.core.data.schema import ChatMessage, DataOutput, DataSample, Step
 
 
-@DataLoadStrategyRegistry.register("local", "rmbbenchmark_pairwise")
-class RMBBenchmarkPairwiseDataLoadStrategy(FileDataLoadStrategy):
+@DataConverterRegistry.register("rmbbenchmark_pairwise")
+class RMBBenchmarkPairwiseConverter(DataConverter):
     """
-    Strategy for loading conversation data with conversation_input, chosen and reject responses
+    Unified converter for conversation data with conversation_input, chosen and reject responses
     """
 
-    def _convert_to_data_sample(
-        self, data_dict: Dict[str, Any], source_file_path: Path
+    def convert_to_data_sample(
+        self, data_dict: Dict[str, Any], source_info: Dict[str, Any]
     ) -> DataSample:
         """Convert conversation data to DataSample format"""
         # Generate unique id using pair_uid
@@ -44,25 +40,45 @@ class RMBBenchmarkPairwiseDataLoadStrategy(FileDataLoadStrategy):
         data_output = self._create_conversation_output(data_dict)
 
         try:
+            # Build metadata based on source type
+            metadata = {
+                "raw_data": data_dict,
+                "load_strategy": "RMBBenchmarkPairwiseConverter",
+                "category_path": data_dict.get("category_path"),
+                "pair_uid": data_dict.get("pair_uid"),
+                "chosen_model": data_dict.get("chosen", {}).get("llm_name")
+                if data_dict.get("chosen")
+                else None,
+                "reject_model": data_dict.get("reject", {}).get("llm_name")
+                if data_dict.get("reject")
+                else None,
+            }
+
+            # Add source-specific metadata
+            if source_info.get("load_type") == "local":
+                metadata.update(
+                    {
+                        "source_file_path": source_info.get("source_file_path"),
+                        "load_type": "local",
+                    }
+                )
+            elif source_info.get("load_type") == "huggingface":
+                metadata.update(
+                    {
+                        "dataset_name": source_info.get("dataset_name"),
+                        "dataset_config": source_info.get("dataset_config"),
+                        "split": source_info.get("split", "train"),
+                        "load_type": "huggingface",
+                    }
+                )
+
             data_sample = DataSample(
                 unique_id=unique_id,
                 input=data_input,
                 output=data_output,
                 source="rewardbench",
-                task_category=self.config.get("task_category", "conversation"),
-                metadata={
-                    "raw_data": data_dict,
-                    "load_strategy": "RMBBenchmarkPairwiseDataLoadStrategy",
-                    "category_path": data_dict.get("category_path"),
-                    "pair_uid": data_dict.get("pair_uid"),
-                    "chosen_model": data_dict.get("chosen", {}).get("llm_name")
-                    if data_dict.get("chosen")
-                    else None,
-                    "reject_model": data_dict.get("reject", {}).get("llm_name")
-                    if data_dict.get("reject")
-                    else None,
-                    "source_file_path": str(source_file_path),
-                },
+                task_category="conversation",
+                metadata=metadata,
             )
 
             return data_sample
@@ -73,7 +89,7 @@ class RMBBenchmarkPairwiseDataLoadStrategy(FileDataLoadStrategy):
 
     def _create_conversation_input(
         self, data_dict: Dict[str, Any]
-    ) -> List[ChatMessage]:
+    ) -> list[ChatMessage]:
         """Create DataInput from conversation_input"""
         conversation_input = data_dict.get("conversation_input", [])
         if isinstance(conversation_input, list):
@@ -91,7 +107,7 @@ class RMBBenchmarkPairwiseDataLoadStrategy(FileDataLoadStrategy):
 
     def _create_conversation_output(
         self, data_dict: Dict[str, Any]
-    ) -> List[DataOutput]:
+    ) -> list[DataOutput]:
         """Create DataOutput list from chosen and reject"""
         outputs = []
 
