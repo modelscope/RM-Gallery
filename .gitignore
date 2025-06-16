@@ -11,3 +11,4 @@ __pycache__
 /dist
 tests/data
 uv*
+_del
