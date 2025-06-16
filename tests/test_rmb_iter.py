@@ -7,10 +7,23 @@ from rm_gallery.core.data.schema import DataSample
 from rm_gallery.core.model.openai_llm import OpenaiLLM
 from rm_gallery.core.reward.principle.iter import IterPrincipleGenerator
 from rm_gallery.core.utils.file import read_jsonl, write_json
-from rm_gallery.gallery.rmb.helpfulness import TASKS, HelpfulnessListWiseReward
-from tests.test_principle_generator import calc_acc
+from rm_gallery.gallery.rm.alignment.base import (
+    DEFAULT_HELPFULNESS_PRINCIPLES,
+    BaseHelpfulnessListwiseReward,
+)
+from rm_gallery.gallery.rm.alignment.rmb.helpfulness import TASKS
 
-SCENARIO = "Entails adopting specific characters or personas within text-based scenarios, engaging in dialogues or actions that reflect the assigned roles."
+
+def calc_acc(samples: List[DataSample]):
+    labels = []
+    for sample in samples:
+        labels.append(0)
+        for output in sample.output:
+            if output.answer.label["preference"] == "chosen":
+                score = sum(r.score for r in output.answer.reward.details)
+                if score > 0:
+                    labels[-1] = 1
+    return sum(labels) / len(labels)
 
 
 def generate(
@@ -33,7 +46,7 @@ def generate(
 
 def get_reward(scenario, principles=[]):
     llm = OpenaiLLM(model="qwen3-8b", enable_thinking=True)
-    reward = HelpfulnessListWiseReward(
+    reward = BaseHelpfulnessListwiseReward(
         llm=llm,
         name="rmb_helpfulness_listwise",
         principles=principles,
@@ -44,7 +57,7 @@ def get_reward(scenario, principles=[]):
 
 def test_generate(
     file: str = "data/RMBbench/pairwise/Helpfulness/Role Playing/Specific Character.jsonl",
-    scenario: str = SCENARIO,
+    scenario: str = "",
     generate_number: int = 10,
     cluster_number: int = 5,
 ):
@@ -62,7 +75,7 @@ def test_evaluate(
     principles: List[str] = [
         "Intent Understanding: Understand user intentions and response."
     ],
-    scenario: str = SCENARIO,
+    scenario: str = "",
 ):
     # qwen3-235b-a22b
 
@@ -101,12 +114,12 @@ def test_single(task: str):
         "RMBbench", "RMBbench_Test"
     )
 
-    principles = ["Intent Understanding: Understand user intentions and response."]
+    principles = DEFAULT_HELPFULNESS_PRINCIPLES
 
-    principles = test_generate(
-        train,
-        scenario=scenario,
-    )
+    # principles = test_generate(
+    #     train,
+    #     scenario=scenario,
+    # )
 
     acc = test_evaluate(
         test,
@@ -123,7 +136,7 @@ def test_all(tasks):
         results[task] = test_single(task)
 
         logger.info(f"Results: {results}")
-        write_json(results, "data/RMBbench/results_rmb_iter_0.json")
+        write_json(results, "data/RMBbench/results_rmb_base_0.json")
 
 
 test_all(tasks=TASKS)

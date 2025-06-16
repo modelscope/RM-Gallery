@@ -6,7 +6,8 @@ from loguru import logger
 from rm_gallery.core.data.schema import DataSample
 from rm_gallery.core.model.openai_llm import OpenaiLLM
 from rm_gallery.core.utils.file import read_jsonl, write_json
-from rm_gallery.gallery.rmb.helpfulness import TASKS, HelpfulnessListWiseReward
+from rm_gallery.gallery.rm.alignment.base import BaseHelpfulnessListwiseReward
+from rm_gallery.gallery.rm.alignment.rmb.helpfulness import TASKS
 from tests.test_principle_generator import calc_acc, generate
 
 SCENARIO = "Entails adopting specific characters or personas within text-based scenarios, engaging in dialogues or actions that reflect the assigned roles."
@@ -38,7 +39,7 @@ def test_evaluate(
     samples = read_jsonl(file)
     samples = [DataSample(**sample) for sample in samples]
 
-    reward_module = HelpfulnessListWiseReward(
+    reward_module = BaseHelpfulnessListwiseReward(
         llm=llm,
         name="rmb_helpfulness_listwise",
         principles=principles,
