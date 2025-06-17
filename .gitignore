@@ -13,3 +13,4 @@ tests/data
 uv*
 _del
 docs/log
+.python-version
