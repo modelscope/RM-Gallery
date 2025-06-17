@@ -59,9 +59,14 @@ Please generate a better response based on the feedback provided on candidate re
             )
 
         respoonse = self.llm.simple_chat(prompt)
-        return respoonse
+        return ChatMessage(role=MessageRole.ASSISTANT, content=respoonse)
 
-    def run(self, input: List[ChatMessage], **kwargs) -> DataSample:
+    def _generate_feedback(self, sample: DataSample, **kwargs):
+        sample = self.reward_module.evaluate(sample)
+        feedback = sample.output[0].answer.reward.details[0].reason
+        return feedback
+
+    def run(self, input: List[ChatMessage], **kwargs) -> ChatMessage:
         response = self.llm.chat(input)
         candicates = [response]
 
@@ -70,14 +75,15 @@ Please generate a better response based on the feedback provided on candidate re
                 input=input,
                 output=[
                     DataOutput(
-                        answer=Step(role=MessageRole.ASSISTANT, content=response)
+                        answer=Step(
+                            role=MessageRole.ASSISTANT, content=response.content
+                        )
                     )
                 ],
                 unique_id=str(uuid.uuid4()),
             )
 
-            sample = self._generate_feedback(sample, **kwargs)
-            feedback = sample.output[0].answer.reward.details[0].reason
-            sample = self._generate_response(input, candicates, feedback, **kwargs)
-
-        return sample
+            feedback = self._generate_feedback(sample, **kwargs)
+            response = self._generate_response(input, candicates, feedback, **kwargs)
+            candicates.append(response)
+        return response
