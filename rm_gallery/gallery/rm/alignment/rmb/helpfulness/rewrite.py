@@ -10,7 +10,7 @@ PRINCIPLES = [
     "Clarity and Conciseness: Simplify complex structures and eliminate redundancy while preserving technical accuracy and avoiding unnecessary expansion.",
 ]
 
-SCENARIO = """the assitant aims to modifies existing text to alter its style while preserving the original information and intent"""
+SCENARIO = """Rewrite: the assitant aims to modifies existing text to alter its style while preserving the original information and intent."""
 
 
 @RewardRegistry.register("rewrite_listwise_reward")

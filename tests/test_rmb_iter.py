@@ -113,8 +113,8 @@ def test_single(task: str):
     )
 
     # principles = DEFAULT_HELPFULNESS_PRINCIPLES
-    # principles = []
-    principles = None
+    principles = []
+    # principles = None
 
     # principles = test_generate(
     #     task,
@@ -137,8 +137,8 @@ def test_all(tasks, i):
 
         logger.info(f"Results: {results}")
         # iter_10_3
-        write_json(results, f"data/RMBbench/results_rmb_opt_{i}.json")
+        write_json(results, f"data/RMBbench/results_rmb_empty_{i}.json")
 
 
-for i in range(1, 2):
+for i in range(5):
     test_all(TASKS, i)
