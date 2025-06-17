@@ -9,7 +9,7 @@ from rm_gallery.core.model.openai_llm import OpenaiLLM
 from rm_gallery.core.reward.principle.iter import IterPrincipleGenerator
 from rm_gallery.core.reward.registry import RewardRegistry
 from rm_gallery.core.utils.file import read_jsonl, write_json
-from rm_gallery.gallery.rm.alignment.rmb.helpfulness import TASKS
+from rm_gallery.gallery.rm.alignment2.rmb.helpfulness import TASKS
 
 os.environ["OPENAI_API_KEY"] = "sk-qS2yrmvJYAhsJN7xA4lZFJwYoOiQgglD5MukURFzMARrGlLJ"
 os.environ["BASE_URL"] = "http://8.130.177.212:3000/v1"
