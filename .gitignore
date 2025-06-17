@@ -12,3 +12,4 @@ __pycache__
 tests/data
 uv*
 _del
+docs/log

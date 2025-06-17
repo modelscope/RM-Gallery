@@ -41,10 +41,29 @@ RM-Gallery is a one-stop platform for training, building and deploying reward mo
 
 
 ## 📥 Installation
-For installation, please refer to [Installation.md](docs/installation.md).
+> RM Gallery requires **Python 3.10** or higher.
+
+
+### Install From source
+
+```bash
+# Pull the source code from GitHub
+git clone https://github.com/modelscope/rm-gallery.git
+
+# Install the package in editable mode
+cd rm-gallery
+pip install -e .
+```
+
+### Install From PyPi
+
+```bash
+pip install rm-gallery
+```
 
 ## 🚀 Quick Start
-For quick start, please refer to [Quick Start.md](docs/quickstart.md).
+
+For quick start, please refer to [Quick Start.md](docs/quick_start.ipynb).
 
 ## 📚 Documentation
 - Tutorial:
@@ -56,9 +75,6 @@ For quick start, please refer to [Quick Start.md](docs/quickstart.md).
     - [training RM](docs/tutorial/training_rm.ipynb)
     - [high performance RM Serving](docs/tutorial/high_performance_rm_serving.ipynb)
     - [adapte huggingface RMs](docs/tutorial/adapte_huggingface_rms.ipynb)
-
-- useful docs:
-    - [RM-Gallery's Rankings in Popular Benchmark](docs/leaderboard.md)
 
 
 ## 🤝 Contribute
