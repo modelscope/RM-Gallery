@@ -1,2 +1,2 @@
-from .alignment2 import *
+from .alignment import *
 from .format import *
