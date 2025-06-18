@@ -335,6 +335,7 @@ class IterPrincipleGenerator(PrincipleGenerator):
         try:
             principles = call()
         except Exception as e:
+            principles = {}
             logger.error(f"API call failed: {str(e)}")
         return principles
 

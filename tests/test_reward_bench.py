@@ -11,8 +11,8 @@ from rm_gallery.core.utils.temp import (
 from rm_gallery.gallery.harmfulness_paiwise import HarmfulnessPairwise
 from rm_gallery.gallery.helpfulness_pairwise import HelpfulnessPairwise
 
-os.environ["OPENAI_API_KEY"] = "sk-qS2yrmvJYAhsJN7xA4lZFJwYoOiQgglD5MukURFzMARrGlLJ"
-os.environ["BASE_URL"] = "http://8.130.177.212:3000/v1"
+os.environ["OPENAI_API_KEY"] = ""
+os.environ["BASE_URL"] = ""
 
 # map rewardbench map to HHH RM
 HHHRM_subset_mapping = {

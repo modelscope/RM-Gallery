@@ -25,6 +25,7 @@ class OpenaiLLM(BaseLLM):
     openai_api_key: str | None = Field(default=None)
     max_retries: int = Field(default=10)
     stream: bool = Field(default=False)
+    max_tokens: int = Field(default=8192)
 
     @model_validator(mode="before")
     @classmethod
@@ -58,7 +59,7 @@ class OpenaiLLM(BaseLLM):
             "model": self.model,
             # "top_p": self.top_p,
             "temperature": self.temperature,
-            # "max_tokens": self.max_tokens,
+            "max_tokens": self.max_tokens,
             "stream": self.stream,
         }
 

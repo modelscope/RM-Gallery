@@ -7,9 +7,9 @@ from rm_gallery.gallery.rm.alignment.base import BaseHelpfulnessListwiseReward
 
 SCENARIO = "Generation: Creating new textual content, from articles to stories, with an emphasis on originality and creativity."
 PRINCIPLES = [
-    "Adherence to Constraints and Comprehensive Coverage: Prioritize compliance with specified requirements, ensuring all essential elements are included to meet the scope of the task without missing critical details.",
-    "Structural Coherence and Organization: Maintain logical progression and clear organization to enhance readability and alignment with the task’s purpose."
-    "Originality Within Boundaries: Balance creative innovation with adherence to factual/technical accuracy or genre conventions to avoid clichés or formulaic outputs",
+    "Adherence to Instructional Intent: Prioritize fulfilling explicit requirements and implicit goals stated in the prompt above all other considerations.",
+    "Comprehensive Coverage of Core Concepts: Ensure all fundamental elements, themes, and specified details are thoroughly addressed to meet the scope of the task.",
+    "Structural Coherence and Logical Progression: Organize content with clear, purposeful sequencing that enhances clarity, engagement, and narrative or analytical flow.",
 ]
 
 

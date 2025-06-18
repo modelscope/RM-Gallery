@@ -6,8 +6,7 @@ from rm_gallery.core.reward.registry import RewardRegistry
 from rm_gallery.gallery.rm.alignment.base import BaseHelpfulnessListwiseReward
 
 PRINCIPLES = [
-    "Adherence to Explicit Instructions: Prioritize strict compliance with all user-specified modifications while maintaining the original intent and core content.",
-    "Clarity and Conciseness: Simplify complex structures and eliminate redundancy while preserving technical accuracy and avoiding unnecessary expansion.",
+    "Adherence to Explicit Instructions and Context: Base modifications strictly on provided instructions and source material, avoiding deviations, embellishments, or speculative additions while maintaining contextual relevance."
 ]
 
 SCENARIO = """Rewrite: the assitant aims to modifies existing text to alter its style while preserving the original information and intent."""

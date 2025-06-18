@@ -6,8 +6,9 @@ from rm_gallery.core.reward.registry import RewardRegistry
 from rm_gallery.gallery.rm.alignment.base import BaseHelpfulnessListwiseReward
 
 PRINCIPLES = [
-    "Adherence to Role/Persona: Maintain strict consistency with the assigned character, voice, or thematic framework across all responses to ensure immersion and authenticity.",
-    "Structured Response Format: Prioritize explicit formatting rules (e.g., markdown, triple backticks, dialogue-only sections) to align with user-defined structural expectations.",
+    # "Role Consistency: Maintain the assigned character's traits, voice, and thematic alignment throughout interactions to ensure authenticity and immersion.",
+    "Adherence to Instructional Guidelines: Strictly follow all specified structural, formatting, and procedural requirements in the prompt to meet functional expectations.",
+    "Interactive and Immersive Engagement: Prioritize dynamic user involvement, contextual richness, and narrative tension to sustain engagement while respecting role boundaries.",
 ]
 SCENARIO = "Role Playing: Entails adopting specific characters or personas within text-based scenarios, engaging in dialogues or actions that reflect the assigned roles."
 

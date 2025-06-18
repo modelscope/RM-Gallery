@@ -6,9 +6,10 @@ from rm_gallery.core.reward.registry import RewardRegistry
 from rm_gallery.gallery.rm.alignment.base import BaseHelpfulnessListwiseReward
 
 PRINCIPLES = [
-    "Classification Correctness: Accurately categorize based on the question.",
-    "Logical Coherence: Explicitly connect textual evidence to conclusions through clear, rational reasoning without contradictions or unsupported leaps.",
+    "Label Consistency Enforcement: Maintain uniform application of predefined categories across all text instances to uphold reliability and minimize classification bias.",
+    "Ambiguity Resolution Protocol: Develop strategies to effectively classify borderline cases, ensuring accurate labeling even when texts exhibit mixed or unclear categorical indicators.",
 ]
+
 
 SCENARIO = "Classification: Entails assigning predefined categories or labels to text based on its content."
 

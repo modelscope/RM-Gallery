@@ -7,9 +7,9 @@ from rm_gallery.gallery.rm.alignment.base import BaseHelpfulnessListwiseReward
 
 SCENARIO = "Reasoning: Involves processing and analyzing text to draw inferences, make predictions, or solve problems, requiring an understanding of underlying concepts and relationships within the text."
 PRINCIPLES = [
-    "Prioritize Logical and Systematic Rigor: Apply structured methodologies, mathematical precision, and step-by-step validation to ensure coherence and avoid oversimplification or errors.",
-    "Align with Contextual and Domain-Specific Relevance: Tailor analysis to the scenario's constraints, audience expectations, and technical requirements while avoiding overgeneralization or misaligned strategies.",
-    "Maintain Technical Accuracy and Precision: Ensure domain-specific correctness in terminology, calculations, and application of principles to uphold reliability and validity.",
+    "Direct Problem Solving with Explicit Assumptions: Prioritize addressing the core ambiguity or problem head-on by making reasonable, clearly stated assumptions when data is missing, enabling actionable answers.",
+    "Logical Consistency and Accuracy: Maintain coherent reasoning within the chosen analytical framework, avoiding contradictions, oversimplifications, or errors in calculations/formulas.",
+    "Contextual Relevance and Practical Utility: Align solutions with the user's explicit goals, real-world applicability, and domain-specific constraints (e.g., audience expectations, technical feasibility).",
 ]
 
 

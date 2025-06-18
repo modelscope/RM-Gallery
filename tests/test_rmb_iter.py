@@ -1,19 +1,14 @@
-import os
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
 from typing import List
 
 from loguru import logger
 
 from rm_gallery.core.data.schema import DataSample
 from rm_gallery.core.model.openai_llm import OpenaiLLM
-from rm_gallery.core.reward.principle.iter import IterPrincipleGenerator
+from rm_gallery.core.reward.principle.base import PrincipleGenerator
 from rm_gallery.core.reward.registry import RewardRegistry
 from rm_gallery.core.utils.file import read_jsonl, write_json
 from rm_gallery.gallery.rm.alignment2.rmb.helpfulness import TASKS
-
-os.environ["OPENAI_API_KEY"] = "sk-qS2yrmvJYAhsJN7xA4lZFJwYoOiQgglD5MukURFzMARrGlLJ"
-os.environ["BASE_URL"] = "http://8.130.177.212:3000/v1"
-os.environ["PYTHONPATH"] = "${workspaceFolder}"
 
 
 def calc_acc(samples: List[DataSample]):
@@ -38,12 +33,12 @@ def generate(
 ):
     llm = OpenaiLLM(model="qwen3-235b-a22b", enable_thinking=True)
 
-    generator = IterPrincipleGenerator(
+    generator = PrincipleGenerator(
         llm=llm,
         scenario=scenario,
         generate_number=generator_number,
         cluster_number=cluster_number,
-        reward=reward,
+        # reward=reward,
     )
     principles = generator.run_batch(
         samples, thread_pool=ThreadPoolExecutor(max_workers=256)
@@ -83,6 +78,7 @@ def test_evaluate(
     task: str,
     file: str = "data/RMBbench/pairwise/Helpfulness/Role Playing/Specific Character.jsonl",
     principles: List[str] | None = None,
+    thread_pool=ThreadPoolExecutor(max_workers=256),
 ):
     # qwen3-235b-a22b
 
@@ -92,9 +88,7 @@ def test_evaluate(
 
     reward_module = get_reward(task, principles)
 
-    samples = reward_module.evaluate_batch(
-        samples, thread_pool=ThreadPoolExecutor(max_workers=256)
-    )
+    samples = reward_module.evaluate_batch(samples, thread_pool=thread_pool)
     acc, success, total = calc_acc(samples)
     logger.info(f"{file}: {acc}")
     return acc, success, total
@@ -104,7 +98,7 @@ def parse(path: str):
     path.replace("RMBbench", "RMBbench_Train")
 
 
-def test_single(task: str):
+def test_single(task: str, thread_pool=ThreadPoolExecutor(max_workers=256)):
     logger.info(f"------------{task}--------------")
 
     path = f"data/RMBbench/bestofn/Helpfulness/{task}.jsonl"
@@ -113,8 +107,8 @@ def test_single(task: str):
     )
 
     # principles = DEFAULT_HELPFULNESS_PRINCIPLES
-    principles = []
-    # principles = None
+    # principles = []
+    principles = None
 
     # principles = test_generate(
     #     task,
@@ -122,22 +116,19 @@ def test_single(task: str):
     # )
 
     acc, success, total = test_evaluate(
-        task,
-        test,
-        principles=principles,
+        task, test, principles=principles, thread_pool=thread_pool
     )
 
     return acc, success, total, principles
 
 
 def test_all(tasks, i):
+    thread_pool = ThreadPoolExecutor(max_workers=384)
     results = {}
-    for task in tasks:
-        results[task] = test_single(task)
-
-        logger.info(f"Results: {results}")
-        # iter_10_3
-        write_json(results, f"data/RMBbench/results_rmb_empty_{i}.json")
+    futures = [(task, thread_pool.submit(test_single, task)) for task in tasks]
+    wait([future[-1] for future in futures], return_when=ALL_COMPLETED)
+    results = {task: future.result() for task, future in futures}
+    write_json(results, f"data/RMBbench/results_rmb_new_base_2_{i}.json")
 
 
 for i in range(5):

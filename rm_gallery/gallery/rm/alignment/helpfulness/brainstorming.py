@@ -8,8 +8,9 @@ from rm_gallery.gallery.rm.alignment.base import BaseHelpfulnessListwiseReward
 SCENARIO = "Brainstorming: Generating text to come up with new ideas or solutions, with an emphasis on creativity and driving thinking."
 
 PRINCIPLES = [
-    "Relevance to Core Request: Ensure ideas directly address the explicit requirements and intent of the query without extraneous details.",
-    "Balanced Speculative Creativity: Maintain imaginative freedom while tethering concepts to logical extrapolation or feasibility.",
+    "Creative Relevance and Contextual Alignment: Prioritize completions that balance novel ideas with direct ties to the scenario's core context, ensuring ideas are both imaginative and grounded in the specific problem or theme.",
+    "Practical Feasibility and Actionable Detail: Favor completions that offer concrete, implementable solutions or insights, avoiding abstract or overly speculative suggestions that lack real-world applicability.",
+    "Structural Coherence and Logical Organization: Prefer completions that present ideas in a clear, logically sequenced framework (e.g., categorized sections, step-by-step processes) to enhance readability and development potential.",
 ]
 
 

@@ -244,6 +244,9 @@ class PrincipleGenerator(BaseModel):
         principles = {}
         for i, sample in enumerate(samples):
             sample_principles = []
+            if "generate" not in sample.input[-1].additional_kwargs:
+                continue
+
             for key, value in (
                 sample.input[-1].additional_kwargs["generate"]["principles"].items()
             ):
@@ -275,7 +278,7 @@ class PrincipleGenerator(BaseModel):
             )
             result = PrincipleClusterTemplate.parse(response)
             logger.info("===CLUSTER RESULT===\n" + result.model_dump_json())
-            return principles
+            return result.principles
 
         try:
             principles = call()

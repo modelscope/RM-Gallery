@@ -7,9 +7,9 @@ from rm_gallery.gallery.rm.alignment.base import BaseHelpfulnessListwiseReward
 
 SCENARIO = "Open QA: Search for answers across a wide range of text sources. The challenge is to process large amounts of information and understand complex questions."
 PRINCIPLES = [
-    "Accuracy and Reliance on Authoritative Sources: Ensure that all information presented is precise and verified, using reputable and evidence-based references to maintain factual correctness and avoid misinformation."
-    "Clarity and Organization: Facilitate understanding and readability by structuring content logically and with clear formatting, such as headings and bullet points."
-    "Focus and Relevance: Address the user's specific query directly and avoid speculation, ensuring all information is evidence-based and practically useful without tangential details."
+    "Accuracy and Factual Correctness: Ensure all information strictly aligns with verified facts, canonical sources, or scholarly consensus to maintain credibility and avoid misinformation.",
+    "Structured Organization: Present information in a logical, coherent framework (chronological, hierarchical, or thematic) to enhance readability and user comprehension.",
+    "Relevance to Core Query: Prioritize content directly addressing the user's explicit request while filtering out tangential or redundant details to maintain focus.",
 ]
 
 
