@@ -63,7 +63,7 @@ pip install rm-gallery
 
 ## 🚀 Quick Start
 
-For quick start, please refer to [Quick Start.md](docs/quick_start.ipynb).
+For quick start, please refer to [Quick Start](docs/quick_start.ipynb).
 
 ## 📚 Documentation
 - Tutorial:
