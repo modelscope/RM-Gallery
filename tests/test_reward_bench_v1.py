@@ -12,6 +12,7 @@ from rm_gallery.gallery.harmfulness_paiwise import HarmfulnessPairwise
 from rm_gallery.gallery.helpfulness_pairwise import HelpfulnessPairwise
 
 os.environ["OPENAI_API_KEY"] = ""
+
 os.environ["BASE_URL"] = ""
 
 # map rewardbench map to HHH RM

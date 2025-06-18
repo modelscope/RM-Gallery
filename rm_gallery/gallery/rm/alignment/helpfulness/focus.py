@@ -18,5 +18,6 @@ PRINCIPLES = [
 
 @RewardRegistry.register("focus_listwise_reward")
 class FocusListWiseReward(BaseHelpfulnessListwiseReward):
+    desc: str = Field(default=DESC)
     scenario: str = Field(default=SCENARIO, description="assistant scenario")
     principles: List[str] = Field(default=PRINCIPLES)

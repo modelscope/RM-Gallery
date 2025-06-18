@@ -265,11 +265,13 @@ class PrincipleListWiseTemplate(BasePromptTemplate):
         if context:
             context = f"\n# Context\n{context}\n"
 
+        if principles:
+            principles = f"# Principles\n{principles}\n"
+
         return f"""# Task Description
 {desc}
 {scenario}
 
-# Principles
 {principles}
 {examples}
 
