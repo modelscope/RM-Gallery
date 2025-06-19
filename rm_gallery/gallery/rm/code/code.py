@@ -1,6 +1,9 @@
 import ast
 import difflib
 import re
+import json
+import traceback
+from typing import List, Dict, Any, Optional
 
 from pydantic import Field
 
@@ -269,4 +272,152 @@ class PatchSimilarityReward(BasePointWiseReward):
                 "reference": reference,
                 "opcodes": opcodes,
             },
+        )
+
+
+class CodeExecutionReward(BasePointWiseReward):
+    """
+    Evaluate code by executing it against test cases
+    
+    This reward model evaluates code by executing it against test cases using a testing framework
+    that supports both call-based and standard input code evaluation methods.
+    """
+
+    name: str = Field(default="code_execution", description="Code execution reward")
+    continuous: bool = Field(default=True, description="Use continuous scoring (partial credit)")
+    timeout: int = Field(default=10, description="Timeout in seconds for code execution")
+    
+    def __init__(self, **data):
+        super().__init__(**data)
+        try:
+            from rm_gallery.gallery.rm.code.prime_code import compute_score
+            self.compute_score = compute_score
+            self.test_framework_available = True
+        except ImportError:
+            print("Warning: Code testing framework not available. Please ensure rm_gallery.gallery.rm.code.prime_code is properly installed.")
+            self.test_framework_available = False
+    
+    def _extract_code(self, content: str) -> str:
+        """
+        Extract code from content
+        
+        Args:
+            content: Text content that may contain code blocks
+            
+        Returns:
+            Extracted code
+        """
+        # Try to find Python code in various formats
+        code_match = re.search(r"```python\n(.*?)\n```", content, re.DOTALL)
+        if code_match:
+            return code_match.group(1)
+        
+        # Try other formats
+        code_match = re.search(r"```\n(.*?)\n```", content, re.DOTALL)
+        if code_match:
+            return code_match.group(1)
+            
+        # If no code block markers, assume the entire content is code
+        return content
+    
+    def _evaluate(
+        self, sample: DataSample, **kwargs
+    ) -> RewardResult[RewardDimensionWithScore]:
+        """
+        Evaluate code against test cases
+        
+        Args:
+            sample: Data sample containing code content and test cases
+            
+        Returns:
+            RewardResult: Reward result containing evaluation score
+        """
+        # Extract code from response
+        content = sample.output[0].answer.content
+        extracted_code = self._extract_code(content)
+        
+        # Default values
+        score = 0.0
+        reason = "No evaluation performed"
+        extra_data = {"extracted_code": extracted_code}
+        
+        # Check if testing framework is available
+        if not self.test_framework_available:
+            reason = "Code testing framework not available"
+            extra_data["error"] = reason
+        else:
+            # Get test cases from sample metadata or label
+            test_cases = None
+            if sample.metadata and "inputs_outputs" in sample.metadata:
+                test_cases = sample.metadata["inputs_outputs"]
+            elif sample.output[0].answer.label and "inputs_outputs" in sample.output[0].answer.label:
+                test_cases = sample.output[0].answer.label["inputs_outputs"]
+            
+            if not test_cases:
+                reason = "No test cases available for evaluation"
+            elif not extracted_code:
+                score = 0.0
+                reason = "No valid code extracted from response"
+                extra_data["test_cases"] = test_cases
+            else:
+                # Convert test cases to string if needed
+                if isinstance(test_cases, dict):
+                    test_cases_str = json.dumps(test_cases)
+                else:
+                    test_cases_str = test_cases
+                    
+                # Evaluate code using testing framework
+                try:
+                    success, metadata = self.compute_score(
+                        completion=extracted_code, 
+                        test_cases=test_cases_str, 
+                        continuous=self.continuous
+                    )
+                    
+                    # Determine score based on success rate
+                    if isinstance(success, bool):
+                        pass_rate = 1.0 if success else 0.0
+                    else:
+                        pass_rate = float(success)
+                    
+                    # Score is always between 0 and 1
+                    score = pass_rate
+                        
+                    # Generate reason based on results
+                    if pass_rate == 1.0:
+                        reason = "All test cases passed successfully"
+                    elif pass_rate == 0.0:
+                        reason = "No test cases passed"
+                    else:
+                        reason = f"Partial success: {pass_rate * 100:.1f}% of test cases passed"
+                    
+                    # Include metadata in extra_data
+                    extra_data = {
+                        "extracted_code": extracted_code,
+                        "test_cases": test_cases,
+                        "pass_rate": pass_rate,
+                    }
+                                
+                except Exception as e:
+                    error_traceback = traceback.format_exc()
+                    score = 0.0
+                    reason = f"Evaluation error: {str(e)}"
+                    extra_data = {
+                        "extracted_code": extracted_code,
+                        "test_cases": test_cases,
+                        "error": str(e),
+                        "traceback": error_traceback,
+                    }
+        
+        # Single return statement at the end of the function
+        return RewardResult(
+            name=self.name,
+            details=[
+                RewardDimensionWithScore(
+                    name=self.name,
+                    score=score,
+                    reason=reason,
+                )
+            ],
+            extra_data=extra_data,
         )
