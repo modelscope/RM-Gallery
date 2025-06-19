@@ -9,6 +9,9 @@ from rm_gallery.core.model.openai_llm import OpenaiLLM
 from rm_gallery.core.reward.registry import RewardRegistry
 from rm_gallery.core.utils.file import read_jsonl, write_json, write_raw_content
 
+THREAD_NUM = 128
+
+
 TASKS = {
     "Focus": "Need to detect high-quality, on-topic answers to general user queries.",
     "Factuality": "Factuality: need to  detect hallucinations and other basic errors in completions.",
@@ -58,7 +61,9 @@ def test_base(
     llm: BaseLLM = None,
 ):
     samples = read_jsonl(file)
-    samples = [DataSample(**sample) for sample in samples][:10]
+
+    samples = [DataSample(**sample) for sample in samples]
+
     rm = RewardRegistry.get("base_helpfulness_listwise")(
         name="test_base_demo",
         llm=llm,
@@ -69,7 +74,7 @@ Your role is that of a professional evaluation expert. I will provide you with a
         principles=[],
     )
     samples = rm.evaluate_batch(
-        samples, thread_pool=ThreadPoolExecutor(max_workers=256)
+        samples, thread_pool=ThreadPoolExecutor(max_workers=THREAD_NUM)
     )
     acc = calc_acc(samples)
     bad_res_ratio = calc_bad_ratio(samples)
@@ -79,13 +84,13 @@ Your role is that of a professional evaluation expert. I will provide you with a
 
 def test_exp(file: str = "", task: str = "", llm: BaseLLM = None):
     samples = read_jsonl(file)
-    samples = [DataSample(**sample) for sample in samples][:10]
+
+    samples = [DataSample(**sample) for sample in samples]
     rm_name = TASK_RM_MAPRING.get(task)
     assert rm_name is not None
     rm = RewardRegistry.get(rm_name)(llm=llm, name=f"test_exp_{task}")
-    # rm = FocusListWiseReward(llm=llm, name=f"test_exp_{task}")
     samples = rm.evaluate_batch(
-        samples, thread_pool=ThreadPoolExecutor(max_workers=256)
+        samples, thread_pool=ThreadPoolExecutor(max_workers=THREAD_NUM)
     )
     acc = calc_acc(samples)
     bad_res_ratio = calc_bad_ratio(samples)
@@ -112,22 +117,19 @@ def test_single(task: str, repeat: int = 5, llm: BaseLLM = None):
     task_result["exp_bad_ratio"] = []
 
     for index in range(repeat):
-        # while True:
-        #     try:
-        #         acc, bad_ratio, base_samples = test_base(
-        #             test,
-        #             llm
-        #         )
-        #         task_result["base_acc"].append(acc)
-        #         task_result["base_bad_ratio"].append(bad_ratio)
-        #         write_raw_content(
-        #             f"data/rewardbench2/result/{task}/base_{index}.jsonl",
-        #             [sample.model_dump_json() for sample in base_samples],
-        #             auto_create_dir=True,
-        #         )
-        #         break
-        #     except Exception as e:
-        #         logger.error(e)
+        while True:
+            try:
+                acc, bad_ratio, base_samples = test_base(test, llm)
+                task_result["base_acc"].append(acc)
+                task_result["base_bad_ratio"].append(bad_ratio)
+                write_raw_content(
+                    f"data/rewardbench2/result/{task}/base_{index}.jsonl",
+                    [sample.model_dump_json() for sample in base_samples],
+                    auto_create_dir=True,
+                )
+                break
+            except Exception as e:
+                logger.error(e)
 
         while True:
             try:
@@ -166,4 +168,4 @@ def test_all(tasks, repeat: int = 5, llm_params: dict = {}):
     write_json(results, "data/rewardbench2/result/overview.json")
 
 
-test_all(TASKS, 1, {"model": "qwen3-8b", "enable_thinking": True})
+test_all(TASKS, 5, {"model": "qwen3-32b", "enable_thinking": True})
