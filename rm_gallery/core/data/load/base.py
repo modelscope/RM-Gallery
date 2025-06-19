@@ -28,7 +28,7 @@ class DataConverter:
     @abstractmethod
     def convert_to_data_sample(
         self, data_dict: Dict[str, Any], source_info: Dict[str, Any]
-    ) -> DataSample:
+    ) -> Union[DataSample, List[DataSample]]:
         """
         Convert raw data dictionary to DataSample format
 
@@ -329,14 +329,24 @@ class FileDataLoadStrategy(DataLoad):
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
+        all_samples = []
         if isinstance(data, list):
-            return [
-                self._convert_to_data_sample(item, source_file_path) for item in data
-            ]
+            for item in data:
+                samples = self._convert_to_data_sample(item, source_file_path)
+                if isinstance(samples, list):
+                    all_samples.extend(samples)
+                else:
+                    all_samples.append(samples)
         elif isinstance(data, dict):
-            return [self._convert_to_data_sample(data, source_file_path)]
+            samples = self._convert_to_data_sample(data, source_file_path)
+            if isinstance(samples, list):
+                all_samples.extend(samples)
+            else:
+                all_samples.append(samples)
         else:
             raise ValueError("Invalid JSON format: expected list or dict")
+
+        return all_samples
 
     def _load_jsonl(self, path: Path, source_file_path: Path) -> List[DataSample]:
         """Load data from JSONL file"""
@@ -345,9 +355,11 @@ class FileDataLoadStrategy(DataLoad):
             for line in f:
                 if line.strip():  # Skip empty lines
                     data = json.loads(line)
-                    data_list.append(
-                        self._convert_to_data_sample(data, source_file_path)
-                    )
+                    samples = self._convert_to_data_sample(data, source_file_path)
+                    if isinstance(samples, list):
+                        data_list.extend(samples)
+                    else:
+                        data_list.append(samples)
         return data_list
 
     def _load_parquet(self, path: Path, source_file_path: Path) -> List[DataSample]:
@@ -384,9 +396,12 @@ class FileDataLoadStrategy(DataLoad):
                     continue
 
                 # convert data to DataSample object
-                data_sample = self._convert_to_data_sample(data_dict, source_file_path)
-                if data_sample is not None:
-                    data_list.append(data_sample)
+                samples = self._convert_to_data_sample(data_dict, source_file_path)
+                if samples is not None:
+                    if isinstance(samples, list):
+                        data_list.extend(samples)
+                    else:
+                        data_list.append(samples)
             except Exception as e:
                 logger.error(f"Error processing row: {str(e)}")
                 continue
@@ -395,7 +410,7 @@ class FileDataLoadStrategy(DataLoad):
 
     def _convert_to_data_sample(
         self, data_dict: Dict[str, Any], source_file_path: Path
-    ) -> DataSample:
+    ) -> Union[DataSample, List[DataSample]]:
         """Convert raw data dictionary to DataSample format"""
         if hasattr(self, "data_converter") and self.data_converter:
             source_info = {
@@ -470,9 +485,12 @@ class HuggingFaceDataLoadStrategy(DataLoad):
             data_samples = []
             for item in dataset_items:
                 try:
-                    data_sample = self._convert_to_data_sample(item)
-                    if data_sample is not None:
-                        data_samples.append(data_sample)
+                    samples = self._convert_to_data_sample(item)
+                    if samples is not None:
+                        if isinstance(samples, list):
+                            data_samples.extend(samples)
+                        else:
+                            data_samples.append(samples)
                 except Exception as e:
                     logger.error(f"Error converting item to DataSample: {str(e)}")
                     continue
@@ -487,7 +505,9 @@ class HuggingFaceDataLoadStrategy(DataLoad):
                 f"Failed to load data from HuggingFace dataset {dataset_name}: {str(e)}"
             )
 
-    def _convert_to_data_sample(self, data_dict: Dict[str, Any]) -> DataSample:
+    def _convert_to_data_sample(
+        self, data_dict: Dict[str, Any]
+    ) -> Union[DataSample, List[DataSample]]:
         """Convert raw data dictionary to DataSample format"""
         if hasattr(self, "data_converter") and self.data_converter:
             source_info = {

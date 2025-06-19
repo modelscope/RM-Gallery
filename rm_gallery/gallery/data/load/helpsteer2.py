@@ -1,5 +1,5 @@
 import hashlib
-from typing import Any, Dict
+from typing import Any, Dict, List, Union
 
 from loguru import logger
 
@@ -16,7 +16,7 @@ class HelpSteer2Converter(DataConverter):
 
     def convert_to_data_sample(
         self, data_dict: Dict[str, Any], source_info: Dict[str, Any]
-    ) -> DataSample:
+    ) -> Union[DataSample, List[DataSample]]:
         """Convert HelpSteer2 data to DataSample format"""
         # Generate unique id
         content = str(data_dict)
@@ -79,7 +79,7 @@ class HelpSteer2Converter(DataConverter):
                 metadata=metadata,
             )
 
-            return data_sample
+            return [data_sample]
 
         except Exception as e:
             logger.error(f"Error creating HelpSteer2 DataSample: {str(e)}")
