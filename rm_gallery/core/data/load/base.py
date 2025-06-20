@@ -4,17 +4,18 @@ Supports loading from local files and remote sources with automatic format detec
 """
 import json
 import random
+import uuid
 from abc import abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type, Union
 
 import pandas as pd
+from datasets import load_dataset
 from loguru import logger
 from pydantic import Field
 
 from rm_gallery.core.data.base import BaseDataModule, DataModuleType
 from rm_gallery.core.data.schema import BaseDataSet, DataSample
-from rm_gallery.core.utils.file import read_dataset
 
 
 class DataConverter:
@@ -475,12 +476,24 @@ class FileDataLoadStrategy(DataLoad):
             for item in data:
                 samples = self._convert_to_data_sample(item, source_file_path)
                 if isinstance(samples, list):
+                    # Add group ID for samples from the same original data
+                    group_id = str(uuid.uuid4())
+                    for sample in samples:
+                        if sample.metadata is None:
+                            sample.metadata = {}
+                        sample.metadata["data_group_id"] = group_id
                     all_samples.extend(samples)
                 else:
                     all_samples.append(samples)
         elif isinstance(data, dict):
             samples = self._convert_to_data_sample(data, source_file_path)
             if isinstance(samples, list):
+                # Add group ID for samples from the same original data
+                group_id = str(uuid.uuid4())
+                for sample in samples:
+                    if sample.metadata is None:
+                        sample.metadata = {}
+                    sample.metadata["data_group_id"] = group_id
                 all_samples.extend(samples)
             else:
                 all_samples.append(samples)
@@ -498,6 +511,12 @@ class FileDataLoadStrategy(DataLoad):
                     data = json.loads(line)
                     samples = self._convert_to_data_sample(data, source_file_path)
                     if isinstance(samples, list):
+                        # Add group ID for samples from the same original data
+                        group_id = str(uuid.uuid4())
+                        for sample in samples:
+                            if sample.metadata is None:
+                                sample.metadata = {}
+                            sample.metadata["data_group_id"] = group_id
                         data_list.extend(samples)
                     else:
                         data_list.append(samples)
@@ -540,6 +559,12 @@ class FileDataLoadStrategy(DataLoad):
                 samples = self._convert_to_data_sample(data_dict, source_file_path)
                 if samples is not None:
                     if isinstance(samples, list):
+                        # Add group ID for samples from the same original data
+                        group_id = str(uuid.uuid4())
+                        for sample in samples:
+                            if sample.metadata is None:
+                                sample.metadata = {}
+                            sample.metadata["data_group_id"] = group_id
                         data_list.extend(samples)
                     else:
                         data_list.append(samples)
@@ -640,7 +665,7 @@ class HuggingFaceDataLoadStrategy(DataLoad):
             )
 
             # Load dataset from HuggingFace
-            dataset = read_dataset(
+            dataset = load_dataset(
                 dataset_name,
                 dataset_config,
                 split=split,
@@ -667,6 +692,12 @@ class HuggingFaceDataLoadStrategy(DataLoad):
                     samples = self._convert_to_data_sample(item)
                     if samples is not None:
                         if isinstance(samples, list):
+                            # Add group ID for samples from the same original data
+                            group_id = str(uuid.uuid4())
+                            for sample in samples:
+                                if sample.metadata is None:
+                                    sample.metadata = {}
+                                sample.metadata["data_group_id"] = group_id
                             data_samples.extend(samples)
                         else:
                             data_samples.append(samples)

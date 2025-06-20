@@ -1,0 +1,40 @@
+dataset:
+    name: rewardbench2                    # data nanme(local: rewardbench2, huggingface: allenai/reward-bench-2)
+    configs:
+        type: local                       # data source type: local/huggingface
+        source: rewardbench2              # data source identifier(need to ensure the converter is registered)
+        path: ./data/reward-bench-2/data/test-00000-of-00001.parquet       # data file path(only valid when local)
+        huggingface_split: train                    # optional: data split(only valid when huggingface)
+        limit: 2000                     # optional: limit sample number(random)
+    processors:                         # optional: data processor config
+        - type: filter
+          name: conversation_turn_filter
+          config:
+            min_turns: 1
+            max_turns: 6
+        - type: filter
+          name: text_length_filter
+          config:
+            min_length: 10
+            max_length: 1000
+        - type: data_juicer
+          name: character_repetition_filter
+          config:
+            rep_len: 10
+            min_ratio: 0.0
+            max_ratio: 0.5
+    annotation:                         # optional: annotation config
+        template_name: "rewardbench2"
+        project_title: "Reward Bench Evaluation"
+        project_description: "Reward model evaluation using reward bench template from yaml"
+        server_url: "http://localhost:8080"
+        api_token: "xxx"    # your api token
+    export:                               # export config
+        output_dir: ./examples/data/exports # export path
+        formats: ["jsonl"]                # supported formats: jsonl, parquet, json
+        preserve_structure: true          # control whether to preserve the original directory structure when exporting data
+        split_ratio: {"train": 0.8, "test": 0.2} # split train and test set
+    metadata:
+        source: "rewardbench2"
+
+

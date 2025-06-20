@@ -79,7 +79,7 @@ For complete basic usage of RM-Gallery, please refer to [Quick Start](docs/quick
         - [data loader](docs/tutorial/data/load.ipynb)
         - [data processor](docs/tutorial/data/process.ipynb)
     - training rm
-        - [training a reasoning reward model](docs/tutorial/training_rm/pointwise_zh.ipynb)
+        - [training a reasoning reward model](docs/tutorial/training_rm/pointwise.ipynb)
     - building rm
         - [ready-to-use RMs](docs/tutorial/building_rm/ready2use.ipynb)
         - [building a custom RM](docs/tutorial/building_rm/customization.ipynb)

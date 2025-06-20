@@ -4,8 +4,11 @@ Data Loading and Processing Script
 Load and process dataset using YAML configuration with integrated export functionality.
 
 Usage:
-    python data_from_yaml.py
+    python data_from_yaml.py --config ./examples/data/config.yaml
 """
+
+import argparse
+from pathlib import Path
 
 from loguru import logger
 
@@ -14,13 +17,21 @@ import rm_gallery.gallery.data  # noqa: F401 - needed for gallery strategy regis
 from rm_gallery.core.data.build import create_build_module_from_yaml
 
 
-def load_and_process_dataset():
-    """Load and process dataset using YAML configuration"""
-    config_path = "./examples/data/data_config.yaml"
+def load_and_process_dataset(config_path: str):
+    """
+    Load and process dataset using YAML configuration
 
+    Args:
+        config_path: Path to the YAML configuration file
+        output_dir: Optional output directory override
+    """
     try:
         logger.info("🚀 Starting data processing...")
         logger.info(f"📄 Loading config: {config_path}")
+
+        # Validate config file exists
+        if not Path(config_path).exists():
+            raise FileNotFoundError(f"Config file not found: {config_path}")
 
         # Create builder from YAML config
         builder = create_build_module_from_yaml(config_path)
@@ -44,20 +55,39 @@ def load_and_process_dataset():
         return None
 
 
+def parse_args():
+    """Parse command line arguments"""
+    parser = argparse.ArgumentParser(
+        description="Load and process dataset using YAML configuration"
+    )
+
+    parser.add_argument(
+        "--config",
+        type=str,
+        default="./examples/data/config.yaml",
+        help="Path to YAML configuration file",
+    )
+
+    return parser.parse_args()
+
+
 def main():
     """Main function"""
-    logger.info("🎯 Data Processing Pipeline")
+    args = parse_args()
 
-    dataset = load_and_process_dataset()
+    logger.info("🎯 Data Processing Pipeline")
+    logger.info(f"📋 Config: {args.config}")
+
+    dataset = load_and_process_dataset(args.config)
 
     if dataset:
-        logger.success("🎉 data processing completed successfully!")
+        logger.success("🎉 Data processing completed successfully!")
         logger.info(
             "💡 Export files should be available in the configured export directory"
         )
         logger.info("📁 Check your YAML config for export settings")
     else:
-        logger.error("\n❌ data processing failed!")
+        logger.error("❌ Data processing failed!")
         logger.info("💡 Check the error messages above for troubleshooting")
 
 

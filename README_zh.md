@@ -68,12 +68,12 @@ pip install rm-gallery
 ## 📚 文档
 - 教程：
     - 数据
-        - [数据管道](docs/tutorial/data/pipeline_zh.ipynb)
-        - [数据标注](docs/tutorial/data/annotation_zh.ipynb)
-        - [数据加载](docs/tutorial/data/load_zh.ipynb)
-        - [数据处理](docs/tutorial/data/process_zh.ipynb)
+        - [数据管道](docs/tutorial/data/pipeline.ipynb)
+        - [数据标注](docs/tutorial/data/annotation.ipynb)
+        - [数据加载](docs/tutorial/data/load.ipynb)
+        - [数据处理](docs/tutorial/data/process.ipynb)
     - 奖励模型训练
-        - [推理奖励模型训练](docs/tutorial/training_rm/pointwise_zh.ipynb)
+        - [推理奖励模型训练](docs/tutorial/training_rm/pointwise.ipynb)
     - 奖励模型构建
         - [现成奖励模型](docs/tutorial/building_rm/ready2use.ipynb)
         - [自定义奖励模型构建](docs/tutorial/building_rm/customization.ipynb)

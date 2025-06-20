@@ -301,20 +301,69 @@ class DataExport(BaseDataModule):
         if not 0 < train_ratio < 1:
             raise ValueError("Train ratio must be between 0 and 1")
 
-        # Shuffle data for random split
-        shuffled_data = data_samples.copy()
-        random.seed(42)  # For reproducible results
-        random.shuffle(shuffled_data)
-
-        # Calculate split point
-        train_size = int(len(shuffled_data) * train_ratio)
-
-        train_data = shuffled_data[:train_size]
-        test_data = shuffled_data[train_size:]
-
-        logger.info(
-            f"Split dataset: {len(train_data)} training samples, {len(test_data)} test samples"
+        # Check if we have group IDs in the data
+        has_groups = any(
+            sample.metadata and sample.metadata.get("data_group_id")
+            for sample in data_samples
         )
+
+        if has_groups:
+            # Group-based splitting to prevent data leakage
+            groups = defaultdict(list)
+            ungrouped_samples = []
+
+            for sample in data_samples:
+                if sample.metadata and sample.metadata.get("data_group_id"):
+                    group_id = sample.metadata["data_group_id"]
+                    groups[group_id].append(sample)
+                else:
+                    ungrouped_samples.append(sample)
+
+            # Shuffle groups for random split
+            group_list = list(groups.keys())
+            random.seed(42)  # For reproducible results
+            random.shuffle(group_list)
+
+            # Calculate split point based on number of groups
+            train_group_count = int(len(group_list) * train_ratio)
+
+            train_data = []
+            test_data = []
+
+            # Assign groups to train/test
+            for i, group_id in enumerate(group_list):
+                if i < train_group_count:
+                    train_data.extend(groups[group_id])
+                else:
+                    test_data.extend(groups[group_id])
+
+            # Handle ungrouped samples (split them individually)
+            if ungrouped_samples:
+                random.shuffle(ungrouped_samples)
+                ungrouped_train_size = int(len(ungrouped_samples) * train_ratio)
+                train_data.extend(ungrouped_samples[:ungrouped_train_size])
+                test_data.extend(ungrouped_samples[ungrouped_train_size:])
+
+            logger.info(
+                f"Group-based split: {len(groups)} groups, {len(train_data)} training samples, {len(test_data)} test samples"
+            )
+
+        else:
+            # Original individual sample splitting
+            shuffled_data = data_samples.copy()
+            random.seed(42)  # For reproducible results
+            random.shuffle(shuffled_data)
+
+            # Calculate split point
+            train_size = int(len(shuffled_data) * train_ratio)
+
+            train_data = shuffled_data[:train_size]
+            test_data = shuffled_data[train_size:]
+
+            logger.info(
+                f"Individual split: {len(train_data)} training samples, {len(test_data)} test samples"
+            )
+
         return train_data, test_data
 
     def _export_format(

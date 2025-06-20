@@ -7,8 +7,8 @@ TRAIN_FILE=./examples/data/train.parquet
 VAL_FILE=./examples/data/test.parquet
 MODEL_PATH=./models/Qwen3-8B
 
-PROJECT_NAME=helpsteer2_pointwise_qwen3_8b
-EXPERIMENT_NAME=rm-gallery-qwen3-8b-${TIMESTAMP}
+PROJECT_NAME=helpsteer2_pointwise_${MODEL_NAME}
+EXPERIMENT_NAME=rm-gallery-${MODEL_NAME}-${TIMESTAMP}
 
 CUSTOM_REWARD_FUNCTION_PATH=./examples/train/pointwise/reward_fn.py
 CUSTOM_CHAT_RL_DATASET_PATH=./examples/train/pointwise/dataset.py

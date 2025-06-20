@@ -1,0 +1,15 @@
+dataset:
+    name: rewardbench2                    # data nanme(local: rewardbench2, huggingface: allenai/reward-bench-2)
+    configs:
+        type: local                       # data source type: local/huggingface
+        source: rewardbench2              # data source identifier(need to ensure the converter is registered)
+        path: ./data/reward-bench-2/data/test-00000-of-00001.parquet       # data file path(only valid when local)
+    export:                               # export config
+        output_dir: ./examples/data/exports # export path
+        formats: ["jsonl"]                # supported formats: jsonl, parquet, json
+        preserve_structure: true          # control whether to preserve the original directory structure when exporting data
+        split_ratio: {"train": 0.8, "test": 0.2} # split train and test set
+    metadata:
+        source: "rewardbench2"
+
+
