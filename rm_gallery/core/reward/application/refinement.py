@@ -1,12 +1,11 @@
-import uuid
-from typing import List
+from copy import deepcopy
 
 from pydantic import Field
 
 from rm_gallery.core.base import BaseModule
 from rm_gallery.core.data.schema import DataOutput, DataSample, Step
 from rm_gallery.core.model.base import BaseLLM
-from rm_gallery.core.model.message import ChatMessage, MessageRole, format_messages
+from rm_gallery.core.model.message import MessageRole, format_messages
 from rm_gallery.core.reward.base import BaseReward
 
 
@@ -26,11 +25,10 @@ class LLMRefinement(BaseModule):
 
     def _generate_response(
         self,
-        input: List[ChatMessage],
-        candicates: List[ChatMessage] | None = None,
+        sample: DataSample,
         feedback: str | None = None,
         **kwargs,
-    ):
+    ) -> DataSample:
         """
         Generate refined response based on conversation history and feedback.
 
@@ -41,7 +39,7 @@ class LLMRefinement(BaseModule):
             **kwargs: Additional parameters for LLM generation
 
         Returns:
-            Generated response as a ChatMessage object
+            Generated response as a DataSample object
         """
         # Construct prompt based on feedback availability
         if feedback is None:
@@ -51,7 +49,7 @@ Please generate a respoonse as the conversation required.
 # Conversation history
 {history}
 """.format(
-                history=format_messages(input)
+                history=format_messages(sample.input)
             )
         else:
             prompt = """# Task
@@ -66,20 +64,23 @@ Please generate a better response based on the feedback provided on candidate re
 # Feedback
 {feedback}
 """.format(
-                history=format_messages(input),
+                history=format_messages(sample.input),
                 responses="\n".join(
                     [
-                        f"<response_{i}>{msg.content}</response_{i+1}>"
-                        for i, msg in enumerate(candicates)
+                        f"<response_{i}>{output.answer.content}</response_{i+1}>"
+                        for i, output in enumerate(sample.output)
                     ]
                 ),
                 feedback=feedback,
             )
 
         respoonse = self.llm.simple_chat(prompt)
-        return ChatMessage(role=MessageRole.ASSISTANT, content=respoonse)
+        sample.output.append(
+            DataOutput(answer=Step(role=MessageRole.ASSISTANT, content=respoonse))
+        )
+        return sample
 
-    def _generate_feedback(self, sample: DataSample, **kwargs):
+    def _generate_feedback(self, sample: DataSample, **kwargs) -> str:
         """
         Generate quality feedback for a response sample.
 
@@ -95,7 +96,7 @@ Please generate a better response based on the feedback provided on candidate re
         feedback = sample.output[0].answer.reward.details[0].reason
         return feedback
 
-    def run(self, input: List[ChatMessage], **kwargs) -> ChatMessage:
+    def run(self, sample: DataSample, **kwargs) -> DataSample:
         """
         Execute iterative response refinement process.
 
@@ -106,27 +107,20 @@ Please generate a better response based on the feedback provided on candidate re
         Returns:
             Final refined response as a ChatMessage object
         """
-        # Initial response generation
-        response = self.llm.chat(input)
-        candicates = [response]
+        sample = deepcopy(sample)
+        if len(sample.output) == 0:
+            # Initial response generation
+            response = self.llm.chat(sample.input)
+            sample.output.append(
+                DataOutput(
+                    answer=Step(role=MessageRole.ASSISTANT, content=response.content)
+                )
+            )
 
         # Iterative refinement loop
         for i in range(self.max_iterations):
-            # Create evaluation sample with current response
-            sample = DataSample(
-                input=input,
-                output=[
-                    DataOutput(
-                        answer=Step(
-                            role=MessageRole.ASSISTANT, content=response.content
-                        )
-                    )
-                ],
-                unique_id=str(uuid.uuid4()),
-            )
-
             # Generate feedback and create refined response
             feedback = self._generate_feedback(sample, **kwargs)
-            response = self._generate_response(input, candicates, feedback, **kwargs)
-            candicates.append(response)
-        return response
+            sample = self._generate_response(sample, feedback, **kwargs)
+
+        return sample
