@@ -267,6 +267,14 @@ class BaseStepWiseReward(BaseReward):
                 step.reward.details.extend(result.details)
                 step.additional_kwargs[self.name] = result.extra_data
 
+        for i, output in enumerate(sample.output):
+            assert isinstance(output.steps, list)
+            for j, step in enumerate(output.steps):
+                if len(step.reward.details) > 0:
+                    step.reward.score = sum(r.score for r in step.reward.details) / len(
+                        step.reward.details
+                    )
+
         return sample
 
 
@@ -358,6 +366,12 @@ class BasePointWiseReward(BaseReward):
                 output.answer.reward.details += result.details
                 output.answer.additional_kwargs[self.name] = result.extra_data
 
+        for output in sample.output:
+            if len(output.answer.reward.details) > 0:
+                output.answer.reward.score = sum(
+                    r.score for r in output.answer.reward.details
+                ) / len(output.answer.reward.details)
+
         return sample
 
 
@@ -417,6 +431,10 @@ class BaseListWiseReward(BaseReward):
         for reward in result.details:
             for i, output in enumerate(sample.output):
                 output.answer.reward.details.append(reward[i])
+                if len(output.answer.reward.details) > 0:
+                    output.answer.reward.score = sum(
+                        r.score for r in output.answer.reward.details
+                    ) / len(output.answer.reward.details)
 
         # Store additional metadata in sample input
         sample.input[-1].additional_kwargs[self.name] = result.extra_data

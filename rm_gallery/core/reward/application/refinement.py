@@ -33,8 +33,7 @@ class LLMRefinement(BaseModule):
         Generate refined response based on conversation history and feedback.
 
         Args:
-            input: List of chat messages forming the conversation history
-            candicates: Previous response attempts to be improved upon
+            sample: DataSample object containing input and previous responses
             feedback: Quality assessment feedback for previous responses
             **kwargs: Additional parameters for LLM generation
 
@@ -101,11 +100,11 @@ Please generate a better response based on the feedback provided on candidate re
         Execute iterative response refinement process.
 
         Args:
-            input: List of chat messages forming the conversation history
+            sample: Data sample containing input for refinement
             **kwargs: Additional parameters for generation and evaluation
 
         Returns:
-            Final refined response as a ChatMessage object
+            Final refined response as a DataSample object
         """
         sample = deepcopy(sample)
         if len(sample.output) == 0:
