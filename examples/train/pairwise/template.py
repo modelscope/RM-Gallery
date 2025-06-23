@@ -1,59 +1,7 @@
 from pydantic import Field
+from typing import Optional
 
 from rm_gallery.core.reward.template import BasePromptTemplate
-
-
-class PointwiseEvaluationTemplate(BasePromptTemplate):
-    """
-    Template for pointwise evaluation tasks using scoring system.
-    """
-
-    score: int = Field(default=..., description="score from 0 to 4")
-
-    @classmethod
-    def parse(cls, text: str):
-        """Parse text and create instance."""
-        try:
-            contents = cls._parse(text)
-            if "score" in contents:
-                contents["score"] = int(contents["score"])
-            return cls(**contents)
-        except Exception as e:
-            raise ValueError(f"Failed to parse: {e}")
-
-    @classmethod
-    def format(
-        cls,
-        desc: str,
-        principles: str,
-        examples: str,
-        query: str,
-        context: str,
-        answer: str,
-        **kwargs,
-    ) -> str:
-        if examples:
-            examples = f"# Examples\n{examples}\n"
-
-        return f"""# Task Description
-        {desc}
-        # Principles
-        {principles}
-
-        {examples}
-
-        # Query
-        {query}
-
-        # Context
-        {context}
-
-        # Answer
-        {answer}
-
-        # Output Requirement
-        {cls.schema(**kwargs)}
-        """
 
 
 class PairwiseComparisonTemplate(BasePromptTemplate):
@@ -63,24 +11,27 @@ class PairwiseComparisonTemplate(BasePromptTemplate):
     """
 
     think: str = Field(default=..., description="your reasoning trace", alias="think")
-    preference: str = Field(default=..., description="which response is better: A or B")
+    preference: Optional[str] = Field(
+        default=None, description="which response is better: A, B, or tie"
+    )
 
     @classmethod
     def parse(cls, text: str):
         """Parse text and create instance."""
         try:
             contents = cls._parse(text)
-            if "preference" in contents:
-                preference = contents["preference"].strip().upper()
-                # Normalize preference values
-                if preference in ["A", "RESPONSE A", "ANSWER A"]:
-                    contents["preference"] = "A"
-                elif preference in ["B", "RESPONSE B", "ANSWER B"]:
-                    contents["preference"] = "B"
-                elif preference in ["TIE", "EQUAL", "SAME"]:
-                    contents["preference"] = "tie"
-                else:
-                    contents["preference"] = preference
+            # 当未检测到 <preference> 标签时，给出默认值以避免未定义错误
+            preference = contents.get("preference", "unknown").strip().upper()
+
+            # Normalize preference values
+            if preference in ["A", "RESPONSE A", "ANSWER A"]:
+                contents["preference"] = "A"
+            elif preference in ["B", "RESPONSE B", "ANSWER B"]:
+                contents["preference"] = "B"
+            elif preference in ["TIE", "EQUAL", "SAME"]:
+                contents["preference"] = "tie"
+            else:
+                contents["preference"] = preference
             return cls(**contents)
         except Exception as e:
             raise ValueError(f"Failed to parse: {e}")
@@ -100,21 +51,22 @@ class PairwiseComparisonTemplate(BasePromptTemplate):
             examples = f"# Examples\n{examples}\n"
 
         return f"""# Task Description
-        {desc}
-        # Principles
-        {principles}
+{desc}
 
-        {examples}
+# Principles
+{principles}
 
-        # Query
-        {query}
+{examples}
 
-        # Response A
-        {response_a}
+# Query
+{query}
 
-        # Response B
-        {response_b}
+# Response A
+{response_a}
 
-        # Output Requirement
-        {cls.schema(**kwargs)}
-        """
+# Response B
+{response_b}
+
+# Output Requirement
+{cls.schema(**kwargs)}
+""" 

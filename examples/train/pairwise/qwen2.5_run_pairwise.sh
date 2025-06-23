@@ -5,10 +5,10 @@ TIMESTAMP=$(date "+%m%dT%H%M")
 
 TRAIN_FILE=./examples/data/exports/preference_train.parquet
 VAL_FILE=./examples/data/exports/preference_test.parquet
-MODEL_PATH=/mnt/data_cpfs/xielipeng.xlp/models/Qwen3-14B
+MODEL_PATH=/mnt/data_cpfs/xielipeng.xlp/models/Qwen2.5-14B-Instruct
 
 PROJECT_NAME=pairwise_train
-EXPERIMENT_NAME=rm-gallery-pairwise-qwen3-14b-${TIMESTAMP}
+EXPERIMENT_NAME=rm-gallery-pairwise-qwen2.5-14b-${TIMESTAMP}
 
 CUSTOM_REWARD_FUNCTION_PATH=./examples/train/pairwise/reward_fn.py
 CUSTOM_CHAT_RL_DATASET_PATH=./examples/train/pairwise/dataset.py

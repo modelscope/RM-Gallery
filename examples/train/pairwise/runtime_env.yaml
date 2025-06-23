@@ -1,5 +1,10 @@
 # working_dir: ./
 excludes: ["/.git/"]
+pip:
+  - retry==0.9.2
+  - pydantic>=2.11.5
+  - loguru>=0.7.3
+  - jsonlines>=4.0.0
 env_vars:
   TORCH_NCCL_AVOID_RECORD_STREAMS: "1"
   PYTORCH_CUDA_ALLOC_CONF: "expandable_segments: False"
@@ -7,4 +12,4 @@ env_vars:
   WANDB_BASE_URL: "http://22.6.186.25:8080"
   HYDRA_FULL_ERROR: "1"
   # If you are using vllm<=0.6.3, you might need to set the following environment variable to avoid bugs:
-  # VLLM_ATTENTION_BACKEND: "XFORMERS"
+  # VLLM_ATTENTION_BACKEND: "XFORMERS" 
