@@ -13,49 +13,61 @@ from rm_gallery.core.base import BaseModule
 from rm_gallery.core.data.schema import BaseDataSet, DataSample
 
 
-class BaseData(BaseModel):
-    """Base data class, parent class for all specific data types"""
-    unique_id: str = Field(..., description="Unique identifier for the data")
-    evaluation_sample: DataSample = Field(
-        default_factory=DataSample,
-        serialization_alias="evaluationSample",
-    )
-    created_at: datetime = Field(default_factory=datetime.now, description="Creation timestamp")
-    extra_metadata: Optional[Dict] = Field(
-        default=None, serialization_alias="extraMetadata"
-    )
+class DataModuleType(Enum):
+    """
+    Enumeration of supported data module types for categorizing processing components.
 
-    # 更新数据的接口
-    def update(self, other, **kwargs):
-        for key, value in kwargs.items():
-            if hasattr(self, key):
-                setattr(self, key, value)
-            else:
-                raise ValueError(f"Invalid field: {key}")
-    
-    class Config:
-        arbitrary_types_allowed = True
-        json_encoders = {
-            datetime: lambda v: v.isoformat()
-        }
+    Each type represents a distinct stage in the data pipeline:
+    - BUILD: Orchestrates the entire data pipeline workflow
+    - LOAD: Ingests data from external sources
+    - GENERATE: Creates new data samples programmatically
+    - PROCESS: Transforms and filters existing data
+    - ANNOTATION: Adds labels and metadata to data
+    - EXPORT: Outputs data to various target formats
+    """
+
+    BUILD = "builder"
+    LOAD = "loader"
+    GENERATE = "generator"
+    PROCESS = "processor"
+    ANNOTATION = "annotator"
+    EXPORT = "exporter"
 
 
+class BaseDataModule(BaseModule):
+    """
+    Abstract base class for all data processing modules in the pipeline.
 
-    def update(self,other):
-        pass
+    Provides common interface and metadata management for data operations.
+    All concrete data modules must inherit from this class and implement the run method.
 
+    Attributes:
+        module_type: Type classification of the data module from DataModuleType enum
+        name: Unique identifier for the module instance
+        config: Module-specific configuration parameters
+        metadata: Additional metadata for tracking and debugging
+    """
 
-class BaseDataSet(BaseModel):
-    """Base dataset class for managing collections of data"""
-    datas: Sequence[BaseData] = Field(default_factory=list, description="List of data items")
-    name: str = Field(..., description="Dataset name")
-    description: Optional[str] = Field(None, description="Dataset description")
-    version: str = Field("1.0.0", description="Dataset version")
-    extra_metadata: Dict[str, Any] = Field(default_factory=dict, description="Dataset metadata")
+    module_type: DataModuleType = Field(..., description="module type")
+    name: str = Field(..., description="module name")
+    config: Optional[Dict[str, Any]] = Field(None, description="module config")
+    metadata: Optional[Dict[str, Any]] = Field(None, description="metadata")
 
     @abstractmethod
     def run(self, input_data: Union[BaseDataSet, List[DataSample]], **kwargs):
-        """run data module"""
+        """
+        Execute the module's data processing logic.
+
+        Args:
+            input_data: Input dataset or list of data samples to process
+            **kwargs: Additional runtime parameters specific to the module
+
+        Returns:
+            Processed data in the form of BaseDataSet or List[DataSample]
+
+        Raises:
+            NotImplementedError: If not implemented by concrete subclass
+        """
         pass
 
     def get_module_info(self) -> Dict[str, Any]:
