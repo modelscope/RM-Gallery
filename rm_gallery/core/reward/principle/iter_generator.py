@@ -209,7 +209,7 @@ class IterPrincipleGenerator(PrincipleGenerator):
             Modified sample with generated principles in metadata
         """
         sample = copy.deepcopy(sample)
-        instructioin: str = format_messages(sample.input)
+        instruction: str = format_messages(sample.input)
         completions = [
             (
                 output.answer.label["preference"],
@@ -229,7 +229,7 @@ class IterPrincipleGenerator(PrincipleGenerator):
         completions = [completion for _, completion, _ in completions]
 
         prompt = PrincipleGenerateTempalte.format(
-            instruction=instructioin,
+            instruction=instruction,
             completions=completions,
             enable_thinking=self.llm.enable_thinking,
             scenario=self.scenario,

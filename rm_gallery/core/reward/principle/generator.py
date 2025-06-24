@@ -190,7 +190,7 @@ class PrincipleGenerator(BaseModel):
         """
         # Deep copy to avoid modifying original sample
         sample = copy.deepcopy(sample)
-        instructioin: str = format_messages(sample.input)
+        instruction: str = format_messages(sample.input)
 
         # Process completions and identify best one
         completions = [
@@ -205,7 +205,7 @@ class PrincipleGenerator(BaseModel):
 
         # Generate prompt and get LLM response
         prompt = PrincipleGenerateTempalte.format(
-            instruction=instructioin,
+            instruction=instruction,
             completions=completions,
             preference=best,
             enable_thinking=self.llm.enable_thinking,
