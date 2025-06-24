@@ -2,21 +2,21 @@
 English | [**中文**](./README_ZH.md)
 <h2 align="center">RM-Gallery: A One-Stop Reward Model Platform</h2>
 
-[![](https://img.shields.io/badge/python-3.10+-blue)](https://pypi.org/project/memoryscope/)
-[![](https://img.shields.io/badge/pypi-v0.1.1.0-blue?logo=pypi)](https://pypi.org/project/memoryscope/)
+[![](https://img.shields.io/badge/python-3.10+-blue)](https://pypi.org/project/rm-gallery/)
+[![](https://img.shields.io/badge/pypi-v0.1.1.0-blue?logo=pypi)](https://pypi.org/project/rm-gallery/)
 [![](https://img.shields.io/badge/license-Apache--2.0-black)](./LICENSE)
-[![](https://img.shields.io/badge/Docs-English%7C%E4%B8%AD%E6%96%87-blue?logo=markdown)](https://modelscope.github.io/MemoryScope/en/index.html#welcome-to-memoryscope-tutorial)
-[![](https://img.shields.io/badge/Docs-API_Reference-blue?logo=markdown)](https://modelscope.github.io/MemoryScope/en/docs/api.html)
-[![](https://img.shields.io/badge/Contribute-Welcome-green)](https://modelscope.github.io/MemoryScope/en/docs/contribution.html)
+[![](https://img.shields.io/badge/Docs-English%7C%E4%B8%AD%E6%96%87-blue?logo=markdown)]()
+[![](https://img.shields.io/badge/Docs-API_Reference-blue?logo=markdown)]()
+[![](https://img.shields.io/badge/Contribute-Welcome-green)]()
 
 ----
 ## 📢 News
-- **[2025-06-XX]** We release RM Gallery vXX now, which is also available in [PyPI](https://pypi.org/simple/rm-gallery/)!
+- **[2025-06-XX]** We release RM Gallery v0.1.0 now, which is also available in [PyPI](https://pypi.org/simple/rm-gallery/)!
 ----
 
 ## 🌟 Why RM-Gallery?
 
-RM-Gallery is a one-stop platform for training, building and deploying reward models. It provides a comprehensive solution for implementing reward models at both task-level and component-level, with high-throughput and fault-tolerant capabilities.
+RM-Gallery is a one-stop platform for training, building and operationalizing reward models. It provides a comprehensive solution for implementing reward models at both task-level and component-level, with high-throughput and fault-tolerant capabilities.
 
 <p align="center">
  <img src="./docs/images/framework.png" alt="Framework" width="75%">
@@ -32,9 +32,9 @@ RM-Gallery is a one-stop platform for training, building and deploying reward mo
 
 - **Principle-Critic-Score Paradigm**: Adopts the Principle+Critic+Score-based reasoning Reward Model  paradigm, offering best practices to help users generate principles with limited preference data.
 
-### Deploying RM
+### Operationalizing RM
 
-- **Multiple Usage Scenarios**: Covers multiple Reward Model (RM) usage scenarios with detailed best practices, including Training with Rewards (e.g., post-training), Inference with Rewards (e.g., Best-of-N), and Post-Inference with Rewards (e.g., self-correction).
+- **Multiple Usage Scenarios**: Covers multiple Reward Model (RM) usage scenarios with detailed best practices, including Training with Rewards (e.g., post-training), Inference with Rewards (e.g., Best-of-N，refinement)
 
 - **High-Performance RM Serving**: Leverages the New API platform to deliver high-throughput, fault-tolerant reward model serving, enhancing feedback efficiency.
 
@@ -51,7 +51,6 @@ RM-Gallery is a one-stop platform for training, building and deploying reward mo
 git clone https://github.com/modelscope/rm-gallery.git
 
 # Install the package in editable mode
-cd rm-gallery
 pip install -e .
 ```
 
@@ -80,15 +79,19 @@ For complete basic usage of RM-Gallery, please refer to [Quick Start](docs/quick
         - [data processor](docs/tutorial/data/process.ipynb)
     - training rm
         - [training a reasoning reward model](docs/tutorial/training_rm/pointwise.ipynb)
+
     - building rm
+        - [overview](docs/tutorial/building_rm/overview.ipynb)
         - [ready-to-use RMs](docs/tutorial/building_rm/ready2use.ipynb)
         - [building a custom RM](docs/tutorial/building_rm/customization.ipynb)
         - [auto principle](docs/tutorial/building_rm/customization.ipynb)
     - rm serving
-        - [High-Performance Model Serving](docs/tutorial/deploy_rm_server/tutorial.md)
-    - deploying rm
-        - [RL training](docs/tutorial/rm_serving/rm_server.md)
-        - [Inference Time Scaling](docs/tutorial/deploying_rm/inference_time_scaling.ipynb)
+        - [High-Performance RM Serving](docs/tutorial/rm_serving/rm_server.md)
+
+    - rm application
+        - [post training](docs/tutorial/rm_application/post_training.ipynb)
+        - [best-of-n](docs/tutorial/rm_application/best_of_n.ipynb)
+        - [refinement](docs/tutorial/rm_application/refinement.ipynb)
 
 
 
