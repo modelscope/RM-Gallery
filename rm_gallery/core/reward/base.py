@@ -687,11 +687,17 @@ Be as goal as possible.""",
         Returns:
             RewardResult: Violation score with explanation
         """
+        # Convert violation list to a single score (e.g., average or sum)
+        score = (
+            1 - len(response.violation) / len(self.principles)
+            if response.violation
+            else 1.0
+        )
         return RewardResult(
             name=self.name,
             details=[
-                RewardDimensionWithRank(
-                    name=self.name, reason=response.reason, rank=response.violation
+                RewardDimensionWithScore(
+                    name=self.name, reason=response.reason, score=score
                 )
             ],
         )

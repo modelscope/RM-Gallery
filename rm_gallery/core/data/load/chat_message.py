@@ -9,7 +9,13 @@ from typing import Any, Dict
 from loguru import logger
 
 from rm_gallery.core.data.load.base import DataConverter, DataConverterRegistry
-from rm_gallery.core.data.schema import ChatMessage, DataSample
+from rm_gallery.core.data.schema import (
+    ChatMessage,
+    DataOutput,
+    DataSample,
+    Reward,
+    Step,
+)
 
 
 @DataConverterRegistry.register("chat_message")
@@ -55,16 +61,56 @@ class ChatMessageConverter(DataConverter):
         try:
             # Create input from messages
             data_input = []
-            messages = data_dict.get("messages", [])
-            if isinstance(messages, list):
-                for msg in messages:
-                    if isinstance(msg, dict):
-                        role = msg.get("role", "user")
-                        content = msg.get("content", "")
-                        data_input.append(ChatMessage(role=role, content=content))
-
-            # Create simple output
             data_output = []
+            messages = data_dict.get("messages", [])
+
+            if isinstance(messages, list) and len(messages) > 0:
+                # check if the conversation is paired
+                is_paired_conversation = True
+                if len(messages) % 2 != 0:
+                    is_paired_conversation = False
+                else:
+                    for i in range(0, len(messages), 2):
+                        if (
+                            i + 1 < len(messages)
+                            and messages[i].get("role") == "user"
+                            and messages[i + 1].get("role") == "assistant"
+                        ):
+                            continue
+                        else:
+                            is_paired_conversation = False
+                            break
+
+                if is_paired_conversation and len(messages) >= 2:
+                    # if the conversation is paired, the last assistant message is the output, others are the input
+                    for i, msg in enumerate(messages):
+                        if isinstance(msg, dict):
+                            role = msg.get("role", "user")
+                            content = msg.get("content", "")
+
+                            # the last assistant message is the output
+                            if i == len(messages) - 1 and role == "assistant":
+                                # Convert to DataOutput format
+                                answer_step = Step(
+                                    role=role,
+                                    content=content,
+                                    label={},
+                                    reward=Reward(),
+                                )
+                                data_output.append(
+                                    DataOutput(answer=answer_step, steps=None)
+                                )
+                            else:
+                                data_input.append(
+                                    ChatMessage(role=role, content=content)
+                                )
+                else:
+                    # if the conversation is not paired, all messages are the input
+                    for msg in messages:
+                        if isinstance(msg, dict):
+                            role = msg.get("role", "user")
+                            content = msg.get("content", "")
+                            data_input.append(ChatMessage(role=role, content=content))
 
             # Build metadata based on source type
             metadata = {

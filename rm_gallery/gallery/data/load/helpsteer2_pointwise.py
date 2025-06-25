@@ -7,8 +7,8 @@ from rm_gallery.core.data.load.base import DataConverter, DataConverterRegistry
 from rm_gallery.core.data.schema import ChatMessage, DataOutput, DataSample, Step
 
 
-@DataConverterRegistry.register("helpsteer2")
-class HelpSteer2Converter(DataConverter):
+@DataConverterRegistry.register("helpsteer2_pointwise")
+class HelpSteer2PointwiseConverter(DataConverter):
     """
     Unified converter for HelpSteer2 data format
     Can handle data from both local files and HuggingFace Hub
