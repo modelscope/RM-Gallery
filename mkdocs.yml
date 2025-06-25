@@ -1,10 +1,15 @@
 site_name: RM-Gallery
 theme:
   name: material
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+  palette:
+    primary: light blue
 nav:
   - Overview: index.md
   - Quick Start: quick_start.ipynb
-  - Benchmark: benchmark.md
   - Contribution: contribution.md
   - Tutorials:
     - Data:

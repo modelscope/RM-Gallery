@@ -1,25 +1,24 @@
 <!-- # RM-Gallery: A One-Stop Reward Model Platform -->
-English | [**中文**](./README_ZH.md)
 <h2 align="center">RM-Gallery: A One-Stop Reward Model Platform</h2>
 
-[![](https://img.shields.io/badge/python-3.10+-blue)](https://pypi.org/project/memoryscope/)
-[![](https://img.shields.io/badge/pypi-v0.1.1.0-blue?logo=pypi)](https://pypi.org/project/memoryscope/)
+[![](https://img.shields.io/badge/python-3.10+-blue)](https://pypi.org/project/rm-gallery/)
+[![](https://img.shields.io/badge/pypi-v0.1.1.0-blue?logo=pypi)](https://pypi.org/project/rm-gallery/)
 [![](https://img.shields.io/badge/license-Apache--2.0-black)](./LICENSE)
-[![](https://img.shields.io/badge/Docs-English%7C%E4%B8%AD%E6%96%87-blue?logo=markdown)](https://modelscope.github.io/MemoryScope/en/index.html#welcome-to-memoryscope-tutorial)
-[![](https://img.shields.io/badge/Docs-API_Reference-blue?logo=markdown)](https://modelscope.github.io/MemoryScope/en/./api.html)
-[![](https://img.shields.io/badge/Contribute-Welcome-green)](https://modelscope.github.io/MemoryScope/en/./contribution.html)
+[![](https://img.shields.io/badge/Docs-English%7C%E4%B8%AD%E6%96%87-blue?logo=markdown)]()
+[![](https://img.shields.io/badge/Docs-API_Reference-blue?logo=markdown)]()
+[![](https://img.shields.io/badge/Contribute-Welcome-green)]()
 
 ----
 ## 📢 News
-- **[2025-06-XX]** We release RM Gallery vXX now, which is also available in [PyPI](https://pypi.org/simple/rm-gallery/)!
+- **[2025-06-XX]** We release RM Gallery v0.1.0 now, which is also available in [PyPI](https://pypi.org/simple/rm-gallery/)!
 ----
 
 ## 🌟 Why RM-Gallery?
 
-RM-Gallery is a one-stop platform for training, building and deploying reward models. It provides a comprehensive solution for implementing reward models at both task-level and component-level, with high-throughput and fault-tolerant capabilities.
+RM-Gallery is a one-stop platform for training, building and applying reward models. It provides a comprehensive solution for implementing reward models at both task-level and component-level, with high-throughput and fault-tolerant capabilities.
 
 <p align="center">
- <img src="././images/framework.png" alt="Framework" width="75%">
+ <img src="./docs/images/framework.png" alt="Framework" width="75%">
 </p>
 
 ### Training RM
@@ -32,9 +31,9 @@ RM-Gallery is a one-stop platform for training, building and deploying reward mo
 
 - **Principle-Critic-Score Paradigm**: Adopts the Principle+Critic+Score-based reasoning Reward Model  paradigm, offering best practices to help users generate principles with limited preference data.
 
-### Deploying RM
+### Applying RM
 
-- **Multiple Usage Scenarios**: Covers multiple Reward Model (RM) usage scenarios with detailed best practices, including Training with Rewards (e.g., post-training), Inference with Rewards (e.g., Best-of-N), and Post-Inference with Rewards (e.g., self-correction).
+- **Multiple Usage Scenarios**: Covers multiple Reward Model (RM) usage scenarios with detailed best practices, including Training with Rewards (e.g., post-training), Inference with Rewards (e.g., Best-of-N，refinement)
 
 - **High-Performance RM Serving**: Leverages the New API platform to deliver high-throughput, fault-tolerant reward model serving, enhancing feedback efficiency.
 
@@ -51,7 +50,6 @@ RM-Gallery is a one-stop platform for training, building and deploying reward mo
 git clone https://github.com/modelscope/rm-gallery.git
 
 # Install the package in editable mode
-cd rm-gallery
 pip install -e .
 ```
 
@@ -68,27 +66,35 @@ pip install rm-gallery
 #Initialize using the registry pattern
 rm = RewardRegistry.get("Your RM's Registry Name")(name="demo_rm")
 ```
-For complete basic usage of RM-Gallery, please refer to [Quick Start](./quick_start.ipynb).
+For complete basic usage of RM-Gallery, please refer to [Quick Start](docs/quick_start.ipynb).
 
 
 ## 📚 Documentation
 - Tutorial:
     - data
-        - [data pipeline](./tutorial/data/pipeline.ipynb)
-        - [data annotator](./tutorial/data/annotation.ipynb)
-        - [data loader](./tutorial/data/load.ipynb)
-        - [data processor](./tutorial/data/process.ipynb)
+        - [data pipeline](tutorial/data/pipeline.ipynb)
+        - [data annotator](tutorial/data/annotation.ipynb)
+        - [data loader](tutorial/data/load.ipynb)
+        - [data processor](tutorial/data/process.ipynb)
     - training rm
-        - [training a reasoning reward model](./tutorial/training_rm/pointwise.ipynb)
+        - [training overview](tutorial/training_rm/overview.md)
+        - [training a pointwise rm](tutorial/training_rm/pointwise.md)
+        - [training a pairwise rm](tutorial/training_rm/pairwise.md)
+
     - building rm
-        - [ready-to-use RMs](./tutorial/building_rm/ready2use.ipynb)
-        - [building a custom RM](./tutorial/building_rm/customization.ipynb)
-        - [auto principle](./tutorial/building_rm/customization.ipynb)
+        - [overview](tutorial/building_rm/overview.ipynb)
+        - [ready-to-use RMs](tutorial/building_rm/ready2use_rewards.md)
+        - [building a custom RM](tutorial/building_rm/custom_reward.ipynb)
+        - [auto principle](tutorial/building_rm/autoprinciple.ipynb)
+        - [benchmark practices](tutorial/building_rm/benchmark_practices.ipynb)
+
     - rm serving
-        - [High-Performance Model Serving](./tutorial/deploy_rm_server/tutorial.md)
-    - deploying rm
-        - [RL training](./tutorial/rm_serving/rm_server.md)
-        - [Inference Time Scaling](./tutorial/deploying_rm/inference_time_scaling.ipynb)
+        - [High-Performance RM Serving](tutorial/rm_serving/rm_server.md)
+
+    - rm application
+        - [post training](tutorial/rm_application/post_training.ipynb)
+        - [best-of-n](tutorial/rm_application/best_of_n.ipynb)
+        - [refinement](tutorial/rm_application/refinement.ipynb)
 
 
 
@@ -105,7 +111,7 @@ pip install -e .
 pre-commit install
 ```
 
-Please refer to our [Contribution Guide](./contribution.md) for more details.
+Please refer to our [Contribution Guide](.contribution.md) for more details.
 
 ## 📝 Citation
 
