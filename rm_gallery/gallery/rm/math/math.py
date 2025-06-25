@@ -1,4 +1,4 @@
-from math_verify.metric import math_metric
+from math_verify import parse, verify
 from math_verify.parser import ExprExtractionConfig, LatexExtractionConfig
 from pydantic import Field
 
@@ -30,21 +30,43 @@ class MathVerifyReward(BasePointWiseReward):
         generated = sample.output[0].answer.content.strip()
         reference = sample.output[0].answer.label.get("reference", "").strip()
 
-        # Use the compute_score function to verify the math
-        verify_func = math_metric(
-            gold_extraction_target=(LatexExtractionConfig(),),
-            pred_extraction_target=(ExprExtractionConfig(), LatexExtractionConfig()),
-        )
-
         score = 0.0
-
-        # Wrap the ground truth in \boxed{} format for verification
-        reference_boxed = "\\boxed{" + reference + "}"
+        reason = "Verification failed or timed out"
 
         try:
-            score, details = verify_func([reference_boxed], [generated])
-        except Exception:
-            pass
+            # Parse the reference (gold) answer
+            # Use both LatexExtractionConfig and ExprExtractionConfig for maximum flexibility
+            gold_parsed = parse(
+                reference,
+                extraction_config=[LatexExtractionConfig(), ExprExtractionConfig()],
+            )
+
+            # Parse the generated answer
+            pred_parsed = parse(
+                generated,
+                extraction_config=[LatexExtractionConfig(), ExprExtractionConfig()],
+            )
+
+            # If both parsing succeeded and we have results
+            if gold_parsed and pred_parsed:
+                # Use the first parsed result from each
+                gold_expr = gold_parsed[0]
+                pred_expr = pred_parsed[0]
+
+                # Verify if they match
+                if verify(gold_expr, pred_expr):
+                    score = 1.0
+                    reason = f"({gold_parsed}, {pred_parsed})"
+                else:
+                    score = 0.0
+                    reason = f"({gold_parsed}, {pred_parsed})"
+            else:
+                score = 0.0
+                reason = f"Parsing failed - gold: {gold_parsed}, pred: {pred_parsed}"
+
+        except Exception as e:
+            score = self.timeout_score
+            reason = f"Exception occurred: {str(e)}"
 
         return RewardResult(
             name=self.name,
@@ -52,7 +74,7 @@ class MathVerifyReward(BasePointWiseReward):
                 RewardDimensionWithScore(
                     name=self.name,
                     score=score,
-                    reason=details,
+                    reason=str(reason),
                 )
             ],
             extra_data={

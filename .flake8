@@ -27,3 +27,4 @@ per-file-ignores =
     # Ignore unused imports in __init__.py
     __init__.py: F401, F403
     tests/test_principle_generator.py: F401, F403
+    tests/test_code.py: W191, E101

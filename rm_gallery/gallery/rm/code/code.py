@@ -3,6 +3,7 @@ import difflib
 import json
 import re
 import traceback
+from typing import Any, Optional
 
 from pydantic import Field
 
@@ -288,6 +289,12 @@ class CodeExecutionReward(BasePointWiseReward):
     )
     timeout: int = Field(
         default=10, description="Timeout in seconds for code execution"
+    )
+    test_framework_available: bool = Field(
+        default=True, description="Whether testing framework is available"
+    )
+    compute_score: Optional[Any] = Field(
+        default=None, description="Compute score function"
     )
 
     def __init__(self, **data):
