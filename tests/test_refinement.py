@@ -1,5 +1,3 @@
-# ... existing code ...
-
 from loguru import logger
 
 from rm_gallery.core.data.schema import DataSample, Reward, Step

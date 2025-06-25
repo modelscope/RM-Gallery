@@ -12,19 +12,21 @@ nav:
       - Load: tutorial/data/load.ipynb
       - Pipeline: tutorial/data/pipeline.ipynb
       - Process: tutorial/data/process.ipynb
+    - Train RM:
+      - Overview: tutorial/training_rm//train.md
+      - Pointwise: tutorial/training_rm/pointwise.md
+      - Pairwise: tutorial/training_rm/pairwise.md
     - Build RM:
-      - Ready to Use: tutorial/building_rm/ready2use.ipynb
-      - Customization: tutorial/building_rm/customization.ipynb
+      - Overview: docs/tutorial/building_rm/overview.ipynb
+      - Customization: tutorial/building_rm/custom_reward.ipynb
       - Auto Principle: tutorial/building_rm/autoprinciple.ipynb
-    - Deploy RM:
+      - Built-in Rewards: tutorial/building_rm/built_in_rewards.md
+      - Benchmark: tutorial/building_rm/benchmark_practices.ipynb
+    - RM Server: tutorial/rm_servering/rm_server.md
+    - Application:
       - Best of N: tutorial/deploying_rm/best_of_n.ipynb
-      - Inference Time Scaling: tutorial/deploying_rm/inference_time_scaling.ipynb
       - Post Traning with RM: tutorial/deploying_rm/post_traning_with_rm.ipynb
       - Refinement: tutorial/deploying_rm/refinement.ipynb
-    - RM Server: tutorial/rm_servering/rm_server.md
-    - Train RM:
-      - Pointwise: tutorial/training_rm/pointwise.ipynb
-      - Pairwise: tutorial/training_rm/pairwise_zh.ipynb
 plugins:
   - search
   - mkdocs-autoapi:

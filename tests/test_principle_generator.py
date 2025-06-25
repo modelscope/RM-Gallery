@@ -1,155 +1,87 @@
-import os
-from concurrent.futures import ThreadPoolExecutor
-from typing import List
+from unittest.mock import MagicMock, patch
 
-from loguru import logger
+import pytest
 
-from rm_gallery.core.data.schema import DataSample
+from rm_gallery.core.data.schema import DataOutput, DataSample, Step
+from rm_gallery.core.model.base import BaseLLM
+from rm_gallery.core.model.message import ChatMessage
 from rm_gallery.core.model.openai_llm import OpenaiLLM
 from rm_gallery.core.reward.principle.generator import PrincipleGenerator
-from rm_gallery.core.reward.registry import RewardRegistry
-from rm_gallery.core.utils.file import read_json, read_jsonl, write_json
-from rm_gallery.gallery import *  # ignore [E402]
 
 
-def generate(samples: List[DataSample], scenario, generator_number, cluster_number):
-    llm = OpenaiLLM(model="qwen3-235b-a22b", enable_thinking=True)
+@pytest.fixture
+def mock_llm():
+    llm = MagicMock(spec=BaseLLM)
+    llm.simple_chat.return_value = '<think>here is a reasoning trace</think><principles>```json{"test_key": "test_description"}```</principles>'
+    llm.enable_thinking = True  # Add missing attribute
+    return llm
 
+
+@pytest.fixture
+def sample_data():
+    return DataSample(
+        unique_id="test",
+        input=[ChatMessage(role="user", content="Hello!")],
+        output=[
+            DataOutput(
+                answer=Step(
+                    role="assistant",
+                    content="Hello! How can I assist you today?",
+                    label={"preference": "chosen"},
+                )
+            ),
+            DataOutput(
+                answer=Step(
+                    role="assistant", content="Hello!", label={"preference": "rejected"}
+                )
+            ),
+        ],
+    )
+
+
+def test_generate(mock_llm: MagicMock, sample_data: DataSample):
     generator = PrincipleGenerator(
-        llm=llm,
-        scenario=scenario,
-        generate_number=generator_number,
-        cluster_number=cluster_number,
+        llm=mock_llm, scenario="test", generate_number=1, cluster_number=1
     )
-    principles = generator.run_batch(
-        samples, thread_pool=ThreadPoolExecutor(max_workers=256)
-    )
-    return principles
 
-
-def test_principle_generator():
-    samples = read_jsonl("data/loaded_dataset_rewardbench_2_output.jsonl")
-    samples = [DataSample(**sample) for sample in samples]
-
-    principles = generate(samples)
-    print(principles)
-
-
-def test_3h_generate():
-    HHH = {
-        "Honesty": ["Factuality"],
-        # "Harmfulness": ["Safety"],
-        # "Helpfulness": ["Precise IF", "Math", "Focus", "Ties"],
+    result = generator.generate(sample_data)
+    assert hasattr(result.input[-1], "additional_kwargs")
+    assert "generate" in result.input[-1].additional_kwargs
+    # Added verification of principle content
+    assert result.input[-1].additional_kwargs["generate"]["principles"] == {
+        "test_key": "test_description"
     }
 
-    principles = {}
 
-    for h_name, h_set in HHH.items():
-        samples = []
-        for file in h_set:
-            samples += read_jsonl(f"data/rewardbench2/{file} Train.jsonl")
+def test_cluster(mock_llm: MagicMock, sample_data: DataSample):
+    generator = PrincipleGenerator(
+        llm=mock_llm, scenario="test", generate_number=1, cluster_number=1
+    )
 
-        samples = [DataSample(**sample) for sample in samples]
-        desc = f"You are a professional expert in {h_name.lower()} evaluation"
-        principles[h_name] = generate(samples, desc)
+    # Modified to use real generate call
+    generated_samples = [generator.generate(sample_data)]
+    result = generator.cluster(generated_samples)
 
-    write_json(principles, "data/3h_principles.json")
-
-
-def calc_acc(samples: List[DataSample]):
-    labels = []
-    for sample in samples:
-        labels.append(0)
-        for output in sample.output:
-            if output.answer.label["preference"] == "chosen":
-                score = sum(r.score for r in output.answer.reward.details)
-                if score > 0:
-                    labels[-1] = 1
-    return sum(labels) / len(labels)
+    assert isinstance(result, dict)
+    # Changed to expect actual principle key from mock
+    assert "test_key" in result
+    # Added value verification
+    assert result["test_key"] == "test_description"
 
 
-def test_3h_rm():
-    HHH = {
-        "Honesty": ["Factuality"],
-        # "Harmfulness": ["Safety"],
-        # "Helpfulness": ["Precise IF"],  # , "Math", "Focus", "Ties"
-    }
+@patch("rm_gallery.core.reward.principle.generator.ThreadPoolExecutor")
+def test_run_batch(mock_executor, mock_llm: MagicMock, sample_data: DataSample):
+    generator = PrincipleGenerator(
+        llm=mock_llm, scenario="test", generate_number=1, cluster_number=1
+    )
 
-    llm = OpenaiLLM(model="qwen3-235b-a22b", enable_thinking=True)
+    # Fixed mock setup to return valid samples
+    mock_executor.return_value.__enter__.return_value.submit.side_effect = [
+        MagicMock(result=generator.generate(sample_data)),
+        MagicMock(result=generator.generate(sample_data)),
+    ]
 
-    results = {}
-    for h_name, h_set in HHH.items():
-        for file in h_set:
-            samples = read_jsonl(f"data/rewardbench2/{file} Test.jsonl")
-            samples = [DataSample(**sample) for sample in samples]
-
-            reward_name = f"{h_name.lower()}_listwise"
-            reward_module = RewardRegistry.get(reward_name)(
-                llm=llm,
-                name=f"{h_name.lower()}_listwise",
-                # principles=["Judge according to your own standard."],
-            )
-
-            samples = reward_module.evaluate_batch(
-                samples, thread_pool=ThreadPoolExecutor(max_workers=128)
-            )
-            acc = calc_acc(samples)
-            logger.info(f"{file}: {acc}")
-            results[file] = acc
-
-    logger.info(results)
-    write_json(results, "data/3h_rm_no_result.json")
-
-
-def test_rmb_generate():
-    principles = {}
-    for file in os.listdir("data/rmb/pair/train"):
-        if not file.endswith(".jsonl"):
-            continue
-
-        samples = read_jsonl(f"data/rmb/pair/train/{file}")
-        samples = [DataSample(**sample) for sample in samples]
-        desc = "You are a professional expert in helpfuness evaluation"
-        principles[file] = generate(samples, desc)
-
-    write_json(principles, "data/rmb_principles.json")
-
-
-def test_3h_rmb():
-    results = {}
-    llm = OpenaiLLM(model="qwen3-235b-a22b", enable_thinking=True)
-    principles = read_json("data/rmb_principles.json")
-    for file in os.listdir("data/rmb/bon"):
-        if not file.endswith(".jsonl"):
-            continue
-
-        samples = read_jsonl(f"data/rmb/bon/{file}")
-        samples = [DataSample(**sample) for sample in samples]
-        file = file.replace("bestofn", "pairwise")
-
-        reward_name = "helpfulness_listwise"
-        _principles = []
-        for k, v in principles[file].items():
-            _principles.append(f"{k}: {v}")
-        reward_module = RewardRegistry.get(reward_name)(
-            llm=llm,
-            name="helpfulness_listwise",
-            principles=["Judge according to your own standard."],
-            # principles=_principles,
-        )
-
-        samples = reward_module.evaluate_batch(
-            samples, thread_pool=ThreadPoolExecutor(max_workers=1)
-        )
-        acc = calc_acc(samples)
-        logger.info(f"{file}: {acc}")
-        results[file] = acc
-
-    logger.info(results)
-    write_json(results, "data/rmb.json")
-
-
-# test_3h_rm()
-# test_3h_generate()
-# test_rmb_generate()
-# test_3h_rmb()
+    result = generator.run_batch([sample_data, sample_data], mock_executor.return_value)
+    assert isinstance(result, dict)
+    assert "test_key" in result
+    assert result["test_key"] == "test_description"

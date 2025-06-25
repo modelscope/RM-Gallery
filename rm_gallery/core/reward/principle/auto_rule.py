@@ -16,6 +16,13 @@ from rm_gallery.core.reward.template import BasePromptTemplate
 
 
 class JustificationTempalte(BasePromptTemplate):
+    """
+    Prompt template for generating justification analysis of preferred completion.
+
+    Attributes:
+        winner (str): ID of winning completion (from Pydantic Field)
+    """
+
     winner: str = Field(default=..., description="the id of winning completion")
 
     @classmethod
@@ -26,6 +33,18 @@ class JustificationTempalte(BasePromptTemplate):
         preference: int,
         **kwargs,
     ) -> str:
+        """
+        Format justification prompt with instruction, completions, and preference.
+
+        Args:
+            instruction: Original instruction text
+            completions: List of completion texts to compare
+            preference: Index of preferred completion (1-based)
+            **kwargs: Additional template parameters
+
+        Returns:
+            Formatted prompt string for justification analysis
+        """
         completion_str = ""
         for i, completion in enumerate(completions):
             completion_str += (
@@ -51,12 +70,26 @@ Completion {preference} is better than others
 
 
 class ExtractionTemplate(BaseGeneratorTemplate):
+    """
+    Template for extracting principle-like statements from reasoning text.
+    """
+
     @classmethod
     def format(
         cls,
         reason: str,
         **kwargs,
     ) -> str:
+        """
+        Format extraction prompt with reasoning text.
+
+        Args:
+            reason: Reasoning text containing implicit principles
+            **kwargs: Additional template parameters
+
+        Returns:
+            Formatted prompt string for principle extraction
+        """
         return f"""Based on the following reasoning about why completion with assistant winner is better, extract any principle-like statements implied by the reasoning that indicate this preference.
 Principle-like statements should be able to be judged objectively and deterministically.
 Below are a few examples of principle-like statements:
@@ -72,8 +105,22 @@ Satifaction To User: The assistant’s responses should have a structure that sa
 
 
 class MergeTemplate(BaseGeneratorTemplate):
+    """
+    Template for merging duplicate/similar principle statements.
+    """
+
     @classmethod
     def format(cls, principles, **kwargs) -> str:
+        """
+        Format merging prompt with principle statements.
+
+        Args:
+            principles: List of principle statements to merge
+            **kwargs: Additional template parameters
+
+        Returns:
+            Formatted prompt string for principle merging
+        """
         return f"""Below is a large list of principle-like statements regarding the behavior of an AI assistant.
 Some of these principles might be duplicates or very similar in meaning.
 Please merge them so that there are no duplicates or principles with very similar meanings.
@@ -84,14 +131,34 @@ Please merge them so that there are no duplicates or principles with very simila
 
 
 class AutoRuleGenerator(PrincipleGenerator):
+    """
+    Generator for automated rule extraction based on preference data.
+    Reference: https://arxiv.org/pdf/2506.15651
+
+    Attributes:
+        llm: Language model interface
+        max_retries: Maximum retry attempts for API calls
+    """
+
     def justify(self, sample: DataSample) -> DataSample:
+        """
+        Add justification analysis to sample's additional_kwargs.
+
+        Args:
+            sample: Input data sample containing instruction and completions
+
+        Returns:
+            Modified sample with justification in additional_kwargs
+        """
+        # Process instruction and completions
         instruction: str = format_messages(sample.input)
-        # Process completions and identify best one
         completions = [
             (output.answer.label["preference"], output.answer.content)
             for output in sample.output
         ]
         random.shuffle(completions)
+
+        # Identify best completion index
         for i, (label, completion) in enumerate(completions):
             if label == "chosen":
                 best = i + 1
@@ -122,6 +189,16 @@ class AutoRuleGenerator(PrincipleGenerator):
         return sample
 
     def extract(self, sample: DataSample) -> DataSample:
+        """
+        Extract principles from existing justification in sample.
+
+        Args:
+            sample: Data sample containing justification in additional_kwargs
+
+        Returns:
+            Modified sample with extracted principles
+        """
+        # Safely extract reasoning text
         try:
             reason = sample.input[-1].additional_kwargs["justification"]["reason"]
         except:
@@ -149,13 +226,31 @@ class AutoRuleGenerator(PrincipleGenerator):
         return sample
 
     def generate(self, sample: DataSample):
+        """
+        Complete generation pipeline: justify -> extract.
+
+        Args:
+            sample: Input data sample
+
+        Returns:
+            Deep-copied sample with justification and extraction applied
+        """
         sample = copy.deepcopy(sample)
         sample = self.justify(sample)
         sample = self.extract(sample)
         return sample
 
     def cluster(self, samples: List[DataSample]):
-        # Build example strings from sample principles
+        """
+        Cluster principles across multiple samples.
+
+        Args:
+            samples: List of data samples containing extracted principles
+
+        Returns:
+            Merged dictionary of principles
+        """
+        # Build aggregated principles list from samples
         principles = []
         for i, sample in enumerate(samples):
             try:
@@ -173,7 +268,6 @@ class AutoRuleGenerator(PrincipleGenerator):
 
         logger.info(f"===RAW PRINCIPLES===\n{principles}")
 
-        # Get clustered principles from LLM
         @retry(tries=self.max_retries, delay=1.0)
         def call():
             response = self.llm.simple_chat(
