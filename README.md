@@ -41,7 +41,7 @@ RM-Gallery is a one-stop platform for training, building and applying reward mod
 
 
 ## 📥 Installation
-> RM Gallery requires **Python 3.10** or higher.
+> RM Gallery requires **Python >=3.10 and <3.13**
 
 
 ### Install From source
