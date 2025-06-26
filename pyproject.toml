@@ -6,7 +6,7 @@ build-backend = "poetry.core.masonry.api"
 name = "rm-gallery"
 version = "0.1.0"
 description = ""
-authors = []
+authors = ["Sen Huang", "Lipeng Xie", "Haoran Chen", "Boyin Liu", "Qingxu Fu", "Anni Zou", "Jiaji Deng", "Yuhao Cui", "Yunzhou Shi", "Yuan Gao", "Yunpeng Zhai", "Zhuo Zhang", "Li Yu", "Zhaoyang Liu"]
 readme = "README.md"
 requires-python = ">=3.10,<3.13"
 dependencies = [

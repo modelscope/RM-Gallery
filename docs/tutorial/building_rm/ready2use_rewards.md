@@ -30,7 +30,7 @@ Additionally, some reward models are sourced from external pre-defined implement
 |------------|------------|------------|--------------------|-------------------|
 | Brainstorming| RMBBench | Brainstorming: Generating text to come up with new ideas or solutions, with an emphasis on creativity and driving thinking. |brainstorming_listwise_reward | False |
 | Chat| RMBBench | Chat: Simulates human conversation and communicates a variety of topics through text understanding and generation, emphasizing coherence and natural flow of interaction. | chat_listwise_reward | True |
-| Classification | RMBBench | Classification: Entails assigning predefined categories or labels to text based on its content. | classification_listwise_reward | True |
+| Classification | RMBBench | Classification: Entails assigning predefined categories or labels to text based on its content. | classification_listwise_reward | False |
 | Closed QA | RMBBench | Closed QA: Search for direct answers to specific questions in given text sources (i.e. given context, given options). | closed_qa_listwise_reward | False |
 | Code | RMBBench | Code: Involves generating, understanding, or modifying programming language code within text. | code_listwise_reward | False |
 | Generation | RMBBench | Generation: Creating new textual content, from articles to stories, with an emphasis on originality and creativity. | generation_listwise_reward | True |

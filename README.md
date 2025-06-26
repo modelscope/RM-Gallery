@@ -11,7 +11,7 @@ English | [**中文**](./README_ZH.md)
 
 ----
 ## 📢 News
-- **[2025-06-XX]** We release RM Gallery v0.1.0 now, which is also available in [PyPI](https://pypi.org/simple/rm-gallery/)!
+- **[2025-06-30]** We release RM Gallery v0.1.0 now, which is also available in [PyPI](https://pypi.org/simple/rm-gallery/)!
 ----
 
 ## 🌟 Why RM-Gallery?
@@ -118,10 +118,10 @@ Reference to cite if you use RM-Gallery in a paper:
 
 ```
 @software{
-author = {GM-Gallery},
+title = {RM-Gallery: A One-Stop Reward Model Platform},
+author = {The GM Gallery Team},
+url = {https://github.com/modelscope/RM-Gallery},
 month = {06},
-title = {GM-Gallery},
-url = {},
 year = {2025}
 }
 ```

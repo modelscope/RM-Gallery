@@ -299,6 +299,7 @@ class OpenaiLLM(BaseLLM):
                 repetition_text = detect_consecutive_repetition(ans)
                 if repetition_text:
                     logger.info(f"repetition_text={repetition_text},stop")
+                    return ans
             if len(ans) > 32768:
                 return ans
 
