@@ -78,7 +78,7 @@ For complete basic usage of RM-Gallery, please refer to [Quick Start](docs/quick
         - [data loader](docs/tutorial/data/load.ipynb)
         - [data processor](docs/tutorial/data/process.ipynb)
     - training rm
-        - [training guide](docs/tutorial/training_rm/complete_guide.md)
+        - [training a pointwise or pairwise rm](docs/tutorial/training_rm/training_rm.md)
 
     - building rm
         - [overview](docs/tutorial/building_rm/overview.ipynb)
@@ -119,7 +119,7 @@ Reference to cite if you use RM-Gallery in a paper:
 ```
 @software{
 title = {RM-Gallery: A One-Stop Reward Model Platform},
-author = {The GM Gallery Team},
+author = {The GM-Gallery Team},
 url = {https://github.com/modelscope/RM-Gallery},
 month = {06},
 year = {2025}
