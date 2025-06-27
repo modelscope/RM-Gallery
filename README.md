@@ -28,7 +28,7 @@ RM-Gallery is a one-stop platform for training, building and applying reward mod
 ### Building RM
 - **Unified Reward Model Architecture**: Flexible implementation of reward models through standardized interfaces, supporting various architectures (model-based/free), reward formats (scalar/critique), and scoring patterns (pointwise/listwise/pairwise)
 
-- **Comprehensive RM Gallery**: Provides a rich collection of ready-to-use Reward Model instances for diverse tasks (e.g., math, coding, preference alignment, agent) with both task-level(RMComposition) and component-level(RewardModel). Users can directly apply RMComposition for specific tasks or assemble custom RMComposition via component-level RewardModel.
+- **Comprehensive RM Gallery**: Provides a rich collection of ready-to-use Reward Model instances for diverse tasks (e.g., math, coding, preference alignment) with both task-level(RMComposition) and component-level(RewardModel). Users can directly apply RMComposition/RewardModel for specific tasks or assemble custom RMComposition via component-level RewardModel.
 
 - **Principle-Critic-Score Paradigm**: Adopts the Principle+Critic+Score-based reasoning Reward Model  paradigm, offering best practices to help users generate principles with limited preference data.
 
@@ -41,7 +41,7 @@ RM-Gallery is a one-stop platform for training, building and applying reward mod
 
 
 ## 📥 Installation
-> RM Gallery requires **Python >=3.10 and <3.13**
+> RM Gallery requires **Python >= 3.10 and < 3.13**
 
 
 ### Install From source
@@ -73,12 +73,12 @@ For complete basic usage of RM-Gallery, please refer to [Quick Start](docs/quick
 ## 📚 Documentation
 - Tutorial:
     - data
-        - [data pipeline](docs/tutorial/data/pipeline.ipynb)
+        - [overview](docs/tutorial/data/pipeline.ipynb)
         - [data annotator](docs/tutorial/data/annotation.ipynb)
         - [data loader](docs/tutorial/data/load.ipynb)
         - [data processor](docs/tutorial/data/process.ipynb)
     - training rm
-        - [training a pointwise or pairwise rm](docs/tutorial/training_rm/training_rm.md)
+        - [training rm guide](docs/tutorial/training_rm/training_rm.md)
 
     - building rm
         - [overview](docs/tutorial/building_rm/overview.ipynb)
