@@ -1,5 +1,5 @@
 <!-- # RM-Gallery: A One-Stop Reward Model Platform -->
-English | [**中文**](./README_ZH.md)
+English | [**中文**](./README_zh.md)
 <h2 align="center">RM-Gallery: A One-Stop Reward Model Platform</h2>
 
 [![](https://img.shields.io/badge/python-3.10+-blue)](https://pypi.org/project/rm-gallery/)
