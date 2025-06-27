@@ -188,14 +188,14 @@ def pointwise_reward(predicted_score, true_score):
     """Reward function optimized for HelpSteer2's 0-4 scale"""
     if true_score is None:
         return 0.0
-
+    
     abs_error = abs(predicted_score - true_score)
     max_error = 4  # HelpSteer2 scale: 0-4
-
+    
     k = 2.0  # Decay coefficient
     error_ratio = abs_error / max_error
     reward = math.exp(-k * error_ratio)
-
+    
     return float(reward)
 ```
 
@@ -287,6 +287,69 @@ class PairwiseComparisonTemplate(BasePromptTemplate):
 Processing Flow:
 1. Parse model output with `extract_preference_from_response(solution_str)`
 2. Compare with `metadata.preferred` to produce reward: 1.0 (correct) / 0.0 (wrong)
+
+### Training Results & Evaluation
+
+#### Model Performance Comparison
+
+We conducted pairwise training experiments using two different base models on the HelpSteer2 preference dataset:
+
+- **Qwen2.5-14B**: Traditional language model
+- **Qwen3-14B**: Reasoning-enhanced model
+
+#### Validation Accuracy Results
+
+![HelpSteer2 Pairwise Training Accuracy](../../images/building_rm/helpsteer2_pairwise_training_eval_accuracy.png)
+
+The training curves show validation accuracy on the test dataset over 350 training steps:
+
+**Key Observations:**
+
+1. **Qwen3-14B Performance** (Orange line):
+   - Achieves higher overall accuracy (~0.62)
+   - More stable training progression
+   - Better convergence characteristics
+   - Consistent performance throughout training
+
+2. **Qwen2.5-14B Performance** (Blue line):
+   - Slightly lower accuracy (~0.61)
+   - More volatile training curve with occasional drops
+   - Shows improvement in later training stages
+   - Reasonable final performance despite fluctuations
+
+3. **Comparative Analysis**:
+   - **Accuracy Gap**: ~1% difference favoring Qwen3-14B
+   - **Stability**: Qwen3-14B demonstrates superior training stability
+   - **Convergence**: Both models show good learning progression
+   - **Final Performance**: Both achieve >60% accuracy on preference prediction
+
+#### Cross-Dataset Evaluation: RM-Bench Results
+
+To further validate the robustness of our trained models, we evaluated the same Qwen2.5-14B model (trained on HelpSteer2 pairwise data) on the RM-Bench dataset:
+
+![HelpSteer2 Pairwise Training RM-Bench Accuracy](../../images/building_rm/helpsteer2_pairwise_training_RM-Bench_eval_accuracy.png)
+
+**RM-Bench Evaluation Results:**
+
+- **Dataset**: RM-Bench (different from training data)
+- **Model**: Qwen2.5-14B trained on HelpSteer2 pairwise data
+- **Performance**: Achieves ~62.5% accuracy on RM-Bench
+- **Training Progression**: Consistent improvement from ~55.8% (baseline Qwen2.5-14B model capability at step 0) to 62.5% over 80+ steps
+
+**Key Insights:**
+
+1. **Cross-Dataset Generalization**: The model trained on HelpSteer2 generalizes well to RM-Bench
+2. **Performance Consistency**: Similar accuracy levels across different evaluation datasets
+3. **Robust Learning**: Steady improvement curve indicates stable learning dynamics
+4. **Practical Validation**: Strong performance on an independent benchmark confirms model quality
+
+#### Practical Implications
+
+- **Model Selection**: Qwen3-14B recommended for production use due to better stability and performance
+- **Training Duration**: Both models benefit from extended training (300+ steps)
+- **Performance Threshold**: Both models exceed the 60% accuracy threshold for practical deployment
+- **Cross-Dataset Robustness**: Models demonstrate good generalization across different preference datasets
+- **Resource Efficiency**: The marginal improvement of Qwen3-14B may justify the additional computational cost
 
 ---
 
@@ -401,7 +464,7 @@ Monitor the training progress through these key curves:
    **Solution**: For reasoning models (e.g., Qwen3):
    - `apply_chat_template` with `enable_thinking=True`
    - `format` with `enable_thinking=False`
-
+   
    For non-reasoning models:
    - `apply_chat_template` with `enable_thinking=False`
    - `format` with `enable_thinking=True`
@@ -461,4 +524,4 @@ This guide provides a complete workflow for training reward models using the VER
 5. **Monitoring and Debugging**: Key metrics and troubleshooting
 6. **Best Practices**: Performance optimization and configuration recommendations
 
-By following this guide, you can successfully train reward models tailored to your specific needs, whether for absolute scoring or preference comparison tasks.
+By following this guide, you can successfully train reward models tailored to your specific needs, whether for absolute scoring or preference comparison tasks. 
