@@ -85,11 +85,15 @@ class SimpleComposition(BaseComposition):
             DataSample with updated reward information
         """
         # Parallel evaluation using thread pool
-        if self.is_parallel:
+        if self.is_parallel and thread_pool is not None:
             sample = deepcopy(sample)
             futures = []
             for name, reward in self.rewards.items():
-                futures.append(thread_pool.submit(reward.evaluate, sample, thread_pool))
+                futures.append(
+                    thread_pool.submit(
+                        reward.evaluate, sample=sample, thread_pool=thread_pool
+                    )
+                )
 
             wait(futures, return_when=ALL_COMPLETED)
             samples = [future.result() for future in futures]

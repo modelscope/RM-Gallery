@@ -124,7 +124,9 @@ class BaseReward(BaseModule):
         """
         if thread_pool:
             futures = [
-                thread_pool.submit(self.evaluate, sample, **kwargs)
+                thread_pool.submit(
+                    self.evaluate, sample=sample, thread_pool=None, **kwargs
+                )
                 for sample in samples
             ]
             wait(futures, return_when=ALL_COMPLETED)
