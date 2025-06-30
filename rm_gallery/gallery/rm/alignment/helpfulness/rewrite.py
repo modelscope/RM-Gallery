@@ -11,7 +11,7 @@ DESC = """
 Your role is that of a professional evaluation expert. I will provide you with a question and several candidate answers. Your task is to select the single best answer from the candidates.
 """
 
-SCENARIO = """Rewrite: the assitant aims to modifies existing text to alter its style while preserving the original information and intent."""
+SCENARIO = """Rewrite: the assistant aims to modifies existing text to alter its style while preserving the original information and intent."""
 
 
 @RewardRegistry.register("rewrite_listwise_reward")

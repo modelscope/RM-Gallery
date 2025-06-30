@@ -63,7 +63,7 @@ class PrincipleGenerateTempalte(BaseGeneratorTemplate):
         return f"""## Overview
 Please propose additional principles that are different from the original principles, about why a potential completion is qualified for a given instruction in the scenario, by completing the following analysis.
 1. Compare and analyze the prediction and the ground truth, and analyze the reasons why the prediction is incorrect.
-2. Summarize the points to pay attention to in order to "correctly" determin which one is the best in the same scenario, with following the requirements.
+2. Summarize the points to pay attention to in order to "correctly" determine which one is the best in the same scenario, with following the requirements.
 
 Another assistant will evaluate the completions based on these principles.
 

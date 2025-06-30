@@ -27,7 +27,7 @@ nav:
     - RM Server: tutorial/rm_servering/rm_server.md
     - Application:
       - Best of N: tutorial/deploying_rm/best_of_n.ipynb
-      - Post Traning with RM: tutorial/deploying_rm/post_traning_with_rm.ipynb
+      - Post Training with RM: tutorial/deploying_rm/post_traning_with_rm.ipynb
       - Refinement: tutorial/deploying_rm/refinement.ipynb
 plugins:
   - search

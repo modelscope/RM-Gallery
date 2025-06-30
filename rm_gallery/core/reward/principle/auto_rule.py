@@ -95,7 +95,7 @@ Principle-like statements should be able to be judged objectively and determinis
 Below are a few examples of principle-like statements:
 Validate Assumptions Adequately: The assistant’s responses should validate any assumptions made with sufficient context and examples.
 Avoid Repetition: The assistant’s responses should not simply restate information provided by the user as its answer.
-Satifaction To User: The assistant’s responses should have a structure that satisfies the user’s request.
+Satisfaction To User: The assistant’s responses should have a structure that satisfies the user’s request.
 ## Reasoning
 {reason}
 

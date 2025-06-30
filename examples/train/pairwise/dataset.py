@@ -73,9 +73,9 @@ Response B is significantly better than Response A. Response A is very basic and
         responses = []
         if isinstance(example.get("output"), list):
             for out in example["output"][:2]:
-                ans = out.get("answer", {})
-                if isinstance(ans, dict):
-                    responses.append(ans.get("content", ""))
+                answer = out.get("answer", {})
+                if isinstance(answer, dict):
+                    responses.append(answer.get("content", ""))
 
         if len(responses) < 2:
             # fallback to metadata raw_data

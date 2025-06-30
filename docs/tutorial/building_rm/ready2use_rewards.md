@@ -36,11 +36,11 @@ Additionally, some reward models are sourced from external pre-defined implement
 | Generation | RMBBench | Generation: Creating new textual content, from articles to stories, with an emphasis on originality and creativity. | generation_listwise_reward | True |
 | Open QA | RMBBench | Open QA: Search for answers across a wide range of text sources. The challenge is to process large amounts of information and understand complex questions. |  open_qa_listwise_reward | False |
 | Reasoning | RMBBench | Reasoning: Involves processing and analyzing text to draw inferences, make predictions, or solve problems, requiring an understanding of underlying concepts and relationships within the text. | reasoning_listwise_reward | False |
-| Rewrite | RMBBench | Rewrite: the assitant aims to modifies existing text to alter its style while preserving the original information and intent. | rewrite_listwise_reward | False |
+| Rewrite | RMBBench | Rewrite: the assistant aims to modifies existing text to alter its style while preserving the original information and intent. | rewrite_listwise_reward | False |
 | Role Playing | RMBBench | Role Playing: Entails adopting specific characters or personas within text-based scenarios, engaging in dialogues or actions that reflect the assigned roles. | role_palying_listwise_reward | True |
 | Summarization | RMBBench | Summarization: The text is compressed into a short form, retaining the main information, which is divided into extraction (directly selected from the original text) and production (rewriting the information). | summarization_listwise_reward | True |
 | Translation | RMBBench | Translation: Converting text from one language to another. | translation_listwise_reward | True |
-| Focus| RMBBench | Focus: Detectes high-quality, on-topic answers to general user queries | focus_pointwise_reward | True |
+| Focus| RMBBench | Focus: Detects high-quality, on-topic answers to general user queries | focus_pointwise_reward | True |
 | Math | RewardBench2 | Math: Solves problems at math, on open-ended human prompts ranging from middle school physics and geometry to college-level chemistry, calculus, combinatorics, and more. | math_pointwise_reward | True |
 | Precise IF| RewardBench2 | Precise Instruction Following : Follows precise instructions, such as 'Answer without the letter u'. | precise_if_pointwise_reward| True |
 
@@ -51,7 +51,7 @@ Click [here](./autoprinciple.ipynb#6) to view relevant evaluation results
 
 |  Scenario | Source | Description | Reward Model | PrinciplesIncluded |
 |------------|---------------|---------------|-----------------|-------------------|
-| Factuality| RewardBench2 | Factuality: Detectes hallucinations and other basic errors in completions. | factuality_pointwise_reward| True |
+| Factuality| RewardBench2 | Factuality: Detects hallucinations and other basic errors in completions. | factuality_pointwise_reward| True |
 
 
 ## 2 Math Evaluation Rewards

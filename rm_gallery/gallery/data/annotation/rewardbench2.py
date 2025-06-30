@@ -201,8 +201,8 @@ class RewardBench2AnnotationTemplate(BaseAnnotationTemplate):
                     == best_rated_answer[0],
                     "best_answer_matches_rank_1": processed["best_answer"]
                     in [
-                        ans
-                        for ans, rank in processed["answer_rankings"].items()
+                        answer
+                        for answer, rank in processed["answer_rankings"].items()
                         if rank == 1
                     ]
                     if processed["answer_rankings"]

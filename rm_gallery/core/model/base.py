@@ -311,7 +311,7 @@ class BaseLLM(BaseModel):
         @retry(tries=self.max_retries, delay=self.retry_delay)
         def chat():
             response: GeneratorChatResponse = self.chat(messages, stream=True)
-            ans = ""
+            answer = ""
             enter_think = False
             leave_think = False
             for chunk in response:
@@ -323,14 +323,14 @@ class BaseLLM(BaseModel):
                     ):
                         if not enter_think:
                             enter_think = True
-                            ans += "</think>"
-                        ans += delta.reasoning_content
+                            answer += "</think>"
+                        answer += delta.reasoning_content
                     elif delta.content:
                         if enter_think and not leave_think:
                             leave_think = True
-                            ans += "</think>"
-                        ans += delta.content
+                            answer += "</think>"
+                        answer += delta.content
 
-            return ans
+            return answer
 
         return chat()

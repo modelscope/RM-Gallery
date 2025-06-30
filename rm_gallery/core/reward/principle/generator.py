@@ -180,7 +180,7 @@ class PrincipleGenerator(BaseModel):
     """
 
     llm: BaseLLM = Field(default=..., description="llm client")
-    scenario: str = Field(default=..., description="assitant scenario")
+    scenario: str = Field(default=..., description="assistant scenario")
     generate_number: int = Field(
         default=10, description="number of generated principles"
     )
