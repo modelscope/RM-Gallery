@@ -10,7 +10,7 @@ The HHH (Helpfulness, Harmlessness, and Honesty) reward models are defined follo
 Additionally, some reward models are sourced from external pre-defined implementations, such as [detoxify](https://github.com/unitaryai/detoxify).
 
 ### Base Reward Models Overview
-| Scenario | Description | Reward Model | PrinciplesIncluded |
+| Scenario | Description | Register Name | PrinciplesIncluded |
 |------------|------------|--------------------|-------------------|
 | Helpfulness| The assistant aims to provide helpful and informative responses to users, responding to their queries with relevant and accurate information. | base_helpfulness_pointwise/base_helpfulness_listwise | True |
 | Harmlessness| The assistant aims to answer questions, avoiding harmful behaviors such as spreading misinformation, spreading harmful ideas, or engaging in other harmful activities. | base_harmlessness_pointwise/base_harmlessness_listwise | True |
@@ -19,14 +19,14 @@ Additionally, some reward models are sourced from external pre-defined implement
 
 
 ### Harmlessness
-|  Scenario | Source |Description | Reward Model | PrinciplesIncluded |
+|  Scenario | Source |Description | Register Name | PrinciplesIncluded |
 |------------|------------|------------|--------------------|-------------------|
 | Safety| RewardBench2 | Safety: Comply with or refuse prompts related to harmful use cases as well as general compliance behaviors. | safety_pointwise_reward | True |
 | detoxify| [detoxify](https://github.com/unitaryai/detoxify) | Detoxify: Detecting different types of of toxicity like threats, obscenity, insults ans so on | DetoxifyReward | False |
 
 ### Helpfulness
 
-| Scenario | Source | Description| Reward Model | PrinciplesIncluded |
+| Scenario | Source | Description| Register Name | PrinciplesIncluded |
 |------------|------------|------------|--------------------|-------------------|
 | Brainstorming| RMBBench | Brainstorming: Generating text to come up with new ideas or solutions, with an emphasis on creativity and driving thinking. |brainstorming_listwise_reward | False |
 | Chat| RMBBench | Chat: Simulates human conversation and communicates a variety of topics through text understanding and generation, emphasizing coherence and natural flow of interaction. | chat_listwise_reward | True |
@@ -49,41 +49,41 @@ Click [here](./autoprinciple.ipynb#6) to view relevant evaluation results
 ### Honesty
 
 
-|  Scenario | Source | Description | Reward Model | PrinciplesIncluded |
+|  Scenario | Source | Description | Register Name | PrinciplesIncluded |
 |------------|---------------|---------------|-----------------|-------------------|
 | Factuality| RewardBench2 | Factuality: Detects hallucinations and other basic errors in completions. | factuality_pointwise_reward| True |
 
 
 ## 2 Math Evaluation Rewards
 
-| Scenario | Source | Description | Reward Model |
-|------|----------|----------|------------|
-| Math Verify | | Verifies mathematical expressions using the math_verify library, supporting both LaTeX and plain expressions | MathVerifyReward |
+| Scenario | Description | Register Name |
+|------|----------|------------|
+| Math Verify | Verifies mathematical expressions using the math_verify library, supporting both LaTeX and plain expressions | MathVerifyReward |
 
 ## 3 Code Quality Rewards
 
-| Scenario | Source | Description | Reward Model |
-|------|----------|----------|------------|
-| Code Syntax |  | Check code syntax using Abstract Syntax Tree to validate Python code blocks |  SyntaxCheckReward |
-| Code Style |  | Basic code style checking including indentation consistency and naming conventions | CodeStyleReward |
-| Patch Similarity |  | Calculate similarity between generated patch and oracle patch using difflib.SequenceMatcher | PatchSimilarityReward |
-| Code Execution |  | Executes code against test cases and evaluates correctness based on test case results | CodeExecutionReward |
+| Scenario | Description | Register Name |
+|------|----------|------------|
+| Code Syntax | Check code syntax using Abstract Syntax Tree to validate Python code blocks |  SyntaxCheckReward |
+| Code Style | Basic code style checking including indentation consistency and naming conventions | CodeStyleReward |
+| Patch Similarity | Calculate similarity between generated patch and oracle patch using difflib.SequenceMatcher | PatchSimilarityReward |
+| Code Execution | Executes code against test cases and evaluates correctness based on test case results | CodeExecutionReward |
 
 ## 4 General Evaluation Rewards
 
-| Scenario | Source | Description | Reward Model |
-|------|----------|----------|--------------|
-| Accuracy |  | Calculate accuracy (exact match rate) between generated content and reference answer | AccuracyReward |
-| F1 Score |  | Calculate F1 score between generated content and reference answer at word level with configurable tokenizer | F1ScoreReward |
-| ROUGE |  | ROUGE-L similarity evaluation using longest common subsequence | RougeReward |
-| Number Accuracy |  | Check numerical calculation accuracy by comparing numbers in generated vs reference content | NumberAccuracyReward |
+| Scenario | Description | Register Name |
+|------|----------|--------------|
+| Accuracy | Calculate accuracy (exact match rate) between generated content and reference answer | AccuracyReward |
+| F1 Score | Calculate F1 score between generated content and reference answer at word level with configurable tokenizer | F1ScoreReward |
+| ROUGE | ROUGE-L similarity evaluation using longest common subsequence | RougeReward |
+| Number Accuracy | Check numerical calculation accuracy by comparing numbers in generated vs reference content | NumberAccuracyReward |
 
 ## 5 Format and Style Rewards
 
-| Scenario | Source | Description | Reward Model |
-|------|----------|----------|--------------|
-| Reasoning Format |  |  Check format reward for thinking format and answer format with proper tags | ReasoningFormatReward |
-| Tool Call Format |  | Check tool call format including think, answer and tool_call tags with JSON validation | ReasoningToolCallFormatReward |
-| Length Penalty |  | Text length based penalty for content that is too short or too long | LengthPenaltyReward |
-| N-gram Repetition |  | Calculate N-gram repetition penalty supporting Chinese processing and multiple penalty strategies | NgramRepetitionPenaltyReward |
-| Privacy Leakage |  |Privacy information leakage detection for emails, phone numbers, ID cards, credit cards, and IP addresses | PrivacyLeakageReward |
+| Scenario | Description | Register Name |
+|------|----------|--------------|
+| Reasoning Format |  Check format reward for thinking format and answer format with proper tags | ReasoningFormatReward |
+| Tool Call Format | Check tool call format including think, answer and tool_call tags with JSON validation | ReasoningToolCallFormatReward |
+| Length Penalty | Text length based penalty for content that is too short or too long | LengthPenaltyReward |
+| N-gram Repetition | Calculate N-gram repetition penalty supporting Chinese processing and multiple penalty strategies | NgramRepetitionPenaltyReward |
+| Privacy Leakage | Privacy information leakage detection for emails, phone numbers, ID cards, credit cards, and IP addresses | PrivacyLeakageReward |

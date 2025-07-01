@@ -128,10 +128,10 @@ def calculate_sum(numbers_list):
         """Test mixed indentation code"""
         content = """This is a code with mixed indentation:
 ```python
-def bad_indentation():
-    if True:
-	    print("Tab indented")  # Using tab
-        print("Space indented")  # Using space
+    def bad_indentation():
+        if True:
+            print("Tab indented")  # Using tab
+            print("Space indented")  # Using space
 ```
 """
         sample = self._create_sample(content)
