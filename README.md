@@ -10,6 +10,25 @@ English | [**中文**](./README_zh.md)
 [![](https://img.shields.io/badge/Contribute-Welcome-green)]()
 
 ----
+
+## 🗂️ Table of Contents
+- [📢 News](#-news)
+- [🌟 Why RM-Gallery?](#-why-rm-gallery)
+- [📥 Installation](#-installation)
+- [🚀 RM Gallery Walkthrough](#-rm-gallery-walkthrough)
+  - [🏋️‍♂️ Training RM](#-training-rm)
+  - [🏗️ Building RM](#-building-rm)
+    -  [🧩 Use Built-in RMs Directly](#-use-built-in-rms-directly)
+    - [🛠️ Building Custom RMs](#-building-custom-rms)
+  - [🧪 Evaluating with Reward Model](#-evaluating-with-reward-model)
+    - [⚡ High-Performance RM Serving](#-high-performance-rm-serving)
+  - [🛠️ Reward Applications](#-reward-applications)
+- [📚 Documentation](#-documentation)
+- [🤝 Contribute](#-contribute)
+- [📝 Citation](#-citation)
+
+----
+
 ## 📢 News
 - **[2025-06-30]** We release RM Gallery v0.1.0 now, which is also available in [PyPI](https://pypi.org/simple/rm-gallery/)!
 ----
@@ -22,7 +41,7 @@ RM-Gallery is a one-stop platform for training, building and applying reward mod
  <img src="./docs/images/framework.png" alt="Framework" width="75%">
 </p>
 
-### Training RM
+### 🏋️‍♂️ Training RM
 - **Integrated RM Training Pipeline**: Provides an RL-based framework for training reasoning reward models, compatible with popular frameworks (e.g., verl), and offers examples for integrating RM-Gallery into the framework.
 <p align="center">
   <img src="./docs/images/building_rm/helpsteer2_pairwise_training_RM-Bench_eval_accuracy.png" alt="Training RM Accuracy Curve" width="60%">
@@ -32,7 +51,7 @@ RM-Gallery is a one-stop platform for training, building and applying reward mod
 This image demonstrates the effectiveness of the RM Training Pipeline. On RM Bench, after more than 80 training steps, the accuracy improved from around 55.8% with the baseline model (Qwen2.5-14B) to approximately 62.5%. For detailed training instructions, see:
 [training_rm tutorial](./docs/tutorial/training_rm/training_rm.md)
 
-### Building RM
+### 🏗️ Building RM
 - **Unified Reward Model Architecture**: Flexible implementation of reward models through standardized interfaces, supporting various architectures (model-based/free), reward formats (scalar/critique), and scoring patterns (pointwise/listwise/pairwise)
 
 - **Comprehensive RM Gallery**: Provides a rich collection of ready-to-use Reward Model instances for diverse tasks (e.g., math, coding, preference alignment) with both task-level(RMComposition) and component-level(RewardModel). Users can directly apply RMComposition/RewardModel for specific tasks or assemble custom RMComposition via component-level RewardModel.
@@ -45,7 +64,7 @@ This image demonstrates the effectiveness of the RM Training Pipeline. On RM Ben
 </div>
 The two images above show that after applying the Principle+Critic+Score paradigm and adding 1–3 principles to the base model (Qwen3-32B), there were significant improvements on both RewardBench2 and RMB-pairwise.
 
-### Applying RM
+### 🛠️ Applying RM
 
 - **Multiple Usage Scenarios**: Covers multiple Reward Model (RM) usage scenarios with detailed best practices, including Training with Rewards (e.g., post-training), Inference with Rewards (e.g., Best-of-N，refinement)
 
@@ -57,7 +76,7 @@ The two images above show that after applying the Principle+Critic+Score paradig
 > RM Gallery requires **Python >= 3.10 and < 3.13**
 
 
-### Install From source
+### 📦 Install From source
 
 ```bash
 # Pull the source code from GitHub
@@ -73,9 +92,11 @@ pip install .
 pip install rm-gallery
 ```
 
-## 🚀 Quick Start
+## 🚀 RM Gallery Walkthrough
+RM-Gallery is a one-stop platform that meets various user needs for reward models. Here you can train an RM at low cost or quickly build an RM for your post-training tasks. Below we'll walk you through the basic usage of our RM-Gallery platform.
 
-### 🚀 🚀 Training RM
+
+### 🏋️‍♂️ Training RM
 
 RM-Gallery offers a comprehensive and user-friendly pipeline for training reward models with the VERL framework, supporting both pointwise (absolute scoring) and pairwise (preference comparison) paradigms.
 
@@ -112,9 +133,9 @@ chmod +x run_pointwise.sh
 For more details and advanced options, see the [training_rm tutorial](./docs/tutorial/training_rm/training_rm.md).
 
 
-### 🚀 🚀 Building RM
+### 🏗️ Building RM
 This section explains how to build RMs using the RM-Gallery framework based on your requirements and scenarios.
-#### Use Built-in RMs Directly
+#### 🧩 Use Built-in RMs Directly
 This part demonstrates how to use ready-to-use RMs.
 <strong> Choose the RM you need </strong>
 
@@ -142,7 +163,7 @@ For details of RM please check[ready2use_rewards](./docs/tutorial/building_rm/re
 rm = RewardRegistry.get("Your RM's Registry Name")
 ```
 
-#### Building Custom RMs
+#### 🛠️ Building Custom RMs
 If you want to build your own RM, here's a structured reference listing of the key base classes. Select appropriate base class based on evaluation strategy:
 
 ```python
@@ -157,7 +178,8 @@ BaseReward
     │   └── BaseListWisePrincipleReward             # Comparative Principle-guided evaluation.
 ```
 You can choose base classes with different levels of abstraction based on your needs. Here are some typical use cases:
-<strong> If you follow the Principle-Critic-Score Paradigm and only want to use your own principles </strong>
+**1️⃣ Custom Principles with Principle-Critic-Score Paradigm**
+If you follow the Principle-Critic-Score Paradigm and only want to use your own principles
 
 ```python
 customPrincipledReward = BaseListWisePrincipleReward(
@@ -167,7 +189,10 @@ customPrincipledReward = BaseListWisePrincipleReward(
         principles=["your Principle 1", "your Principle 2"],
     )
 ```
-<strong> If you need a more customized LLM template, you can inherit from BaseLLMReward and replace with your own template </strong>
+
+**2️⃣ Custom LLM Template**
+If you need a more customized LLM template, you can inherit from BaseLLMReward and replace with your own template
+
 ```python
     from rm_gallery.core.model.openai_llm import OpenaiLLM
     import os
@@ -187,8 +212,10 @@ customPrincipledReward = BaseListWisePrincipleReward(
         llm=llm,
     )
 ```
-<strong> If you want to build a rule-based RM </strong>
-You can choose to inherit from BasePointWiseReward/BaseListWiseReward/BasePairWiseReward/BaseStepWiseReward based on your scoring pattern. Override the evaluate method to implement your logic.
+
+**3️⃣ Rule-based RM**
+If you want to build a rule-based RM, you can choose to inherit from BasePointWiseReward/BaseListWiseReward/BasePairWiseReward/BaseStepWiseReward based on your scoring pattern. Override the evaluate method to implement your logic.
+
 ```python
 class CustomReward(BasePointWiseReward):
         def _evaluate(self, sample: DataSample, **kwargs) -> RewardResult:
@@ -199,7 +226,7 @@ class CustomReward(BasePointWiseReward):
             ...
 ```
 
-### 🚀 🚀  Evaluating with Reward Model
+### 🧪 Evaluating with Reward Model
 #### Data Preparation
 RM Gallery uses a [structured data schema](../rm_gallery/core/data/schema.py) for reward model. Here's a simple example of how to prepare your data. For more complex data preparation scenarios (e.g., using Hugging Face datasets), please refer to [our data pipeline tutorial](../docs/tutorial/data/pipeline.ipynb).
 
@@ -267,13 +294,13 @@ samples_with_reward = rm.evaluate_batch(
 print([sample.model_dump_json() for sample in samples_with_reward])
 
 ```
-#### High-Performance RM Serving
+#### ⚡ High-Performance RM Serving
 RM-Gallery supports deploying your reward models as scalable, production-ready services using the New API platform, enabling unified management, high throughput, and robust access control for real-world applications. For a step-by-step deployment guide, see the [rm_server tutorial](./docs/tutorial/rm_serving/rm_server.md). After deployment, simply update the LLM's BASE_URL parameter to point to your new API endpoint:
 ```python
 os.environ["BASE_URL"] = "your_new_api_url"
 ```
 
-### 🚀 🚀 Reward Applications
+### 🛠️ Reward Applications
 
 RM-Gallery enables a variety of practical reward model applications to enhance LLM outputs and downstream tasks. Here are some typical scenarios:
 <strong>Best-of-N Selection</strong>
