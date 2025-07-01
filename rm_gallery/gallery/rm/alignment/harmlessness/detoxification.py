@@ -9,7 +9,7 @@ from rm_gallery.core.reward.schema import RewardDimensionWithScore, RewardResult
 
 @RewardRegistry.register("detoxify_reward")
 class DetoxifyReward(BasePointWiseReward):
-    """Detoxify-based reward model for measuring text toxicity."""
+    """Detoxify: Detecting different types of of toxicity like threats, obscenity, insults ans so on."""
 
     name: str = Field(default="detoxify", description="Name of the reward module")
     model_name: str = Field(

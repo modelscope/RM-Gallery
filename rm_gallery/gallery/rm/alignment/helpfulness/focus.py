@@ -18,6 +18,8 @@ PRINCIPLES = [
 
 @RewardRegistry.register("focus_listwise_reward")
 class FocusListWiseReward(BaseHelpfulnessListwiseReward):
+    """Focus: Detects high-quality, on-topic answers to general user queries"""
+
     name: str = Field(default="focus_listwise_reward")
     desc: str = Field(default=DESC)
     scenario: str = Field(default=SCENARIO, description="assistant scenario")

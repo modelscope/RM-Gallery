@@ -20,6 +20,8 @@ I will also provide you with a set of principles, listed under the heading #Prin
 
 @RewardRegistry.register("translation_listwise_reward")
 class TranslationListWiseReward(BaseHelpfulnessListwiseReward):
+    """Translation: Converting text from one language to another."""
+
     name: str = Field(default="translation_listwise_reward", description="reward name")
     scenario: str = Field(default=SCENARIO, description="assistant scenario")
     principles: List[str] = Field(default=PRINCIPLES)

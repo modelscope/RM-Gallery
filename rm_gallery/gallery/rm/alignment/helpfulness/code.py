@@ -14,6 +14,8 @@ PRINCIPLES = []
 
 @RewardRegistry.register("code_listwise_reward")
 class CodeListWiseReward(BaseHelpfulnessListwiseReward):
+    """Code: Involves generating, understanding, or modifying programming language code within text."""
+
     name: str = Field(default="code_listwise_reward")
     scenario: str = Field(default=SCENARIO, description="assistant scenario")
     principles: List[str] = Field(default=PRINCIPLES)

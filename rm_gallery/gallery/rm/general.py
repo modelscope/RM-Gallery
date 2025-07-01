@@ -153,9 +153,7 @@ class F1ScoreReward(BasePointWiseReward):
 
 @RewardRegistry.register("rouge")
 class RougeReward(BasePointWiseReward):
-    """
-    ROUGE-L similarity evaluation
-    """
+    """ROUGE-L similarity evaluation using longest common subsequence"""
 
     name: str = Field(default="rouge", description="ROUGE similarity reward")
 
@@ -235,7 +233,7 @@ class RougeReward(BasePointWiseReward):
 @RewardRegistry.register("number_accuracy")
 class NumberAccuracyReward(BasePointWiseReward):
     """
-    Check numerical calculation accuracy.
+    Check numerical calculation accuracy by comparing numbers in generated vs reference content.
 
     This reward verifies if the numbers in the generated content match
     the numbers in the reference content within a specified tolerance.

@@ -20,6 +20,8 @@ I will also provide you with a set of principles, listed under the heading #Prin
 
 @RewardRegistry.register("generation_listwise_reward")
 class GenerationListWiseReward(BaseHelpfulnessListwiseReward):
+    """Generation: Creating new textual content, from articles to stories, with an emphasis on originality and creativity."""
+
     name: str = Field(default="generation_listwise_reward", description="reward name")
     scenario: str = Field(default=SCENARIO, description="assistant scenario")
     principles: List[str] = Field(default=PRINCIPLES)

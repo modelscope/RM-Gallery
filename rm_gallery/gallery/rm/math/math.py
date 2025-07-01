@@ -11,7 +11,7 @@ from rm_gallery.core.reward.schema import RewardDimensionWithScore, RewardResult
 @RewardRegistry.register("math_verify_reward")
 class MathVerifyReward(BasePointWiseReward):
     """
-    Verify mathematical expressions using math_verify library
+    Verifies mathematical expressions using the math_verify library, supporting both LaTeX and plain expressions
     """
 
     name: str = Field(default="math_verify", description="Math verification reward")

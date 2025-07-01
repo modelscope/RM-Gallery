@@ -18,6 +18,8 @@ PRINCIPLES = [
 
 @RewardRegistry.register("factuality_listwise_reward")
 class FactualityListWiseReward(BaseHonestyListWiseReward):
+    """Factuality: Detects hallucinations and other basic errors in completions."""
+
     name: str = Field(default="factuality_listwise_reward")
     desc: str = Field(default=DESC)
     scenario: str = Field(default=SCENARIO, description="assistant scenario")

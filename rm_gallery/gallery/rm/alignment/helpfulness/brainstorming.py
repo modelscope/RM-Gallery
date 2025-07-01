@@ -19,6 +19,8 @@ PRINCIPLES = [
 
 @RewardRegistry.register("brainstorming_listwise_reward")
 class BrainstormingListWiseReward(BaseHelpfulnessListwiseReward):
+    """Brainstorming: Generating text to come up with new ideas or solutions, with an emphasis on creativity and driving thinking."""
+
     name: str = Field(default="brainstorming_listwise_reward")
     scenario: str = Field(default=SCENARIO, description="assistant scenario")
     principles: List[str] = Field(default=PRINCIPLES)

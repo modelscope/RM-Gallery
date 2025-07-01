@@ -48,6 +48,8 @@ DEFAULT_HONESTY_PRINCIPLES = [
 
 @RewardRegistry.register("base_helpfulness_listwise")
 class BaseHelpfulnessListwiseReward(BaseListWisePrincipleReward):
+    """The assistant aims to provide helpful and informative responses to users, responding to their queries with relevant and accurate information."""
+
     name: str = Field(default="base_helpfulness_listwise")
     desc: str = Field(default=DEFAULT_HELPFULNESS_DESC)
     scenario: str = Field(
@@ -58,6 +60,8 @@ class BaseHelpfulnessListwiseReward(BaseListWisePrincipleReward):
 
 @RewardRegistry.register("base_harmlessness_listwise")
 class BaseHarmlessnessListwiseReward(BaseListWisePrincipleReward):
+    """The assistant aims to answer questions, avoiding harmful behaviors such as spreading misinformation, spreading harmful ideas, or engaging in other harmful activities."""
+
     name: str = Field(default="base_harmlessness_listwise")
     desc: str = Field(default=DEFAULT_HARMLESSNESS_DESC)
     scenario: str = Field(
@@ -68,6 +72,8 @@ class BaseHarmlessnessListwiseReward(BaseListWisePrincipleReward):
 
 @RewardRegistry.register("base_honesty_listwise")
 class BaseHonestyListWiseReward(BaseListWisePrincipleReward):
+    """The assistant aims to truthfully answer the user’s questions with no bias or prejudice."""
+
     name: str = Field(default="base_honesty_listwise")
     desc: str = Field(default=DEFAULT_HONESTY_DESC)
     scenario: str = Field(
@@ -78,6 +84,8 @@ class BaseHonestyListWiseReward(BaseListWisePrincipleReward):
 
 @RewardRegistry.register("base_helpfulness_pointwise")
 class BaseHelpfulnessPointWiseReward(BasePointWisePrincipleReward):
+    """The assistant aims to provide helpful and informative responses to users, responding to their queries with relevant and accurate information."""
+
     name: str = Field(default="base_helpfulness_pointwise")
     desc: str = Field(default=DEFAULT_HELPFULNESS_DESC)
     scenario: str = Field(
@@ -88,6 +96,8 @@ class BaseHelpfulnessPointWiseReward(BasePointWisePrincipleReward):
 
 @RewardRegistry.register("base_harmlessness_pointwise")
 class BaseHarmlessnessPointWiseReward(BasePointWisePrincipleReward):
+    """The assistant aims to answer questions, avoiding harmful behaviors such as spreading misinformation, spreading harmful ideas, or engaging in other harmful activities."""
+
     name: str = Field(default="base_harmlessness_pointwise")
     desc: str = Field(default=DEFAULT_HARMLESSNESS_DESC)
     scenario: str = Field(
@@ -98,6 +108,8 @@ class BaseHarmlessnessPointWiseReward(BasePointWisePrincipleReward):
 
 @RewardRegistry.register("base_honesty_pointwise")
 class BaseHonestyPointWiseReward(BasePointWisePrincipleReward):
+    """The assistant aims to truthfully answer the user’s questions with no bias or prejudice."""
+
     name: str = Field(default="base_honesty_pointwise")
     desc: str = Field(default=DEFAULT_HONESTY_DESC)
     scenario: str = Field(

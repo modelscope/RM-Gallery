@@ -15,9 +15,7 @@ from rm_gallery.core.reward.schema import RewardDimensionWithScore, RewardResult
 
 @RewardRegistry.register("code_syntax_check")
 class SyntaxCheckReward(BasePointWiseReward):
-    """
-    Check code syntax using Abstract Syntax Tree
-    """
+    """Check code syntax using Abstract Syntax Tree to validate Python code blocks."""
 
     name: str = Field(default="syntax_check", description="Syntax check reward")
 
@@ -92,9 +90,7 @@ class SyntaxCheckReward(BasePointWiseReward):
 
 @RewardRegistry.register("code_style")
 class CodeStyleReward(BasePointWiseReward):
-    """
-    Basic code style checking
-    """
+    """Basic code style checking including indentation consistency and naming conventions."""
 
     name: str = Field(default="code_style", description="Code style reward")
 
@@ -275,9 +271,10 @@ class PatchSimilarityReward(BasePointWiseReward):
         )
 
 
+@RewardRegistry.register("code_execution")
 class CodeExecutionReward(BasePointWiseReward):
     """
-    Evaluate code by executing it against test cases
+    Executes code against test cases and evaluates correctness based on test case results.
 
     This reward model evaluates code by executing it against test cases using a testing framework
     that supports both call-based and standard input code evaluation methods.

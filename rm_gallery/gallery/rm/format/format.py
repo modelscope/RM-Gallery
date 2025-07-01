@@ -15,7 +15,7 @@ from rm_gallery.core.utils.tokenizer import get_tokenizer
 @RewardRegistry.register("reasoning_format")
 class ReasoningFormatReward(BasePointWiseReward):
     """
-    Check format reward: thinking format and answer format.
+    Check format reward for thinking format and answer format with proper tags.
 
     This reward verifies if the generated content follows the required format
     with proper <think> and <answer> tags.
@@ -80,7 +80,7 @@ class ReasoningFormatReward(BasePointWiseReward):
 @RewardRegistry.register("reasoning_tool_call_format")
 class ReasoningToolCallFormatReward(BasePointWiseReward):
     """
-    Check tool call format: think format, answer format and tool_call format.
+    Check tool call format including think, answer and tool_call tags with JSON validation.
 
     This reward verifies if the generated content follows the required format
     with proper <think>, <answer> and <tool_call> tags, including JSON validation
@@ -244,7 +244,7 @@ class ReasoningToolCallFormatReward(BasePointWiseReward):
 @RewardRegistry.register("length_penalty")
 class LengthPenaltyReward(BasePointWiseReward):
     """
-    Text length based penalty
+    Text length based penalty for content that is too short or too long.
     """
 
     name: str = Field(default="length_penalty", description="Length penalty reward")
@@ -300,7 +300,7 @@ class LengthPenaltyReward(BasePointWiseReward):
 @RewardRegistry.register("ngram_repetition_penalty")
 class NgramRepetitionPenaltyReward(BasePointWiseReward):
     """
-    Calculate N-gram repetition penalty, supporting Chinese processing and multiple penalty strategies
+    Calculate N-gram repetition penalty supporting Chinese processing and multiple penalty strategies.
     """
 
     name: str = Field(
@@ -520,7 +520,7 @@ class NgramRepetitionPenaltyReward(BasePointWiseReward):
 @RewardRegistry.register("privacy_leakage")
 class PrivacyLeakageReward(BasePointWiseReward):
     """
-    Privacy information leakage detection.
+    Privacy information leakage detection for emails, phone numbers, ID cards, credit cards, and IP addresses.
 
     This reward checks for potential privacy leaks in the generated content,
     including email addresses, phone numbers, ID numbers, credit card numbers,

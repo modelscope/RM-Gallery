@@ -17,6 +17,8 @@ PRINCIPLES = [
 
 @RewardRegistry.register("math_listwise_reward")
 class MathListWiseReward(BaseHelpfulnessListwiseReward):
+    """Math: Solves problems at math, on open-ended human prompts ranging from middle school physics and geometry to college-level chemistry, calculus, combinatorics, and more."""
+
     name: str = Field(default="math_listwise_reward")
     desc: str = Field(default=DESC)
     scenario: str = Field(default=SCENARIO, description="assistant scenario")

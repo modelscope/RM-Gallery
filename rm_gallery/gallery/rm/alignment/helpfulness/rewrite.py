@@ -16,6 +16,8 @@ SCENARIO = """Rewrite: the assistant aims to modifies existing text to alter its
 
 @RewardRegistry.register("rewrite_listwise_reward")
 class RewriteListWiseReward(BaseHelpfulnessListwiseReward):
+    """Rewrite: the assistant aims to modifies existing text to alter its style while preserving the original information and intent."""
+
     name: str = Field(default="rewrite_listwise_reward", description="reward name")
     scenario: str = Field(default=SCENARIO, description="assistant scenario")
     principles: List[str] = Field(default=PRINCIPLES)

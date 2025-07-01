@@ -14,6 +14,8 @@ Your role is that of a professional evaluation expert. I will provide you with a
 
 @RewardRegistry.register("reasoning_listwise_reward")
 class ReasoningListWiseReward(BaseHelpfulnessListwiseReward):
+    """Reasoning: Involves processing and analyzing text to draw inferences, make predictions, or solve problems, requiring an understanding of underlying concepts and relationships within the text."""
+
     name: str = Field(default="reasoning_listwise_reward", description="reward name")
     scenario: str = Field(default=SCENARIO, description="assistant scenario")
     principles: List[str] = Field(default=PRINCIPLES)

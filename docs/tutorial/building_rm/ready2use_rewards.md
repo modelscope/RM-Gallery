@@ -58,32 +58,32 @@ Click [here](./autoprinciple.ipynb#6) to view relevant evaluation results
 
 | Scenario | Description | Register Name |
 |------|----------|------------|
-| Math Verify | Verifies mathematical expressions using the math_verify library, supporting both LaTeX and plain expressions | MathVerifyReward |
+| Math Verify | Verifies mathematical expressions using the math_verify library, supporting both LaTeX and plain expressions | math_verify_reward |
 
 ## 3 Code Quality Rewards
 
 | Scenario | Description | Register Name |
 |------|----------|------------|
-| Code Syntax | Check code syntax using Abstract Syntax Tree to validate Python code blocks |  SyntaxCheckReward |
-| Code Style | Basic code style checking including indentation consistency and naming conventions | CodeStyleReward |
-| Patch Similarity | Calculate similarity between generated patch and oracle patch using difflib.SequenceMatcher | PatchSimilarityReward |
-| Code Execution | Executes code against test cases and evaluates correctness based on test case results | CodeExecutionReward |
+| Code Syntax | Check code syntax using Abstract Syntax Tree to validate Python code blocks |  code_syntax_check |
+| Code Style | Basic code style checking including indentation consistency and naming conventions | code_style |
+| Patch Similarity | Calculate similarity between generated patch and oracle patch using difflib.SequenceMatcher | code_patch_similarity |
+| Code Execution | Executes code against test cases and evaluates correctness based on test case results | code_execution |
 
 ## 4 General Evaluation Rewards
 
 | Scenario | Description | Register Name |
 |------|----------|--------------|
-| Accuracy | Calculate accuracy (exact match rate) between generated content and reference answer | AccuracyReward |
-| F1 Score | Calculate F1 score between generated content and reference answer at word level with configurable tokenizer | F1ScoreReward |
-| ROUGE | ROUGE-L similarity evaluation using longest common subsequence | RougeReward |
-| Number Accuracy | Check numerical calculation accuracy by comparing numbers in generated vs reference content | NumberAccuracyReward |
+| Accuracy | Calculate accuracy (exact match rate) between generated content and reference answer | accuracy |
+| F1 Score | Calculate F1 score between generated content and reference answer at word level with configurable tokenizer | f1_score |
+| ROUGE | ROUGE-L similarity evaluation using longest common subsequence | rouge |
+| Number Accuracy | Check numerical calculation accuracy by comparing numbers in generated vs reference content | number_accuracy |
 
 ## 5 Format and Style Rewards
 
 | Scenario | Description | Register Name |
 |------|----------|--------------|
-| Reasoning Format |  Check format reward for thinking format and answer format with proper tags | ReasoningFormatReward |
-| Tool Call Format | Check tool call format including think, answer and tool_call tags with JSON validation | ReasoningToolCallFormatReward |
-| Length Penalty | Text length based penalty for content that is too short or too long | LengthPenaltyReward |
-| N-gram Repetition | Calculate N-gram repetition penalty supporting Chinese processing and multiple penalty strategies | NgramRepetitionPenaltyReward |
-| Privacy Leakage | Privacy information leakage detection for emails, phone numbers, ID cards, credit cards, and IP addresses | PrivacyLeakageReward |
+| Reasoning Format |  Check format reward for thinking format and answer format with proper tags | reasoning_format |
+| Tool Call Format | Check tool call format including think, answer and tool_call tags with JSON validation | reasoning_tool_call_format |
+| Length Penalty | Text length based penalty for content that is too short or too long | length_penalty |
+| N-gram Repetition | Calculate N-gram repetition penalty supporting Chinese processing and multiple penalty strategies | ngram_repetition_penalty |
+| Privacy Leakage | Privacy information leakage detection for emails, phone numbers, ID cards, credit cards, and IP addresses | privacy_leakage |

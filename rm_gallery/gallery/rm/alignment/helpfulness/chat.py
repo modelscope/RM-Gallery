@@ -21,6 +21,8 @@ I will also provide you with a set of principles, listed under the heading #Prin
 
 @RewardRegistry.register("chat_listwise_reward")
 class ChatListWiseReward(BaseHelpfulnessListwiseReward):
+    """Chat: Simulates human conversation and communicates a variety of topics through text understanding and generation, emphasizing coherence and natural flow of interaction."""
+
     name: str = Field(default="chat_listwise_reward", description="reward name")
     scenario: str = Field(default=SCENARIO, description="assistant scenario")
     principles: List[str] = Field(default=PRINCIPLES)
