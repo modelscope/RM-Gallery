@@ -30,7 +30,7 @@ English | [**中文**](./README_zh.md)
 ----
 
 ## 📢 News
-- **[2025-06-30]** We release RM Gallery v0.1.0 now, which is also available in [PyPI](https://pypi.org/simple/rm-gallery/)!
+- **[2025-07-03]** We release RM Gallery v0.1.0 now, which is also available in [PyPI](https://pypi.org/simple/rm-gallery/)!
 ----
 
 ## 🌟 Why RM-Gallery?
@@ -39,6 +39,8 @@ RM-Gallery is a one-stop platform for training, building and applying reward mod
 
 <p align="center">
  <img src="./docs/images/framework.png" alt="Framework" width="75%">
+ <br/>
+ <em>RM-Gallery Framework </em>
 </p>
 
 ### 🏋️‍♂️ Training RM
@@ -48,8 +50,7 @@ RM-Gallery is a one-stop platform for training, building and applying reward mod
   <br/>
   <em>RM Training Pipeline improves accuracy on RM Bench</em>
 </p>
-This image demonstrates the effectiveness of the RM Training Pipeline. On RM Bench, after more than 80 training steps, the accuracy improved from around 55.8% with the baseline model (Qwen2.5-14B) to approximately 62.5%. For detailed training instructions, see:
-[training_rm tutorial](./examples/train/training_rm.md)
+This image demonstrates the effectiveness of the RM Training Pipeline. On RM Bench, after more than 80 training steps, the accuracy improved from around 55.8% with the baseline model (Qwen2.5-14B) to approximately 62.5%.
 
 ### 🏗️ Building RM
 - **Unified Reward Model Architecture**: Flexible implementation of reward models through standardized interfaces, supporting various architectures (model-based/free), reward formats (scalar/critique), and scoring patterns (pointwise/listwise/pairwise)
@@ -66,7 +67,7 @@ The two images above show that after applying the Principle+Critic+Score paradig
 
 ### 🛠️ Applying RM
 
-- **Multiple Usage Scenarios**: Covers multiple Reward Model (RM) usage scenarios with detailed best practices, including Training with Rewards (e.g., post-training), Inference with Rewards (e.g., Best-of-N，refinement)
+- **Multiple Usage Scenarios**: Covers multiple Reward Model (RM) usage scenarios with detailed best practices, including Training with Rewards (e.g., post-training), Inference with Rewards (e.g., Best-of-N，data-correction)
 
 - **High-Performance RM Serving**: Leverages the New API platform to deliver high-throughput, fault-tolerant reward model serving, enhancing feedback efficiency.
 
@@ -102,7 +103,7 @@ RM-Gallery offers a comprehensive and user-friendly pipeline for training reward
 
 Below is an example of how to train a reward model using the pointwise approach:
 
-<strong> Prepare the Training Data </strong>
+<strong> 1️⃣  Prepare the Training Data </strong>
 
 Download and convert the HelpSteer2 dataset to the required format.
 
@@ -114,14 +115,14 @@ git clone https://huggingface.co/datasets/nvidia/helpsteer2
 python examples/data/data_from_yaml.py --config examples/train/pointwise/data_config.yaml
 ```
 
-<strong>  Launch the Ray Distributed Cluster </strong>
+<strong>2️⃣  Launch the Ray Distributed Cluster </strong>
 
 For single-node (8 GPUs) setup:
 
 ```bash
 ray start --head --node-ip-address $MASTER_ADDR --num-gpus 8 --dashboard-host 0.0.0.0
 ```
-<strong> Start Pointwise Training </strong>
+<strong>3️⃣ Start Pointwise Training </strong>
 
 Navigate to the pointwise training directory and run the script:
 
@@ -143,14 +144,16 @@ This part demonstrates how to use ready-to-use RMs.
 Below are the main RM scenarios included in RM-Gallery:
 | Scenario | Description |
 | :--- | :--- |
-| math |Focuse on verifying mathematical correctness and evaluating math-related tasks|
-| code | For assessing code quality, including syntax, style, patch similarity, and execution correctness|
-| alignment | Evaluate and optimize outputs for human values such as helpfulness, harmlessness, and honesty|
+| Math |Focuse on verifying mathematical correctness and evaluating math-related tasks|
+| Code | For assessing code quality, including syntax, style, patch similarity, and execution correctness|
+| Alignment | Evaluate and optimize outputs for human values such as helpfulness, harmlessness, and honesty|
 | General | For general-purpose evaluation metrics like accuracy, F1 score, ROUGE, and number accuracy|
 | Format and Style|Check output format, style, length, repetition, and privacy compliance.|
 
 You can call
 ```python
+from rm_gallery.core.reward.registry import RewardRegistry
+
 RewardRegistry.list()
 ```
 to view all registered RMs.
@@ -159,6 +162,8 @@ For details of RM please check[ready2use_rewards](./docs/tutorial/building_rm/re
 <strong> How to initialize a ready-to-use RM </strong>
 
 ```python
+from rm_gallery.core.reward.registry import RewardRegistry
+
 # Initialize using the registry pattern
 rm = RewardRegistry.get("Your RM's Registry Name")
 ```
@@ -182,16 +187,26 @@ You can choose base classes with different levels of abstraction based on your n
 If you follow the Principle-Critic-Score Paradigm and only want to use your own principles
 
 ```python
+import os
+# Add environment variables
+os.environ["OPENAI_API_KEY"] = "your_api_key"
+os.environ["BASE_URL"] = "your_base_url"
+
+# Initialize the LLM client with thinking capability enabled
+llm = OpenaiLLM(model="qwen3-8b", enable_thinking=True)
 customPrincipledReward = BaseListWisePrincipleReward(
         name="demo_custom_principled_reward",
         desc="your task description",
         scenario="your scenario description",
         principles=["your Principle 1", "your Principle 2"],
+        llm=llm
     )
 ```
 
 **2️⃣ Custom LLM Template**
 If you need a more customized LLM template, you can inherit from BaseLLMReward and replace with your own template
+<details>
+<summary>Example: CustomLLMReward</summary>
 
 ```python
     from rm_gallery.core.model.openai_llm import OpenaiLLM
@@ -202,16 +217,72 @@ If you need a more customized LLM template, you can inherit from BaseLLMReward a
 
     # Initialize the LLM client with thinking capability enabled
     llm = OpenaiLLM(model="qwen3-8b", enable_thinking=True)
-    custom_template = BasePromptTemplate(
-        template="""
-            write your template here.
-        """
-    )
-    customLLMReward = BaseLLMReward(
-        template= custom_template,
-        llm=llm,
-    )
+
+    ##定义Template
+    class CustomTemplate(BasePromptTemplate):
+        score: float = Field(default=..., description="Return only the numerical score")
+
+        @classmethod
+        def format(cls, question: str, answer: str, **kwargs) -> str:
+            return f"""
+                Question: {question}
+                Response: {answer}
+
+                Score according to these criteria:
+                1. Fully accurate and verifiable: 1.0
+                2. Partially correct with minor errors: 0.5
+                3. Completely incorrect/misleading: 0.0
+
+                # Output:
+                {cls.schema()}
+            """
+    ##定义Reward
+    class CustomLLMReward(BaseLLMReward, BasePointWiseReward):
+        """LLM-based factuality assessment reward module"""
+
+        name: str = "factuality"
+        threshold: float = Field(default=0.7, description="Factuality score threshold")
+        template: Type[BasePromptTemplate] = CustomTemplate
+
+        def _before_evaluate(self, sample: DataSample, **kwargs) -> dict:
+            """
+            Prepare prompt parameters
+
+            Args:
+                sample: Data sample containing question and response
+
+            Returns:
+                dict: Dictionary containing 'question' and 'answer' fields
+            """
+            question = format_messages(sample.input)
+            answer = sample.output[0].answer.content
+            return {"question": question, "answer": answer}
+
+        def _after_evaluate(self, response: CustomTemplate, **kwargs) -> RewardResult:
+            """
+            Parse LLM response into reward value
+
+            Args:
+                response: Raw response string from LLM
+
+            Returns:
+                RewardResult: Object containing factuality score
+            """
+            score = response.score
+            return RewardResult(
+                name=self.name,
+                details=[
+                    RewardDimensionWithScore(
+                        name=self.name,
+                        score=score,
+                        reason=f"LLM factuality score: {score}"
+                    )
+                ],
+                extra_data={"raw_response": response}
+            )
 ```
+</details>
+
 
 **3️⃣ Rule-based RM**
 If you want to build a rule-based RM, you can choose to inherit from BasePointWiseReward/BaseListWiseReward/BasePairWiseReward/BaseStepWiseReward based on your scoring pattern. Override the evaluate method to implement your logic.
@@ -364,7 +435,7 @@ Reference to cite if you use RM-Gallery in a paper:
 title = {RM-Gallery: A One-Stop Reward Model Platform},
 author = {The RM-Gallery Team},
 url = {https://github.com/modelscope/RM-Gallery},
-month = {06},
+month = {07},
 year = {2025}
 }
 ```
