@@ -5,7 +5,7 @@ Supports loading from local files and remote sources with automatic format detec
 import json
 import random
 import uuid
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type, Union
 
@@ -116,20 +116,21 @@ class DataConverterRegistry:
         return list(cls._converters.keys())
 
 
-class DataLoader(BaseDataModule):
+class DataLoader(BaseDataModule, ABC):
     """
-    Unified data loading module supporting multiple strategies and sources.
+    Abstract base class for data loading modules with multiple strategies and sources.
 
-    Serves as both the main loading interface and base class for loading strategies.
-    Supports local file loading and remote dataset loading with automatic format detection.
+    Defines the common interface and behavior for all data loading strategies while
+    requiring concrete implementations to provide strategy-specific loading logic.
+    Use create_loader() factory function to instantiate the appropriate concrete loader.
 
     Attributes:
         load_strategy_type: Strategy identifier (local/huggingface)
         data_source: Source identifier for converter selection
 
     Input Sources:
-        - Local: JSON, JSONL, Parquet files or directories
-        - Remote: HuggingFace datasets with various configurations
+        - Local: JSON, JSONL, Parquet files or directories (FileDataLoader)
+        - Remote: HuggingFace datasets with various configurations (HuggingFaceDataLoader)
 
     Output: BaseDataSet containing converted DataSample objects
     """
@@ -185,54 +186,10 @@ class DataLoader(BaseDataModule):
         """
         pass
 
+    @abstractmethod
     def load_data(self, **kwargs) -> List[DataSample]:
         """
-        Load data from the configured source using the appropriate strategy.
-
-        Automatically selects and instantiates the correct loading strategy
-        based on load_strategy_type configuration.
-
-        Args:
-            **kwargs: Additional parameters passed to the loading strategy
-
-        Returns:
-            List of DataSample objects loaded from the source
-
-        Raises:
-            ValueError: If unsupported strategy type is specified
-            RuntimeError: If loading fails at any stage
-        """
-        # If this is a strategy instance (subclass), call the abstract method
-        if self.__class__ != DataLoader:
-            return self._load_data_impl(**kwargs)
-
-        # Choose strategy based on load_strategy_type
-        if self.load_strategy_type == "local":
-            strategy = FileDataLoader(
-                name=self.name,
-                load_strategy_type=self.load_strategy_type,
-                data_source=self.data_source,
-                config=self.config.copy(),
-                metadata=self.metadata,
-            )
-        elif self.load_strategy_type == "huggingface":
-            strategy = HuggingFaceDataLoader(
-                name=self.name,
-                load_strategy_type=self.load_strategy_type,
-                data_source=self.data_source,
-                config=self.config.copy(),
-                metadata=self.metadata,
-            )
-        else:
-            error_msg = f"Unsupported load strategy type: {self.load_strategy_type}"
-            logger.error(error_msg)
-            raise ValueError(error_msg)
-
-        return strategy.load_data(**kwargs)
-
-    def _load_data_impl(self, **kwargs) -> List[DataSample]:
-        """
-        Abstract method for strategy implementations to override.
+        Load data from the configured source using the strategy-specific implementation.
 
         Each loading strategy must implement this method to handle
         the actual data loading and conversion process.
@@ -241,12 +198,12 @@ class DataLoader(BaseDataModule):
             **kwargs: Strategy-specific loading parameters
 
         Returns:
-            List of DataSample objects from the source
+            List of DataSample objects loaded from the source
 
         Raises:
-            NotImplementedError: If not implemented by strategy subclass
+            RuntimeError: If loading fails at any stage
         """
-        raise NotImplementedError("Subclasses must implement _load_data_impl method")
+        pass
 
     def run(
         self, input_data: Union[BaseDataSet, List[DataSample], None] = None, **kwargs
@@ -396,7 +353,7 @@ class FileDataLoader(DataLoader):
         # Sort files for consistent ordering
         return sorted(supported_files)
 
-    def _load_data_impl(self, **kwargs) -> List[DataSample]:
+    def load_data(self, **kwargs) -> List[DataSample]:
         path = Path(self.config["path"])
 
         try:
@@ -637,7 +594,7 @@ class HuggingFaceDataLoader(DataLoader):
         """
         pass
 
-    def _load_data_impl(self, **kwargs) -> List[DataSample]:
+    def load_data(self, **kwargs) -> List[DataSample]:
         """
         Load data from HuggingFace dataset with automatic conversion.
 
@@ -767,6 +724,9 @@ def create_loader(
     """
     Factory function to create data loading module with specified strategy.
 
+    Automatically selects and instantiates the appropriate concrete loader class
+    based on the load_strategy_type parameter.
+
     Args:
         name: Unique identifier for the loading module
         load_strategy_type: Loading strategy type (local/huggingface)
@@ -775,12 +735,27 @@ def create_loader(
         metadata: Additional metadata for tracking and debugging
 
     Returns:
-        Configured DataLoader instance ready for pipeline integration
+        Configured concrete DataLoader instance ready for pipeline integration
+
+    Raises:
+        ValueError: If unsupported strategy type is specified
     """
-    return DataLoader(
-        name=name,
-        load_strategy_type=load_strategy_type,
-        data_source=data_source,
-        config=config,
-        metadata=metadata,
-    )
+    # Choose strategy based on load_strategy_type
+    if load_strategy_type == "local":
+        return FileDataLoader(
+            name=name,
+            load_strategy_type=load_strategy_type,
+            data_source=data_source,
+            config=config,
+            metadata=metadata,
+        )
+    elif load_strategy_type == "huggingface":
+        return HuggingFaceDataLoader(
+            name=name,
+            load_strategy_type=load_strategy_type,
+            data_source=data_source,
+            config=config,
+            metadata=metadata,
+        )
+    else:
+        raise ValueError(f"Unsupported load strategy type: {load_strategy_type}")

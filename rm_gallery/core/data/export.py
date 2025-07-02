@@ -271,12 +271,28 @@ class DataExporter(BaseDataModule):
         # Create directory structure
         full_output_dir.mkdir(parents=True, exist_ok=True)
 
-        if format_type.lower() == "json":
-            self._export_json(dataset, filepath)
-        elif format_type.lower() == "jsonl":
-            self._export_jsonl(dataset, filepath)
-        elif format_type.lower() == "parquet":
-            self._export_parquet(dataset, filepath)
+        # Use the common format export method
+        self._export_by_format(dataset, filepath, format_type)
+
+    def _export_by_format(self, dataset: BaseDataSet, filepath: Path, format_type: str):
+        """
+        Common method to export dataset in specified format.
+
+        Args:
+            dataset: Dataset to export
+            filepath: Full file path for output
+            format_type: Target export format
+        """
+        # Format handler mapping
+        format_handlers = {
+            "json": self._export_json,
+            "jsonl": self._export_jsonl,
+            "parquet": self._export_parquet,
+        }
+
+        format_key = format_type.lower()
+        if format_key in format_handlers:
+            format_handlers[format_key](dataset, filepath)
         else:
             logger.warning(f"Unsupported format: {format_type}")
 
@@ -393,14 +409,8 @@ class DataExporter(BaseDataModule):
 
         filepath = output_dir / filename
 
-        if format_type.lower() == "json":
-            self._export_json(dataset, filepath)
-        elif format_type.lower() == "jsonl":
-            self._export_jsonl(dataset, filepath)
-        elif format_type.lower() == "parquet":
-            self._export_parquet(dataset, filepath)
-        else:
-            logger.warning(f"Unsupported format: {format_type}")
+        # Use the common format export method
+        self._export_by_format(dataset, filepath, format_type)
 
     def _export_json(self, dataset: BaseDataSet, filepath: Path):
         """

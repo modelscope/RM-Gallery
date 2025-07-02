@@ -48,7 +48,7 @@ RM-Gallery 是一个集训练、构建、应用于一体的奖励模型平台，
   <br/>
   <em>RM训练管道在RM Bench上的效果提升</em>
 </p>
-如上图所示，RM训练管道在RM Bench上，经过80步训练，准确率从基线模型(Qwen2.5-14B)的55.8%提升到约62.5%。详细训练说明见：[training_rm教程](./docs/tutorial/training_rm/training_rm.md)
+如上图所示，RM训练管道在RM Bench上，经过80步训练，准确率从基线模型(Qwen2.5-14B)的55.8%提升到约62.5%。详细训练说明见：[training_rm教程](./examples/train/training_rm.md.md)
 
 ### 🏗️ 构建RM
 - **统一奖励模型架构**：通过标准化接口灵活实现奖励模型，支持多种架构（基于模型/无模型）、奖励格式（标量/点评）、评分模式（点式/列表式/对式）。
@@ -129,7 +129,7 @@ cd examples/train/pointwise
 chmod +x run_pointwise.sh
 ./run_pointwise.sh
 ```
-更多细节见 [training_rm教程](./docs/tutorial/training_rm/training_rm.md)
+更多细节见 [training_rm教程](./examples/train/training_rm.md)
 
 
 ### 🏗️ 构建RM
@@ -323,7 +323,7 @@ print(sample_best_of_n.model_dump_json())
 |                 | [data annotator](docs/tutorial/data/annotation.ipynb)                    | 数据标注指南                                           |
 |                 | [data loader](docs/tutorial/data/load.ipynb)                             | 数据加载与预处理                                                |
 |                 | [data processor](docs/tutorial/data/process.ipynb)                       | 数据处理与转换最佳实践                                             |
-| **训练RM** | [training rm guide](docs/tutorial/training_rm/training_rm.md)            | 奖励模型训练全流程指南                                                 |
+| **训练RM** | [training rm guide](examples/train/training_rm.md)            | 奖励模型训练全流程指南                                                 |
 | **构建RM** | [overview](docs/tutorial/building_rm/overview.ipynb)                     | 自定义奖励模型构建概览                                                     |
 |                 | [ready-to-use RMs](docs/tutorial/building_rm/ready2use_rewards.md)        | 内置奖励模型列表与用法                                        |
 |                 | [building a custom RM](docs/tutorial/building_rm/custom_reward.ipynb)     | 自定义奖励模型设计与实现                                             |

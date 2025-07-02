@@ -99,18 +99,16 @@ def test_data_load_empty_config(dataset_info):
     """Test data loading with minimal config should fail without required path"""
     minimal_config = {"limit": 10}
 
-    load_module = create_loader(
-        name=dataset_info["name"],
-        load_strategy_type=dataset_info["type"],
-        data_source=dataset_info["data_source"],
-        config=minimal_config,
-    )
-
     # Should raise an exception because 'path' is required for local file strategy
     with pytest.raises(
-        RuntimeError, match="File data strategy requires 'path' in config"
+        ValueError, match="File data strategy requires 'path' in config"
     ):
-        load_module.run()
+        load_module = create_loader(
+            name=dataset_info["name"],
+            load_strategy_type=dataset_info["type"],
+            data_source=dataset_info["data_source"],
+            config=minimal_config,
+        )
 
 
 @pytest.mark.parametrize("limit", [1, 5, 20, 50])
@@ -137,32 +135,26 @@ def test_data_load_parametrized(dataset_info, load_config, limit):
 
 def test_invalid_data_source():
     """Test handling of invalid data source"""
-    # Create module with invalid data source
-    load_module = create_loader(
-        name="invalid/dataset",
-        load_strategy_type="local",
-        data_source="invalid_source",
-        config={"path": "/nonexistent/path.parquet", "limit": 10},
-    )
-
-    # Should raise an exception when trying to run
-    with pytest.raises(RuntimeError):
-        load_module.run()
+    # Should raise an exception when trying to create with nonexistent path
+    with pytest.raises(FileNotFoundError, match="Could not find path"):
+        load_module = create_loader(
+            name="invalid/dataset",
+            load_strategy_type="local",
+            data_source="invalid_source",
+            config={"path": "/nonexistent/path.parquet", "limit": 10},
+        )
 
 
 def test_invalid_load_strategy_type(dataset_info, load_config):
     """Test handling of invalid load strategy type"""
-    # Create module with invalid strategy type
-    load_module = create_loader(
-        name=dataset_info["name"],
-        load_strategy_type="invalid_type",
-        data_source=dataset_info["data_source"],
-        config=load_config,
-    )
-
-    # Should raise an exception when trying to run
-    with pytest.raises(RuntimeError):
-        load_module.run()
+    # Should raise an exception when trying to create with invalid strategy type
+    with pytest.raises(ValueError, match="Unsupported load strategy type"):
+        load_module = create_loader(
+            name=dataset_info["name"],
+            load_strategy_type="invalid_type",
+            data_source=dataset_info["data_source"],
+            config=load_config,
+        )
 
 
 if __name__ == "__main__":

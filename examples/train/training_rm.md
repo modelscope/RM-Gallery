@@ -197,6 +197,41 @@ def pointwise_reward(predicted_score, true_score):
     return float(reward)
 ```
 
+### 5.5. Training Results & Evaluation
+
+#### 5.5.1. Model Performance Comparison
+
+We conducted pairwise training experiments using two different base models on the HelpSteer2 pointwise dataset:
+
+- **Qwen2.5-14B**: Traditional language model
+- **Qwen3-14B**: Reasoning-enhanced model
+
+#### 5.5.2. Validation Accuracy Results
+
+![HelpSteer2 Pairwise Training Accuracy](../../docs/images/building_rm/helpsteer2_pointwise_eval_14b.png)
+
+The training curves show validation accuracy on the test dataset over 350 training steps:
+
+**Key Observations:**
+
+1. **Qwen3-14B Performance** (Red line):
+   - Rapid convergence in early training, reaching high accuracy within ~50 steps
+   - Achieves peak performance around step 200 (~0.42 accuracy)
+   - Stable training process with minimal fluctuations
+   - Final accuracy stabilizes around 0.42
+
+2. **Qwen2.5-14B Performance** (Green line):
+   - Lower starting accuracy (~0.28)
+   - Notable fluctuations and drops during training
+   - Performance decline in the 200-250 step range
+   - Recovery in later stages (after step 300), approaching Qwen3-14B levels
+
+3. **Comparative Analysis**:
+   - **Convergence Speed**: Qwen3-14B converges faster with higher training efficiency
+   - **Stability**: Qwen3-14B shows smoother training curve, while Qwen2.5-14B exhibits larger fluctuations
+   - **Final Performance**: Both models achieve similar final accuracy (~0.42)
+   - **Training Characteristics**: Qwen3-14B demonstrates superior training stability and predictability
+
 ---
 
 ## 6. Pairwise Training Detailed Guide
@@ -297,7 +332,7 @@ We conducted pairwise training experiments using two different base models on th
 
 #### 6.5.2. Validation Accuracy Results
 
-![HelpSteer2 Pairwise Training Accuracy](../../images/building_rm/helpsteer2_pairwise_training_eval_accuracy.png)
+![HelpSteer2 Pairwise Training Accuracy](../../docs/images/building_rm/helpsteer2_pairwise_training_eval_accuracy.png)
 
 The training curves show validation accuracy on the test dataset over 350 training steps:
 
@@ -325,7 +360,7 @@ The training curves show validation accuracy on the test dataset over 350 traini
 
 To further validate the robustness of our trained models, we evaluated the same Qwen2.5-14B model (trained on HelpSteer2 pairwise data) on the RM-Bench dataset:
 
-![HelpSteer2 Pairwise Training RM-Bench Accuracy](../../images/building_rm/helpsteer2_pairwise_training_RM-Bench_eval_accuracy.png)
+![HelpSteer2 Pairwise Training RM-Bench Accuracy](../../docs/images/building_rm/helpsteer2_pairwise_training_RM-Bench_eval_accuracy.png)
 
 **RM-Bench Evaluation Results:**
 

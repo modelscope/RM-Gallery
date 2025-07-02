@@ -49,7 +49,7 @@ RM-Gallery is a one-stop platform for training, building and applying reward mod
   <em>RM Training Pipeline improves accuracy on RM Bench</em>
 </p>
 This image demonstrates the effectiveness of the RM Training Pipeline. On RM Bench, after more than 80 training steps, the accuracy improved from around 55.8% with the baseline model (Qwen2.5-14B) to approximately 62.5%. For detailed training instructions, see:
-[training_rm tutorial](./docs/tutorial/training_rm/training_rm.md)
+[training_rm tutorial](./examples/train/training_rm.md)
 
 ### 🏗️ Building RM
 - **Unified Reward Model Architecture**: Flexible implementation of reward models through standardized interfaces, supporting various architectures (model-based/free), reward formats (scalar/critique), and scoring patterns (pointwise/listwise/pairwise)
@@ -130,7 +130,7 @@ cd examples/train/pointwise
 chmod +x run_pointwise.sh
 ./run_pointwise.sh
 ```
-For more details and advanced options, see the [training_rm tutorial](./docs/tutorial/training_rm/training_rm.md).
+For more details and advanced options, see the [training_rm tutorial](./examples/train/training_rm.md).
 
 
 ### 🏗️ Building RM
@@ -327,7 +327,7 @@ See Details in [data_refinement](./docs/tutorial/rm_application/data_refinement.
 |                 | [data annotator](docs/tutorial/data/annotation.ipynb)                    | Guide for annotating data for reward model training                                           |
 |                 | [data loader](docs/tutorial/data/load.ipynb)                             | How to load and preprocess data for RM-Gallery                                                |
 |                 | [data processor](docs/tutorial/data/process.ipynb)                       | Data processing and transformation best practices                                             |
-| **Training RM** | [training rm guide](docs/tutorial/training_rm/training_rm.md)            | Step-by-step guide for training reward models                                                 |
+| **Training RM** | [training rm guide](examples/train/training_rm.md)            | Step-by-step guide for training reward models                                                 |
 | **Building RM** | [overview](docs/tutorial/building_rm/overview.ipynb)                     | Overview of building custom reward models                                                     |
 |                 | [ready-to-use RMs](docs/tutorial/building_rm/ready2use_rewards.md)        | List and usage of built-in, ready-to-use reward models                                        |
 |                 | [building a custom RM](docs/tutorial/building_rm/custom_reward.ipynb)     | How to design and implement your own reward model                                             |
