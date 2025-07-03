@@ -3,8 +3,8 @@ from loguru import logger
 from rm_gallery.core.data.schema import DataSample, Reward, Step
 from rm_gallery.core.model.message import MessageRole
 from rm_gallery.core.model.openai_llm import OpenaiLLM
-from rm_gallery.core.reward.application.refinement import LLMRefinement
 from rm_gallery.core.reward.base import BaseReward
+from rm_gallery.core.reward.refinement import LLMRefinement
 from rm_gallery.core.reward.schema import RewardDimensionWithScore
 
 
@@ -28,9 +28,9 @@ def test_initialization():
         name="mock_reward",
     )
 
-    refinement = LLMRefinement(llm=llm, reward_module=reward)
+    refinement = LLMRefinement(llm=llm, reward=reward)
     assert refinement.llm == llm
-    assert refinement.reward_module == reward
+    assert refinement.reward == reward
     assert refinement.max_iterations == 3
 
 
@@ -41,7 +41,7 @@ def test_run_with_sample():
     reward = MockReward(
         name="mock_reward",
     )
-    refinement = LLMRefinement(llm=llm, reward_module=reward, max_iterations=1)
+    refinement = LLMRefinement(llm=llm, reward=reward, max_iterations=1)
 
     # Create test sample
     sample = DataSample(

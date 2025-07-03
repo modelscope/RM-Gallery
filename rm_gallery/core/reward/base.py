@@ -605,6 +605,36 @@ class BaseLLMReward(BaseReward):
             self._format, sample=sample, thread_pool=thread_pool, **kwargs
         )
 
+    def refine(
+        self,
+        sample: DataSample,
+        max_iterations: int = 3,
+        llm: BaseLLM | None = None,
+        thread_pool: ThreadPoolExecutor | None = None,
+        **kwargs,
+    ) -> DataSample:
+        """
+        Refines a given data sample using an LLM (Large Language Model) with a specified maximum number of iterations.
+
+        Args:
+            sample (DataSample): The input data sample to be refined.
+            max_iterations (int, optional): The maximum number of refinement iterations. Defaults to 3.
+            llm (BaseLLM | None, optional): The LLM instance to use for refinement. If None, uses the default LLM from the instance. Defaults to None.
+            thread_pool (ThreadPoolExecutor | None, optional): A thread pool executor for managing concurrent tasks. If None, no thread pool is used. Defaults to None.
+            **kwargs: Additional keyword arguments for flexibility.
+
+        Returns:
+            DataSample: The refined data sample after processing.
+        """
+        # Set default LLM if not provided
+        llm = self.llm if llm is None else llm
+
+        from rm_gallery.core.reward.refinement import LLMRefinement
+
+        return LLMRefinement(reward=self, llm=llm, max_iterations=max_iterations).run(
+            sample, thread_pool=thread_pool, **kwargs
+        )
+
 
 class BasePrincipleReward(BaseLLMReward):
     """

@@ -20,12 +20,12 @@ class LLMRefinement(BaseModule):
     A module implementing iterative response refinement using LLM and reward feedback.
 
     Attributes:
-        reward_module: Reward model for evaluating response quality
+        reward: Reward for evaluating response quality
         llm: Language model client for generating responses
         max_iterations: Maximum number of refinement iterations
     """
 
-    reward_module: BaseReward = Field(default=..., description="reward module")
+    reward: BaseReward = Field(default=..., description="reward")
     llm: BaseLLM = Field(default=..., description="llm client")
     max_iterations: int = Field(default=3, description="max iterations")
 
@@ -98,7 +98,7 @@ Please generate a better response based on the feedback provided on candidate re
             Feedback string describing response quality assessment
         """
         # Evaluate response quality using reward module
-        sample = self.reward_module.evaluate(sample)
+        sample = self.reward.evaluate(sample)
 
         # safety check
         if (

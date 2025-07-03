@@ -34,7 +34,7 @@ from rm_gallery.core.data.load.base import create_loader
 # Import core modules
 from rm_gallery.core.data.schema import DataSample
 from rm_gallery.core.model.openai_llm import OpenaiLLM
-from rm_gallery.core.reward.application.refinement import LLMRefinement
+from rm_gallery.core.reward.refinement import LLMRefinement
 from rm_gallery.core.reward.registry import RewardRegistry
 from rm_gallery.gallery.rm.alignment.base import BaseHelpfulnessListWiseReward
 
@@ -169,7 +169,7 @@ class RefinementProcessor:
         if self._refiner is None:
             self._refiner = LLMRefinement(
                 llm=self.llm,
-                reward_module=self.reward,
+                reward=self.reward,
                 max_iterations=self.refinement_config.max_iterations,
             )
         return self._refiner
