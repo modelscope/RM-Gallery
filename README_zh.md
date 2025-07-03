@@ -180,7 +180,7 @@ BaseReward
     │   ├── BasePointWisePrincipleReward            # 点式原则评测
     │   └── BaseListWisePrincipleReward             # 列表式原则评测
 ```
-可按需选择不同抽象层级的基类。典型用法如下：
+可按需选择不同抽象层级的基类。典型用法如下, 详细教程请看 [自定义RM教程](./docs/tutorial/building_rm/custom_reward.ipynb)
 **1️⃣ Custom Principles with Principle-Critic-Score Paradigm**
 如仅需自定义Principles：
 
@@ -293,7 +293,7 @@ class CustomReward(BasePointWiseReward):
 
 ### 🧪 奖励模型评测
 #### 数据准备
-RM-Gallery采用[结构化数据格式](../rm_gallery/core/data/schema.py)。以下为简单数据准备示例。更复杂场景（如Hugging Face数据集）见[数据流程教程](../docs/tutorial/data/pipeline.ipynb)。
+RM-Gallery采用[结构化数据格式](./rm_gallery/core/data/schema.py)。以下为简单数据准备示例。更复杂场景（如Hugging Face数据集）见[数据流程教程](./docs/tutorial/data/pipeline.ipynb)。
 
 <details>
 <summary><strong>示例：Harmlessness评测数据结构</strong></summary>
