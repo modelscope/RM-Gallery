@@ -161,7 +161,7 @@ Please summarize some general principles from the examples that can help another
 """
 
 
-class PrincipleGenerator(BaseModel):
+class AutoPrincipleGenerator(BaseModel):
     """Main class for generating and clustering evaluation principles.
 
     Attributes:

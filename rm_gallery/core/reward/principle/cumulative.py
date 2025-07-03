@@ -6,8 +6,8 @@ from pydantic import Field
 
 from rm_gallery.core.data.schema import DataSample
 from rm_gallery.core.reward.base import BaseListWisePrincipleReward
-from rm_gallery.core.reward.principle.generator import BaseGeneratorTemplate
-from rm_gallery.core.reward.principle.iter_generator import IterPrincipleGenerator
+from rm_gallery.core.reward.principle.auto import BaseGeneratorTemplate
+from rm_gallery.core.reward.principle.iterative import IterativePrincipleGenerator
 
 
 class PrincipleClusterTemplate(BaseGeneratorTemplate):
@@ -66,7 +66,7 @@ When consolidating the principles, be sure to maintain the integrity, clarity, a
 """
 
 
-class IterCumPrincipleGenerator(IterPrincipleGenerator):
+class IterableCumulativePrincipleGenerator(IterativePrincipleGenerator):
     """
     Iterative principle generator that combines evaluation, generation, and clustering.
 

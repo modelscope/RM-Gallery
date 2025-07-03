@@ -6,7 +6,7 @@ from rm_gallery.core.data.schema import DataOutput, DataSample, Step
 from rm_gallery.core.model.base import BaseLLM
 from rm_gallery.core.model.message import ChatMessage
 from rm_gallery.core.model.openai_llm import OpenaiLLM
-from rm_gallery.core.reward.principle.generator import PrincipleGenerator
+from rm_gallery.core.reward.principle.auto import AutoPrincipleGenerator
 
 
 @pytest.fixture
@@ -40,7 +40,7 @@ def sample_data():
 
 
 def test_generate(mock_llm: MagicMock, sample_data: DataSample):
-    generator = PrincipleGenerator(
+    generator = AutoPrincipleGenerator(
         llm=mock_llm, scenario="test", generate_number=1, cluster_number=1
     )
 
@@ -54,7 +54,7 @@ def test_generate(mock_llm: MagicMock, sample_data: DataSample):
 
 
 def test_cluster(mock_llm: MagicMock, sample_data: DataSample):
-    generator = PrincipleGenerator(
+    generator = AutoPrincipleGenerator(
         llm=mock_llm, scenario="test", generate_number=1, cluster_number=1
     )
 
@@ -71,7 +71,7 @@ def test_cluster(mock_llm: MagicMock, sample_data: DataSample):
 
 @patch("rm_gallery.core.reward.principle.generator.ThreadPoolExecutor")
 def test_run_batch(mock_executor, mock_llm: MagicMock, sample_data: DataSample):
-    generator = PrincipleGenerator(
+    generator = AutoPrincipleGenerator(
         llm=mock_llm, scenario="test", generate_number=1, cluster_number=1
     )
 

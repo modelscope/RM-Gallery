@@ -12,9 +12,9 @@ from retry import retry
 from rm_gallery.core.data.schema import DataSample
 from rm_gallery.core.model.message import format_messages
 from rm_gallery.core.reward.base import BaseListWisePrincipleReward
-from rm_gallery.core.reward.principle.generator import (
+from rm_gallery.core.reward.principle.auto import (
+    AutoPrincipleGenerator,
     BaseGeneratorTemplate,
-    PrincipleGenerator,
 )
 
 
@@ -154,7 +154,7 @@ When consolidating the principles, be sure to maintain the integrity, clarity, a
 """
 
 
-class IterPrincipleGenerator(PrincipleGenerator):
+class IterativePrincipleGenerator(AutoPrincipleGenerator):
     """
     Iterative principle generator that combines evaluation, generation, and clustering.
 
