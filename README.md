@@ -157,7 +157,7 @@ from rm_gallery.core.reward.registry import RewardRegistry
 RewardRegistry.list()
 ```
 to view all registered RMs.
-For details of RM please check[ready2use_rewards](./docs/tutorial/building_rm/ready2use_rewards.md)
+For details of RM please check [ready-to-use rewards tutorial](./docs/tutorial/building_rm/ready2use_rewards.md)
 
 <strong> How to initialize a ready-to-use RM </strong>
 
@@ -182,7 +182,7 @@ BaseReward
     │   ├── BasePointWisePrincipleReward            # Point-wise Principle-guided evaluation.
     │   └── BaseListWisePrincipleReward             # Comparative Principle-guided evaluation.
 ```
-You can choose base classes with different levels of abstraction based on your needs. Here are some typical use cases:
+You can choose base classes with different levels of abstraction based on your needs.   Here are some typical use cases, and For details please check [building custom rewards tutorial](./docs/tutorial/building_rm/custom_reward.ipynb)
 **1️⃣ Custom Principles with Principle-Critic-Score Paradigm**
 If you follow the Principle-Critic-Score Paradigm and only want to use your own principles
 
@@ -299,7 +299,7 @@ class CustomReward(BasePointWiseReward):
 
 ### 🧪 Evaluating with Reward Model
 #### Data Preparation
-RM Gallery uses a [structured data schema](../rm_gallery/core/data/schema.py) for reward model. Here's a simple example of how to prepare your data. For more complex data preparation scenarios (e.g., using Hugging Face datasets), please refer to [our data pipeline tutorial](../docs/tutorial/data/pipeline.ipynb).
+RM Gallery uses a [structured data schema](./rm_gallery/core/data/schema.py) for reward model. Here's a simple example of how to prepare your data. For more complex data preparation scenarios (e.g., using Hugging Face datasets), please refer to [our data pipeline tutorial](./docs/tutorial/data/pipeline.ipynb).
 
 <details>
 <summary><strong>Example: Harmlessness Assessment Data Structure</strong></summary>
