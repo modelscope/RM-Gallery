@@ -4,7 +4,7 @@ English | [**中文**](./README_zh.md)
 
 [![](https://img.shields.io/badge/python-3.10+-blue)](https://pypi.org/project/rm-gallery/)
 [![](https://img.shields.io/badge/pypi-v0.1.0-blue?logo=pypi)](https://pypi.org/project/rm-gallery/)
-[![](https://img.shields.io/badge/Docs-English%7C%E4%B8%AD%E6%96%87-blue?logo=markdown)](https://modelscope.github.io/RM-Gallery/)
+[![](https://img.shields.io/badge/Docs-English-blue?logo=markdown)](https://modelscope.github.io/RM-Gallery/)
 
 ----
 
