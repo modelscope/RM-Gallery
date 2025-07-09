@@ -4,7 +4,7 @@ English | [**中文**](./README_zh.md)
 
 [![](https://img.shields.io/badge/python-3.10+-blue)](https://pypi.org/project/rm-gallery/)
 [![](https://img.shields.io/badge/pypi-v0.1.0-blue?logo=pypi)](https://pypi.org/project/rm-gallery/)
-[![](https://img.shields.io/badge/Docs-English%7C%E4%B8%AD%E6%96%87-blue?logo=markdown)](https://modelscope.github.io/RM-Gallery/)
+[![](https://img.shields.io/badge/Docs-English-blue?logo=markdown)](https://modelscope.github.io/RM-Gallery/)
 
 ----
 
@@ -27,7 +27,7 @@ English | [**中文**](./README_zh.md)
 ----
 
 ## 📢 News
-- **[2025-07-03]** We release RM Gallery v0.1.0 now, which is also available in [PyPI](https://pypi.org/simple/rm-gallery/)!
+- **[2025-07-09]** We release RM Gallery v0.1.0 now, which is also available in [PyPI](https://pypi.org/simple/rm-gallery/)!
 ----
 
 ## 🌟 Why RM-Gallery?
