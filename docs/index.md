@@ -2,10 +2,8 @@
 <h2 align="center">RM-Gallery: A One-Stop Reward Model Platform</h2>
 
 [![](https://img.shields.io/badge/python-3.10+-blue)](https://pypi.org/project/rm-gallery/)
-[![](https://img.shields.io/badge/pypi-v0.1.1.0-blue?logo=pypi)](https://pypi.org/project/rm-gallery/)
-[![](https://img.shields.io/badge/Docs-English%7C%E4%B8%AD%E6%96%87-blue?logo=markdown)]()
-[![](https://img.shields.io/badge/Docs-API_Reference-blue?logo=markdown)]()
-[![](https://img.shields.io/badge/Contribute-Welcome-green)]()
+[![](https://img.shields.io/badge/pypi-v0.1.0-blue?logo=pypi)](https://pypi.org/project/rm-gallery/)
+[![](https://img.shields.io/badge/Docs-English%7C%E4%B8%AD%E6%96%87-blue?logo=markdown)](https://modelscope.github.io/RM-Gallery/)
 
 ----
 
@@ -163,6 +161,7 @@ BaseReward
     │   └── BaseListWisePrincipleReward             # Comparative Principle-guided evaluation.
 ```
 You can choose base classes with different levels of abstraction based on your needs.   Here are some typical use cases, and For details please check [building custom rewards tutorial](./tutorial/building_rm/custom_reward.ipynb)
+
 **1️⃣ Custom Principles with Principle-Critic-Score Paradigm**
 If you follow the Principle-Critic-Score Paradigm and only want to use your own principles
 
