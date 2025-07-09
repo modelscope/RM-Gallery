@@ -407,7 +407,7 @@ See Details in [data_refinement](./docs/tutorial/rm_application/data_refinement.
 | **RM Serving**  | [High-Performance RM Serving](docs/tutorial/rm_serving/rm_server.md)      | Deploying reward models as scalable, production-ready services                                |
 | **RM Application** | [post training](docs/tutorial/rm_application/post_training.ipynb)      | Integrating reward models into RLHF/post-training pipelines                                   |
 |                 | [best-of-n](docs/tutorial/rm_application/best_of_n.ipynb)                 | Selecting the best response from multiple candidates using reward models                      |
-|                 | [refinement](docs/tutorial/rm_application/refinement.ipynb)               | Iterative data refinement using reward model feedback                                         |
+|                 | [refinement](docs/tutorial/rm_application/data_refinement.ipynb)               | Iterative data refinement using reward model feedback                                         |
 
 
 
