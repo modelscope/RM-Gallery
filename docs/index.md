@@ -8,7 +8,7 @@
 ----
 
 ## 📢 News
-- **[2025-07-03]** We release RM Gallery v0.1.0 now, which is also available in [PyPI](https://pypi.org/simple/rm-gallery/)!
+- **[2025-07-09]** We release RM Gallery v0.1.0 now, which is also available in [PyPI](https://pypi.org/simple/rm-gallery/)!
 ----
 
 ## 🌟 Why RM-Gallery?
