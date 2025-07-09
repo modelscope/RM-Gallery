@@ -3,11 +3,8 @@
 <h2 align="center">RM-Gallery：一站式奖励模型平台</h2>
 
 [![](https://img.shields.io/badge/python-3.10+-blue)](https://pypi.org/project/rm-gallery/)
-[![](https://img.shields.io/badge/pypi-v0.1.1.0-blue?logo=pypi)](https://pypi.org/project/rm-gallery/)
-[![](https://img.shields.io/badge/license-Apache--2.0-black)](./LICENSE)
-[![](https://img.shields.io/badge/Docs-English%7C%E4%B8%AD%E6%96%87-blue?logo=markdown)]()
-[![](https://img.shields.io/badge/Docs-API_Reference-blue?logo=markdown)]()
-[![](https://img.shields.io/badge/Contribute-Welcome-green)]()
+[![](https://img.shields.io/badge/pypi-v0.1.0-blue?logo=pypi)](https://pypi.org/project/rm-gallery/)
+[![](https://img.shields.io/badge/Docs-English%7C%E4%B8%AD%E6%96%87-blue?logo=markdown)](https://modelscope.github.io/RM-Gallery/)
 
 ----
 
@@ -30,7 +27,7 @@
 ----
 
 ## 📢 新闻
-- **[2025-07-03]** RM-Gallery v0.1.0 正式发布，并已上线 [PyPI](https://pypi.org/simple/rm-gallery/)！
+- **[2025-07-09]** RM-Gallery v0.1.0 正式发布，并已上线 [PyPI](https://pypi.org/simple/rm-gallery/)！
 ----
 
 ## 🌟 Why RM-Gallery？
@@ -181,6 +178,7 @@ BaseReward
     │   └── BaseListWisePrincipleReward             # 列表式原则评测
 ```
 可按需选择不同抽象层级的基类。典型用法如下, 详细教程请看 [自定义RM教程](./docs/tutorial/building_rm/custom_reward.ipynb)
+
 **1️⃣ Custom Principles with Principle-Critic-Score Paradigm**
 如仅需自定义Principles：
 

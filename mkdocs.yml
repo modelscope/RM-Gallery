@@ -1,4 +1,5 @@
 site_name: RM-Gallery
+repo_url: https://github.com/modelscope/RM-Gallery
 theme:
   name: material
   features:
@@ -38,6 +39,6 @@ plugins:
   - mkdocstrings:
       handlers:
         python:
-          paths: [rm_gallery]
+          paths: [.]
           rendering:
             show_root_toc_entry: true
