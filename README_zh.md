@@ -77,7 +77,7 @@ RM-Gallery 是一个集奖励模型训练、构建与应用于一体的一站式
 
 ```bash
 # 从GitHub拉取源码
-git clone https://github.com/modelscope/rm-gallery.git
+git clone https://github.com/modelscope/RM-Gallery.git
 
 # 安装依赖
 pip install .

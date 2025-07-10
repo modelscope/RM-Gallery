@@ -59,7 +59,7 @@ The two images above show that after applying the Principle+Critic+Score paradig
 
 ```bash
 # Pull the source code from GitHub
-git clone https://github.com/modelscope/rm-gallery.git
+git clone https://github.com/modelscope/RM-Gallery.git
 
 # Install the package
 pip install .
