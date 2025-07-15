@@ -3,20 +3,12 @@ from typing import Any, Dict, List
 
 from examples.train.pairwise.template import PairwiseComparisonTemplate
 from rm_gallery.core.train.dataset import BaseTrainDataset
-from rm_gallery.gallery.rm.alignment.base import HelpfulnessPairWiseReward
 
 
 class HelpfulnessPairwiseTrainDataset(BaseTrainDataset):
     """Specialized dataset for pairwise comparison evaluation tasks"""
 
     def __init__(self, *args, **kwargs):
-        self.helpfulness_reward = HelpfulnessPairWiseReward(
-            name="helpfulness_pairwise_train",
-            template=PairwiseComparisonTemplate,
-            examples=self._get_examples(),
-            llm=None,
-        )
-
         super().__init__(*args, **kwargs)
 
     @staticmethod
