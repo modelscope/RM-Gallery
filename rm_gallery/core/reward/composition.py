@@ -38,7 +38,6 @@ class SimpleComposition(BaseComposition):
         weights: Dictionary mapping reward dimension names to their respective weights
         rewards: Dict of reward module configurations or instances
         is_parallel: Flag indicating whether to evaluate modules in parallel
-        max_concurrency: Maximum number of concurrent async tasks
     """
 
     weights: Dict[str, float] = Field(default={}, description="weight for each reward")
@@ -46,9 +45,6 @@ class SimpleComposition(BaseComposition):
         default_factory=dict, description="reward modules"
     )
     is_parallel: bool = Field(default=False, description="parallel or not")
-    max_concurrency: int = Field(
-        default=10, description="max concurrency for async execution"
-    )
 
     def __init__(self, *args, **kwargs):
         """
@@ -60,8 +56,6 @@ class SimpleComposition(BaseComposition):
             **kwargs: Arbitrary keyword arguments passed to parent constructor
         """
         super().__init__(*args, **kwargs)
-        # Initialize semaphore for async concurrency control
-        object.__setattr__(self, "semaphore", asyncio.Semaphore(self.max_concurrency))
 
         for name, reward in self.rewards.items():
             if isinstance(reward, dict):
@@ -157,9 +151,8 @@ class SimpleComposition(BaseComposition):
         Returns:
             DataSample with updated reward information
         """
-        # Use provided semaphore or create a new one
         if semaphore is None:
-            semaphore = self.semaphore
+            semaphore = asyncio.Semaphore(self.max_workers)
 
         sample = deepcopy(sample)
 
@@ -255,6 +248,9 @@ class RouterComposition(SimpleComposition):
         Returns:
             DataSample with updated reward information
         """
+        if semaphore is None:
+            semaphore = asyncio.Semaphore(self.max_workers)
+
         condition = self._condition(sample)
         sample = await self.rewards[condition].async_evaluate(sample, semaphore)
         return sample

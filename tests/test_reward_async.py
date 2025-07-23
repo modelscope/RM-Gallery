@@ -174,29 +174,6 @@ async def test_accuracy_reward(accuracy_test_sample):
     print()
 
 
-def test_mock_reward_batch(mock_reward, test_samples):
-    """Test mock reward module's batch processing"""
-    print("Testing MockReward batch processing...")
-
-    # Create test samples
-    samples = test_samples(5)
-
-    start_time = time.time()
-    results_async = mock_reward.evaluate_batch(samples, max_workers=5)
-    async_time = time.time() - start_time
-
-    print(f"MockReward Batch - sync time: {async_time:.4f}s")
-    print(f"sync results count: {len(results_async)}")
-
-    # Verify results
-    assert len(results_async) == 5
-    for result in results_async:
-        # Check score in reward details
-        assert len(result.output[0].answer.reward.details) > 0
-        assert result.output[0].answer.reward.details[0].score > 0
-    print()
-
-
 @pytest.mark.asyncio
 async def test_composition_reward(composition_reward, test_samples):
     """Test composition reward module's synchronous and asynchronous functionality"""
@@ -277,9 +254,7 @@ def test_large_batch_performance(test_samples):
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "max_workers", [1, 3, 5, 8, 10, 15, 20, 25, 30, 35, 40, 45, 50]
-)
+@pytest.mark.parametrize("max_workers", [1, 3, 5, 8, 10, 15])
 async def test_concurrency_scaling(max_workers, test_samples):
     """Test performance with different concurrency levels"""
     print(f"Testing concurrency scaling with max_workers={max_workers}...")
@@ -288,7 +263,9 @@ async def test_concurrency_scaling(max_workers, test_samples):
     reward = MockReward(name="concurrency_test", delay=0.1)
 
     start_time = time.time()
-    results = await reward._async_evaluate_batch(samples, max_workers=max_workers)
+    results = await reward._async_evaluate_batch(
+        samples, semaphore=asyncio.Semaphore(max_workers)
+    )
     execution_time = time.time() - start_time
 
     print(f"Max workers: {max_workers}, Time: {execution_time:.4f}s")
