@@ -3,6 +3,7 @@ Module for composing multiple reward evaluation modules with weighting and routi
 Implements base classes and concrete compositions for handling complex reward calculations.
 """
 
+import asyncio
 from abc import abstractmethod
 from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
 from copy import deepcopy
@@ -55,6 +56,7 @@ class SimpleComposition(BaseComposition):
             **kwargs: Arbitrary keyword arguments passed to parent constructor
         """
         super().__init__(*args, **kwargs)
+
         for name, reward in self.rewards.items():
             if isinstance(reward, dict):
                 params = {k: v for k, v in self.params.items()}
@@ -136,6 +138,62 @@ class SimpleComposition(BaseComposition):
 
         return sample
 
+    async def async_evaluate(
+        self, sample: DataSample, semaphore: asyncio.Semaphore | None = None
+    ) -> DataSample:
+        """
+        Async version of evaluate method that supports async parallel execution.
+
+        Args:
+            sample: Input data sample to evaluate
+            semaphore: Optional semaphore for concurrency control
+
+        Returns:
+            DataSample with updated reward information
+        """
+        if semaphore is None:
+            semaphore = asyncio.Semaphore(self.max_workers)
+
+        sample = deepcopy(sample)
+
+        async def _async_evaluate_reward(name: str, reward: BaseReward):
+            """Async wrapper for individual reward evaluation"""
+            return await reward.async_evaluate(sample, semaphore)
+
+        # Create tasks for all reward modules
+        tasks = []
+        for name, reward in self.rewards.items():
+            task = asyncio.create_task(_async_evaluate_reward(name, reward))
+            tasks.append(task)
+
+        # Wait for all tasks to complete
+        samples = await asyncio.gather(*tasks)
+
+        # Merge results from parallel evaluations
+        for s in samples:
+            sample.update(s)
+
+        # Weighted reward calculation function (executed for both parallel and sequential modes)
+        def weight(reward: Reward):
+            """Calculate weighted average based on configured weights"""
+            w_sum = 0
+            d_sum = 0
+            for d in reward.details:
+                w = self.weights.get(d.name, 1.0)
+                w_sum += w
+                d_sum += w * d.score
+            if w_sum != 0:
+                reward.score = d_sum / w_sum
+
+        # Apply weighting to all output rewards
+        for output in sample.output:
+            weight(output.answer.reward)
+            if output.steps:
+                for step in output.steps:
+                    weight(step.reward)
+
+        return sample
+
 
 class RouterComposition(SimpleComposition):
     """
@@ -175,4 +233,24 @@ class RouterComposition(SimpleComposition):
         """
         condition = self._condition(sample)
         sample = self.rewards[condition].evaluate(sample, thread_pool)
+        return sample
+
+    async def async_evaluate(
+        self, sample: DataSample, semaphore: asyncio.Semaphore | None = None
+    ) -> DataSample:
+        """
+        Async version of evaluate method that routes sample to appropriate reward composition.
+
+        Args:
+            sample: Input data sample to evaluate
+            semaphore: Optional semaphore for concurrency control
+
+        Returns:
+            DataSample with updated reward information
+        """
+        if semaphore is None:
+            semaphore = asyncio.Semaphore(self.max_workers)
+
+        condition = self._condition(sample)
+        sample = await self.rewards[condition].async_evaluate(sample, semaphore)
         return sample
