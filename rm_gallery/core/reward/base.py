@@ -1,3 +1,4 @@
+import asyncio
 from abc import abstractmethod
 from concurrent.futures import ALL_COMPLETED, ThreadPoolExecutor, wait
 from typing import Callable, Dict, List, Type
@@ -105,6 +106,94 @@ class BaseReward(BaseModule):
             self._evaluate, sample=sample, thread_pool=thread_pool, **kwargs
         )
 
+    async def _async_parallel(
+        self,
+        func: Callable,
+        sample: DataSample,
+        semaphore: asyncio.Semaphore,
+        **kwargs,
+    ) -> DataSample:
+        """
+        Abstract async parallel execution method to be implemented by subclasses.
+
+        Defines the core interface for async parallel processing of data samples with semaphore control.
+        Subclasses must implement this method to handle async parallel execution of the provided function.
+
+        Parameters:
+            func (Callable): The callable function to execute in parallel. Should accept a DataSample parameter.
+            sample (DataSample): The input data sample to process
+            semaphore (asyncio.Semaphore): Semaphore for async concurrency control.
+            **kwargs: Implementation-specific configuration options for async parallel execution
+
+        Returns:
+            DataSample: Processed data sample containing generated reward metrics.
+                The returned object should maintain the same structure as the input sample with
+                additional metrics fields populated.
+
+        Note: This method is designed to handle async parallel processing patterns while maintaining
+        the original data sample structure. Implementations should ensure proper async safety
+        and resource management when executing in parallel.
+        """
+        ...
+
+    async def async_evaluate(
+        self,
+        sample: DataSample | dict,
+        semaphore: asyncio.Semaphore | None = None,
+        **kwargs,
+    ) -> DataSample:
+        """
+        Async version of evaluate method that executes evaluation on a single data sample.
+
+        Provides async execution capability with semaphore-based concurrency control.
+
+        Parameters:
+            sample (DataSample): Data sample to evaluate
+            semaphore (asyncio.Semaphore | None): Optional semaphore for async concurrency control
+            **kwargs: Additional parameters for evaluation logic
+
+        Returns:
+            DataSample: Processed sample with reward metrics populated
+        """
+
+        if semaphore is None:
+            semaphore = asyncio.Semaphore(self.max_workers)
+
+        if isinstance(sample, dict):
+            sample = DataSample.model_validate(sample)
+        return await self._async_parallel(
+            self._evaluate, sample=sample, semaphore=semaphore, **kwargs
+        )
+
+    async def _async_evaluate_batch(
+        self,
+        samples: List[DataSample | dict],
+        semaphore: asyncio.Semaphore | None = None,
+        **kwargs,
+    ) -> List[DataSample]:
+        """
+        Async implementation of batch evaluation.
+
+        Uses semaphore to control concurrent execution of async_evaluate calls.
+
+        Parameters:
+            samples (List[DataSample]): Batch of samples to process
+            semaphore (asyncio.Semaphore | None): Optional semaphore for async concurrency control
+            **kwargs: Parameters passed to individual evaluations
+
+        Returns:
+            List[DataSample]: Processed samples with reward metrics
+        """
+        if semaphore is None:
+            semaphore = asyncio.Semaphore(self.max_workers)
+
+        tasks = [
+            self.async_evaluate(sample=sample, semaphore=semaphore, **kwargs)
+            for sample in samples
+        ]
+        results = await asyncio.gather(*tasks)
+        return results
+
     def evaluate_batch(
         self,
         samples: List[DataSample | dict],
@@ -114,7 +203,7 @@ class BaseReward(BaseModule):
         """
         Processes multiple data samples in parallel or sequentially.
 
-        Uses provided thread pool for concurrent execution when available.
+        Uses async_evaluate with semaphore-based concurrency control.
 
         Parameters:
             samples (List[DataSample]): Batch of samples to process
@@ -124,23 +213,13 @@ class BaseReward(BaseModule):
         Returns:
             List[DataSample]: Processed samples with reward metrics
         """
-        max_workers = self.max_workers if max_workers else self.max_workers
+        if not max_workers:
+            max_workers = self.max_workers
+        semaphore = asyncio.Semaphore(max_workers)
 
-        if max_workers > 1:
-            thread_pool = ThreadPoolExecutor(max_workers=max_workers)
-            futures = [
-                thread_pool.submit(
-                    self.evaluate, sample=sample, thread_pool=None, **kwargs
-                )
-                for sample in samples
-            ]
-            wait(futures, return_when=ALL_COMPLETED)
-            samples = [future.result() for future in futures]
-        else:
-            for i, sample in enumerate(samples):
-                samples[i] = self.evaluate(sample=sample, thread_pool=thread_pool)
-
-        return samples
+        return asyncio.run(
+            self._async_evaluate_batch(samples=samples, semaphore=semaphore, **kwargs)
+        )
 
     def best_of_n(
         self,
@@ -245,14 +324,13 @@ class BaseStepWiseReward(BaseReward):
                             thread_pool.submit(
                                 func,
                                 sample=subsample,
-                                thread_pool=thread_pool,
                                 **kwargs,
                             ),
                         )
                     )
                 else:
                     # Execute evaluation synchronously
-                    result = func(sample=subsample, thread_pool=thread_pool, **kwargs)
+                    result = func(sample=subsample, **kwargs)
                     # Update step with evaluation results
                     step.reward.details.extend(result.details)
                     step.additional_kwargs[self.name] = result.extra_data
@@ -268,6 +346,70 @@ class BaseStepWiseReward(BaseReward):
                 step = sample.output[i].steps[j]
                 step.reward.details.extend(result.details)
                 step.additional_kwargs[self.name] = result.extra_data
+
+        for i, output in enumerate(sample.output):
+            assert isinstance(output.steps, list)
+            for j, step in enumerate(output.steps):
+                if len(step.reward.details) > 0:
+                    step.reward.score = sum(r.score for r in step.reward.details) / len(
+                        step.reward.details
+                    )
+
+        return sample
+
+    async def _async_parallel(
+        self,
+        func: Callable,
+        sample: DataSample,
+        semaphore: asyncio.Semaphore,
+        **kwargs,
+    ) -> DataSample:
+        """
+        Async version of _parallel method for BaseStepWiseReward.
+
+        Process all reasoning steps in a data sample with async execution capability.
+
+        Parameters:
+            func (Callable): Evaluation function to apply to each step
+            sample (DataSample): Multi-step reasoning sample to evaluate
+            semaphore (asyncio.Semaphore): Semaphore for async concurrency control
+            **kwargs: Additional parameters passed to the evaluation function
+
+        Returns:
+            DataSample: Evaluated sample with step-level reward metrics populated
+        """
+        sample = sample.model_copy(deep=True)
+
+        async def _async_evaluate_step(i: int, j: int, step):
+            """Async wrapper for individual step evaluation"""
+            subsample = DataSample(
+                unique_id=sample.unique_id,
+                input=sample.input,
+                output=[DataOutput(answer=sample.output[i].answer, steps=[step])],
+            )
+
+            # Use asyncio.to_thread to wrap the sync function
+            async with semaphore:
+                result = await asyncio.to_thread(func, sample=subsample, **kwargs)
+
+            return i, j, result
+
+        # Create tasks for all steps
+        tasks = []
+        for i, output in enumerate(sample.output):
+            assert isinstance(output.steps, list)
+            for j, step in enumerate(output.steps):
+                task = asyncio.create_task(_async_evaluate_step(i, j, step))
+                tasks.append(task)
+
+        # Wait for all tasks to complete
+        results = await asyncio.gather(*tasks)
+
+        # Merge results back into steps
+        for i, j, result in results:
+            step = sample.output[i].steps[j]
+            step.reward.details.extend(result.details)
+            step.additional_kwargs[self.name] = result.extra_data
 
         for i, output in enumerate(sample.output):
             assert isinstance(output.steps, list)
@@ -344,15 +486,12 @@ class BasePointWiseReward(BaseReward):
                 futures.append(
                     (
                         i,
-                        thread_pool.submit(
-                            func, sample=subsample, thread_pool=thread_pool, **kwargs
-                        ),
+                        thread_pool.submit(func, sample=subsample, **kwargs),
                     )
                 )
             else:
                 result = func(
                     sample=subsample,
-                    thread_pool=thread_pool,
                     **kwargs,
                 )
                 output.answer.reward.details += result.details
@@ -368,6 +507,65 @@ class BasePointWiseReward(BaseReward):
                 output.answer.reward.details += result.details
                 output.answer.additional_kwargs[self.name] = result.extra_data
 
+        for output in sample.output:
+            if len(output.answer.reward.details) > 0:
+                output.answer.reward.score = sum(
+                    r.score for r in output.answer.reward.details
+                ) / len(output.answer.reward.details)
+
+        return sample
+
+    async def _async_parallel(
+        self,
+        func: Callable,
+        sample: DataSample,
+        semaphore: asyncio.Semaphore,
+        **kwargs,
+    ) -> DataSample:
+        """
+        Async version of _parallel method for BasePointWiseReward.
+
+        Processes responses in a data sample using async execution with semaphore control.
+
+        Parameters:
+            func (Callable): Function to apply to each response
+            sample (DataSample): Input sample containing multiple responses to process
+            semaphore (asyncio.Semaphore): Semaphore for async concurrency control
+            **kwargs: Additional arguments passed to func
+
+        Returns:
+            DataSample: Modified copy of input sample with reward metrics updated in each response
+        """
+        sample = sample.model_copy(deep=True)
+
+        async def _async_evaluate_output(i: int, output):
+            """Async wrapper for individual output evaluation"""
+            subsample = DataSample(
+                unique_id=sample.unique_id, input=sample.input, output=[output]
+            )
+
+            # Use asyncio.to_thread to wrap the sync function
+            async with semaphore:
+                result = await asyncio.to_thread(func, sample=subsample, **kwargs)
+
+            return i, result
+
+        # Create tasks for all outputs
+        tasks = []
+        for i, output in enumerate(sample.output):
+            task = asyncio.create_task(_async_evaluate_output(i, output))
+            tasks.append(task)
+
+        # Wait for all tasks to complete
+        results = await asyncio.gather(*tasks)
+
+        # Merge results back into sample outputs
+        for i, result in results:
+            output = sample.output[i]
+            output.answer.reward.details += result.details
+            output.answer.additional_kwargs[self.name] = result.extra_data
+
+        # Calculate average score for each output
         for output in sample.output:
             if len(output.answer.reward.details) > 0:
                 output.answer.reward.score = sum(
@@ -427,19 +625,64 @@ class BaseListWiseReward(BaseReward):
         sample = sample.model_copy(deep=True)
 
         # Execute evaluation function with provided parameters
-        result = func(sample=sample, thread_pool=thread_pool, **kwargs)
+        result = func(sample=sample, **kwargs)
 
         # Append reward details to corresponding output objects
         for reward in result.details:
             for i, output in enumerate(sample.output):
                 output.answer.reward.details.append(reward[i])
-                if len(output.answer.reward.details) > 0:
-                    output.answer.reward.score = sum(
-                        r.score for r in output.answer.reward.details
-                    ) / len(output.answer.reward.details)
+
+        for i, output in enumerate(sample.output):
+            if len(output.answer.reward.details) > 0:
+                output.answer.reward.score = sum(
+                    r.score for r in output.answer.reward.details
+                ) / len(output.answer.reward.details)
 
         # Store additional metadata in sample input
         sample.input[-1].additional_kwargs[self.name] = result.extra_data
+        return sample
+
+    async def _async_parallel(
+        self,
+        func: Callable,
+        sample: DataSample,
+        semaphore: asyncio.Semaphore,
+        **kwargs,
+    ) -> DataSample:
+        """
+        Async version of _parallel method for BaseListWiseReward.
+
+        Executes list-wise evaluation on a group of responses using async execution.
+
+        Parameters:
+            func (Callable): Evaluation function to apply to the sample
+            sample (DataSample): Multi-response sample to evaluate
+            semaphore (asyncio.Semaphore): Semaphore for async concurrency control
+            **kwargs: Parameters for evaluation logic
+
+        Returns:
+            DataSample: Responses with ranking information populated
+        """
+        sample = sample.model_copy(deep=True)
+
+        # Use asyncio.to_thread to wrap the sync function
+        async with semaphore:
+            result = await asyncio.to_thread(func, sample=sample, **kwargs)
+
+        # Append reward details to corresponding output objects
+        for reward in result.details:
+            for i, output in enumerate(sample.output):
+                output.answer.reward.details.append(reward[i])
+
+        for i, output in enumerate(sample.output):
+            if len(output.answer.reward.details) > 0:
+                output.answer.reward.score = sum(
+                    r.score for r in output.answer.reward.details
+                ) / len(output.answer.reward.details)
+
+        # Store additional metadata in sample input
+        sample.input[-1].additional_kwargs[self.name] = result.extra_data
+
         return sample
 
 
@@ -486,12 +729,86 @@ class BasePairWiseReward(BaseListWiseReward):
                 )
 
                 # Execute evaluation function on the subsample
-                result = func(sample=subsample, thread_pool=thread_pool, **kwargs)
+                result = func(sample=subsample, **kwargs)
 
                 # Aggregate comparison results into both responses
                 for reward in result.details:
                     output_i.answer.reward.details.append(reward[0])
                     output_j.answer.reward.details.append(reward[1])
+
+        # Calculate average score for each output
+        for output in sample.output:
+            if len(output.answer.reward.details) > 0:
+                output.answer.reward.score = sum(
+                    r.score for r in output.answer.reward.details
+                ) / len(output.answer.reward.details)
+
+        return sample
+
+    async def _async_parallel(
+        self,
+        func: Callable,
+        sample: DataSample,
+        semaphore: asyncio.Semaphore,
+        **kwargs,
+    ) -> DataSample:
+        """
+        Async version of _parallel method for BasePairWiseReward.
+
+        Performs all pairwise comparisons between responses using async execution.
+
+        Parameters:
+            func (Callable): Evaluation function that takes a subsample and returns comparison results
+            sample (DataSample): Multi-response sample containing all outputs to be compared
+            semaphore (asyncio.Semaphore): Semaphore for async concurrency control
+            **kwargs: Additional parameters to pass to the evaluation function
+
+        Returns:
+            DataSample: Original sample with updated reward details from pairwise comparisons
+        """
+        sample = sample.model_copy(deep=True)
+
+        async def _async_evaluate_pair(i: int, j: int, output_i, output_j):
+            """Async wrapper for pairwise evaluation"""
+            subsample = DataSample(
+                unique_id=sample.unique_id,
+                input=sample.input,
+                output=[output_i, output_j],
+            )
+
+            # Use asyncio.to_thread to wrap the sync function
+            async with semaphore:
+                result = await asyncio.to_thread(func, sample=subsample, **kwargs)
+
+            return i, j, result
+
+        # Create tasks for all pairs
+        tasks = []
+        for i, output_i in enumerate(sample.output):
+            for j, output_j in enumerate(sample.output[i + 1 :], start=i + 1):
+                task = asyncio.create_task(
+                    _async_evaluate_pair(i, j, output_i, output_j)
+                )
+                tasks.append(task)
+
+        # Wait for all tasks to complete
+        results = await asyncio.gather(*tasks)
+
+        # Aggregate comparison results into responses
+        for i, j, result in results:
+            output_i = sample.output[i]
+            output_j = sample.output[j]
+
+            for reward in result.details:
+                output_i.answer.reward.details.append(reward[0])
+                output_j.answer.reward.details.append(reward[1])
+
+        # Calculate average score for each output
+        for output in sample.output:
+            if len(output.answer.reward.details) > 0:
+                output.answer.reward.score = sum(
+                    r.score for r in output.answer.reward.details
+                ) / len(output.answer.reward.details)
 
         return sample
 
@@ -609,6 +926,42 @@ class BaseLLMReward(BaseReward):
         return self._parallel(
             self._format, sample=sample, thread_pool=thread_pool, **kwargs
         )
+
+    async def _async_parallel(
+        self,
+        func: Callable,
+        sample: DataSample,
+        semaphore: asyncio.Semaphore,
+        **kwargs,
+    ) -> DataSample:
+        """
+        Default async parallel implementation for BaseLLMReward.
+
+        Since BaseLLMReward doesn't define its own _parallel method, this provides
+        a default implementation that simply calls the function directly.
+
+        Parameters:
+            func (Callable): Function to call
+            sample (DataSample): Input sample
+            semaphore (asyncio.Semaphore): Semaphore for concurrency control
+            **kwargs: Additional arguments
+
+        Returns:
+            DataSample: Processed sample
+        """
+        sample = sample.model_copy(deep=True)
+
+        # Use asyncio.to_thread to wrap the sync function
+        async with semaphore:
+            result = await asyncio.to_thread(func, sample=sample, **kwargs)
+
+        # For BaseLLMReward, we typically work with single responses
+        # Add the result to the first output
+        if sample.output:
+            sample.output[0].answer.reward.details.extend(result.details)
+            sample.output[0].answer.additional_kwargs[self.name] = result.extra_data
+
+        return sample
 
     def refine(
         self,
