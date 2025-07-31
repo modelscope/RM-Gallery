@@ -607,7 +607,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../../docs/tutorial/building_rm/overview.ipynb" class="md-nav__link">
+      <a href="../../../../../tutorial/building_rm/overview/" class="md-nav__link">
         
   
   
@@ -676,7 +676,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../../tutorial/building_rm/built_in_rewards.md" class="md-nav__link">
+      <a href="../../../../../tutorial/building_rm/ready2use_rewards/" class="md-nav__link">
         
   
   
@@ -730,7 +730,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../../tutorial/rm_servering/rm_server.md" class="md-nav__link">
+      <a href="../../../../../tutorial/rm_serving/rm_server/" class="md-nav__link">
         
   
   
@@ -798,7 +798,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../../tutorial/deploying_rm/best_of_n.ipynb" class="md-nav__link">
+      <a href="../../../../../tutorial/rm_application/best_of_n/" class="md-nav__link">
         
   
   
@@ -821,7 +821,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../../tutorial/deploying_rm/post_traning.ipynb" class="md-nav__link">
+      <a href="../../../../../tutorial/rm_application/post_training/" class="md-nav__link">
         
   
   
@@ -844,7 +844,7 @@
   
   
     <li class="md-nav__item">
-      <a href="../../../../../tutorial/deploying_rm/data_refinement.ipynb" class="md-nav__link">
+      <a href="../../../../../tutorial/rm_application/data_refinement/" class="md-nav__link">
         
   
   
@@ -2018,6 +2018,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#rm_gallery.core.reward.composition.RouterComposition.async_evaluate" class="md-nav__link">
+    <span class="md-ellipsis">
+      async_evaluate
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rm_gallery.core.reward.composition.RouterComposition.evaluate" class="md-nav__link">
     <span class="md-ellipsis">
       evaluate
@@ -2045,6 +2054,15 @@
   <a href="#rm_gallery.core.reward.composition.SimpleComposition.__init__" class="md-nav__link">
     <span class="md-ellipsis">
       __init__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rm_gallery.core.reward.composition.SimpleComposition.async_evaluate" class="md-nav__link">
+    <span class="md-ellipsis">
+      async_evaluate
     </span>
   </a>
   
@@ -4109,6 +4127,15 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
+  <a href="#rm_gallery.core.reward.composition.RouterComposition.async_evaluate" class="md-nav__link">
+    <span class="md-ellipsis">
+      async_evaluate
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
   <a href="#rm_gallery.core.reward.composition.RouterComposition.evaluate" class="md-nav__link">
     <span class="md-ellipsis">
       evaluate
@@ -4136,6 +4163,15 @@
   <a href="#rm_gallery.core.reward.composition.SimpleComposition.__init__" class="md-nav__link">
     <span class="md-ellipsis">
       __init__
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#rm_gallery.core.reward.composition.SimpleComposition.async_evaluate" class="md-nav__link">
+    <span class="md-ellipsis">
+      async_evaluate
     </span>
   </a>
   
@@ -4254,8 +4290,7 @@ Implements base classes and concrete compositions for handling complex reward ca
 
               <details class="quote">
                 <summary>Source code in <code>rm_gallery/core/reward/composition.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">18</span>
-<span class="normal">19</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">19</span>
 <span class="normal">20</span>
 <span class="normal">21</span>
 <span class="normal">22</span>
@@ -4264,7 +4299,8 @@ Implements base classes and concrete compositions for handling complex reward ca
 <span class="normal">25</span>
 <span class="normal">26</span>
 <span class="normal">27</span>
-<span class="normal">28</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BaseComposition</span><span class="p">(</span><span class="n">BaseReward</span><span class="p">):</span>
+<span class="normal">28</span>
+<span class="normal">29</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">BaseComposition</span><span class="p">(</span><span class="n">BaseReward</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Base class for reward compositions that provides shared configuration parameters.</span>
 
@@ -4349,45 +4385,65 @@ based on input sample characteristics.</p>
 
               <details class="quote">
                 <summary>Source code in <code>rm_gallery/core/reward/composition.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">140</span>
-<span class="normal">141</span>
-<span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
-<span class="normal">148</span>
-<span class="normal">149</span>
-<span class="normal">150</span>
-<span class="normal">151</span>
-<span class="normal">152</span>
-<span class="normal">153</span>
-<span class="normal">154</span>
-<span class="normal">155</span>
-<span class="normal">156</span>
-<span class="normal">157</span>
-<span class="normal">158</span>
-<span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span>
-<span class="normal">178</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">RouterComposition</span><span class="p">(</span><span class="n">SimpleComposition</span><span class="p">):</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">RouterComposition</span><span class="p">(</span><span class="n">SimpleComposition</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Base class for conditional reward routing that selects different reward compositions</span>
 <span class="sd">    based on input sample characteristics.</span>
@@ -4426,6 +4482,26 @@ based on input sample characteristics.</p>
         <span class="n">condition</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
         <span class="n">sample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">rewards</span><span class="p">[</span><span class="n">condition</span><span class="p">]</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">thread_pool</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">sample</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">async_evaluate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">:</span> <span class="n">DataSample</span><span class="p">,</span> <span class="n">semaphore</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Semaphore</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataSample</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Async version of evaluate method that routes sample to appropriate reward composition.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sample: Input data sample to evaluate</span>
+<span class="sd">            semaphore: Optional semaphore for concurrency control</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            DataSample with updated reward information</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">semaphore</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">semaphore</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Semaphore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_workers</span><span class="p">)</span>
+
+        <span class="n">condition</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">rewards</span><span class="p">[</span><span class="n">condition</span><span class="p">]</span><span class="o">.</span><span class="n">async_evaluate</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">semaphore</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">sample</span>
 </code></pre></div></td></tr></table></div>
               </details>
 
@@ -4440,6 +4516,139 @@ based on input sample characteristics.</p>
 
 
 
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="rm_gallery.core.reward.composition.RouterComposition.async_evaluate" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">async_evaluate</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">semaphore</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Async version of evaluate method that routes sample to appropriate reward composition.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>sample</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="DataSample (rm_gallery.core.data.schema.DataSample)" href="../../data/schema/#rm_gallery.core.data.schema.DataSample">DataSample</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Input data sample to evaluate</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>semaphore</code>
+            </td>
+            <td>
+                  <code><span title="asyncio.Semaphore">Semaphore</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional semaphore for concurrency control</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="DataSample (rm_gallery.core.data.schema.DataSample)" href="../../data/schema/#rm_gallery.core.data.schema.DataSample">DataSample</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>DataSample with updated reward information</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>rm_gallery/core/reward/composition.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">async_evaluate</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">:</span> <span class="n">DataSample</span><span class="p">,</span> <span class="n">semaphore</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Semaphore</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataSample</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Async version of evaluate method that routes sample to appropriate reward composition.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sample: Input data sample to evaluate</span>
+<span class="sd">        semaphore: Optional semaphore for concurrency control</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        DataSample with updated reward information</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">semaphore</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">semaphore</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Semaphore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_workers</span><span class="p">)</span>
+
+    <span class="n">condition</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_condition</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
+    <span class="n">sample</span> <span class="o">=</span> <span class="k">await</span> <span class="bp">self</span><span class="o">.</span><span class="n">rewards</span><span class="p">[</span><span class="n">condition</span><span class="p">]</span><span class="o">.</span><span class="n">async_evaluate</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">semaphore</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">sample</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
 
 <div class="doc doc-object doc-function">
 
@@ -4527,22 +4736,22 @@ based on input sample characteristics.</p>
 
             <details class="quote">
               <summary>Source code in <code>rm_gallery/core/reward/composition.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span>
-<span class="normal">178</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">:</span> <span class="n">DataSample</span><span class="p">,</span> <span class="n">thread_pool</span><span class="p">:</span> <span class="n">ThreadPoolExecutor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataSample</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -4646,8 +4855,7 @@ Supports both sequential and parallel execution modes for reward evaluation.</p>
 
               <details class="quote">
                 <summary>Source code in <code>rm_gallery/core/reward/composition.py</code></summary>
-                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 31</span>
-<span class="normal"> 32</span>
+                <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 32</span>
 <span class="normal"> 33</span>
 <span class="normal"> 34</span>
 <span class="normal"> 35</span>
@@ -4752,7 +4960,65 @@ Supports both sequential and parallel execution modes for reward evaluation.</p>
 <span class="normal">134</span>
 <span class="normal">135</span>
 <span class="normal">136</span>
-<span class="normal">137</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">SimpleComposition</span><span class="p">(</span><span class="n">BaseComposition</span><span class="p">):</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">SimpleComposition</span><span class="p">(</span><span class="n">BaseComposition</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Composite reward module that combines multiple reward modules with weighted averaging.</span>
 <span class="sd">    Supports both sequential and parallel execution modes for reward evaluation.</span>
@@ -4779,6 +5045,7 @@ Supports both sequential and parallel execution modes for reward evaluation.</p>
 <span class="sd">            **kwargs: Arbitrary keyword arguments passed to parent constructor</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
         <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">reward</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rewards</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reward</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
                 <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
@@ -4838,6 +5105,62 @@ Supports both sequential and parallel execution modes for reward evaluation.</p>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">reward</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rewards</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">sample</span> <span class="o">=</span> <span class="n">reward</span><span class="o">.</span><span class="n">evaluate</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">thread_pool</span><span class="p">)</span>
+
+        <span class="c1"># Weighted reward calculation function (executed for both parallel and sequential modes)</span>
+        <span class="k">def</span><span class="w"> </span><span class="nf">weight</span><span class="p">(</span><span class="n">reward</span><span class="p">:</span> <span class="n">Reward</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Calculate weighted average based on configured weights&quot;&quot;&quot;</span>
+            <span class="n">w_sum</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="n">d_sum</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">reward</span><span class="o">.</span><span class="n">details</span><span class="p">:</span>
+                <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+                <span class="n">w_sum</span> <span class="o">+=</span> <span class="n">w</span>
+                <span class="n">d_sum</span> <span class="o">+=</span> <span class="n">w</span> <span class="o">*</span> <span class="n">d</span><span class="o">.</span><span class="n">score</span>
+            <span class="k">if</span> <span class="n">w_sum</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">reward</span><span class="o">.</span><span class="n">score</span> <span class="o">=</span> <span class="n">d_sum</span> <span class="o">/</span> <span class="n">w_sum</span>
+
+        <span class="c1"># Apply weighting to all output rewards</span>
+        <span class="k">for</span> <span class="n">output</span> <span class="ow">in</span> <span class="n">sample</span><span class="o">.</span><span class="n">output</span><span class="p">:</span>
+            <span class="n">weight</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">answer</span><span class="o">.</span><span class="n">reward</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">output</span><span class="o">.</span><span class="n">steps</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">output</span><span class="o">.</span><span class="n">steps</span><span class="p">:</span>
+                    <span class="n">weight</span><span class="p">(</span><span class="n">step</span><span class="o">.</span><span class="n">reward</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">sample</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">async_evaluate</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">:</span> <span class="n">DataSample</span><span class="p">,</span> <span class="n">semaphore</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Semaphore</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataSample</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Async version of evaluate method that supports async parallel execution.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            sample: Input data sample to evaluate</span>
+<span class="sd">            semaphore: Optional semaphore for concurrency control</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            DataSample with updated reward information</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">semaphore</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">semaphore</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Semaphore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_workers</span><span class="p">)</span>
+
+        <span class="n">sample</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
+
+        <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_async_evaluate_reward</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">reward</span><span class="p">:</span> <span class="n">BaseReward</span><span class="p">):</span>
+<span class="w">            </span><span class="sd">&quot;&quot;&quot;Async wrapper for individual reward evaluation&quot;&quot;&quot;</span>
+            <span class="k">return</span> <span class="k">await</span> <span class="n">reward</span><span class="o">.</span><span class="n">async_evaluate</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">semaphore</span><span class="p">)</span>
+
+        <span class="c1"># Create tasks for all reward modules</span>
+        <span class="n">tasks</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">reward</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rewards</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">_async_evaluate_reward</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">reward</span><span class="p">))</span>
+            <span class="n">tasks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+
+        <span class="c1"># Wait for all tasks to complete</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="n">tasks</span><span class="p">)</span>
+
+        <span class="c1"># Merge results from parallel evaluations</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">samples</span><span class="p">:</span>
+            <span class="n">sample</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
 
         <span class="c1"># Weighted reward calculation function (executed for both parallel and sequential modes)</span>
         <span class="k">def</span><span class="w"> </span><span class="nf">weight</span><span class="p">(</span><span class="n">reward</span><span class="p">:</span> <span class="n">Reward</span><span class="p">):</span>
@@ -4936,8 +5259,7 @@ Converts dictionary configurations to actual reward module instances using the r
 
             <details class="quote">
               <summary>Source code in <code>rm_gallery/core/reward/composition.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">48</span>
-<span class="normal">49</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">49</span>
 <span class="normal">50</span>
 <span class="normal">51</span>
 <span class="normal">52</span>
@@ -4968,7 +5290,9 @@ Converts dictionary configurations to actual reward module instances using the r
 <span class="normal">77</span>
 <span class="normal">78</span>
 <span class="normal">79</span>
-<span class="normal">80</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="normal">80</span>
+<span class="normal">81</span>
+<span class="normal">82</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Initialize reward modules from configurations.</span>
 <span class="sd">    Converts dictionary configurations to actual reward module instances using the registry.</span>
@@ -4978,6 +5302,7 @@ Converts dictionary configurations to actual reward module instances using the r
 <span class="sd">        **kwargs: Arbitrary keyword arguments passed to parent constructor</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
     <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">reward</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rewards</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">reward</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="n">params</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
@@ -5001,6 +5326,211 @@ Converts dictionary configurations to actual reward module instances using the r
             <span class="bp">self</span><span class="o">.</span><span class="n">rewards</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">reward</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">params</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid dimension: </span><span class="si">{</span><span class="n">reward</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+            </details>
+    </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+<h3 id="rm_gallery.core.reward.composition.SimpleComposition.async_evaluate" class="doc doc-heading">
+            <code class="highlight language-python"><span class="n">async_evaluate</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">semaphore</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-async"><code>async</code></small>
+  </span>
+
+</h3>
+
+
+    <div class="doc doc-contents ">
+
+        <p>Async version of evaluate method that supports async parallel execution.</p>
+
+
+<p><span class="doc-section-title">Parameters:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Type</th>
+          <th>Description</th>
+          <th>Default</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                <code>sample</code>
+            </td>
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="DataSample (rm_gallery.core.data.schema.DataSample)" href="../../data/schema/#rm_gallery.core.data.schema.DataSample">DataSample</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Input data sample to evaluate</p>
+              </div>
+            </td>
+            <td>
+                <em>required</em>
+            </td>
+          </tr>
+          <tr class="doc-section-item">
+            <td>
+                <code>semaphore</code>
+            </td>
+            <td>
+                  <code><span title="asyncio.Semaphore">Semaphore</span> | None</code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>Optional semaphore for concurrency control</p>
+              </div>
+            </td>
+            <td>
+                  <code>None</code>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+    <p><span class="doc-section-title">Returns:</span></p>
+    <table>
+      <thead>
+        <tr>
+          <th>Type</th>
+          <th>Description</th>
+        </tr>
+      </thead>
+      <tbody>
+          <tr class="doc-section-item">
+            <td>
+                  <code><a class="autorefs autorefs-internal" title="DataSample (rm_gallery.core.data.schema.DataSample)" href="../../data/schema/#rm_gallery.core.data.schema.DataSample">DataSample</a></code>
+            </td>
+            <td>
+              <div class="doc-md-description">
+                <p>DataSample with updated reward information</p>
+              </div>
+            </td>
+          </tr>
+      </tbody>
+    </table>
+
+
+            <details class="quote">
+              <summary>Source code in <code>rm_gallery/core/reward/composition.py</code></summary>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">async_evaluate</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">:</span> <span class="n">DataSample</span><span class="p">,</span> <span class="n">semaphore</span><span class="p">:</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Semaphore</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataSample</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Async version of evaluate method that supports async parallel execution.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        sample: Input data sample to evaluate</span>
+<span class="sd">        semaphore: Optional semaphore for concurrency control</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        DataSample with updated reward information</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">semaphore</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">semaphore</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">Semaphore</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">max_workers</span><span class="p">)</span>
+
+    <span class="n">sample</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
+
+    <span class="k">async</span> <span class="k">def</span><span class="w"> </span><span class="nf">_async_evaluate_reward</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">reward</span><span class="p">:</span> <span class="n">BaseReward</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Async wrapper for individual reward evaluation&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="k">await</span> <span class="n">reward</span><span class="o">.</span><span class="n">async_evaluate</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">semaphore</span><span class="p">)</span>
+
+    <span class="c1"># Create tasks for all reward modules</span>
+    <span class="n">tasks</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">reward</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">rewards</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="n">task</span> <span class="o">=</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">create_task</span><span class="p">(</span><span class="n">_async_evaluate_reward</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">reward</span><span class="p">))</span>
+        <span class="n">tasks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">task</span><span class="p">)</span>
+
+    <span class="c1"># Wait for all tasks to complete</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="k">await</span> <span class="n">asyncio</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">*</span><span class="n">tasks</span><span class="p">)</span>
+
+    <span class="c1"># Merge results from parallel evaluations</span>
+    <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">samples</span><span class="p">:</span>
+        <span class="n">sample</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">s</span><span class="p">)</span>
+
+    <span class="c1"># Weighted reward calculation function (executed for both parallel and sequential modes)</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">weight</span><span class="p">(</span><span class="n">reward</span><span class="p">:</span> <span class="n">Reward</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Calculate weighted average based on configured weights&quot;&quot;&quot;</span>
+        <span class="n">w_sum</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">d_sum</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">reward</span><span class="o">.</span><span class="n">details</span><span class="p">:</span>
+            <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weights</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+            <span class="n">w_sum</span> <span class="o">+=</span> <span class="n">w</span>
+            <span class="n">d_sum</span> <span class="o">+=</span> <span class="n">w</span> <span class="o">*</span> <span class="n">d</span><span class="o">.</span><span class="n">score</span>
+        <span class="k">if</span> <span class="n">w_sum</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">reward</span><span class="o">.</span><span class="n">score</span> <span class="o">=</span> <span class="n">d_sum</span> <span class="o">/</span> <span class="n">w_sum</span>
+
+    <span class="c1"># Apply weighting to all output rewards</span>
+    <span class="k">for</span> <span class="n">output</span> <span class="ow">in</span> <span class="n">sample</span><span class="o">.</span><span class="n">output</span><span class="p">:</span>
+        <span class="n">weight</span><span class="p">(</span><span class="n">output</span><span class="o">.</span><span class="n">answer</span><span class="o">.</span><span class="n">reward</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">output</span><span class="o">.</span><span class="n">steps</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="n">output</span><span class="o">.</span><span class="n">steps</span><span class="p">:</span>
+                <span class="n">weight</span><span class="p">(</span><span class="n">step</span><span class="o">.</span><span class="n">reward</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">sample</span>
 </code></pre></div></td></tr></table></div>
             </details>
     </div>
@@ -5093,9 +5623,7 @@ Converts dictionary configurations to actual reward module instances using the r
 
             <details class="quote">
               <summary>Source code in <code>rm_gallery/core/reward/composition.py</code></summary>
-              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 82</span>
-<span class="normal"> 83</span>
-<span class="normal"> 84</span>
+              <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 84</span>
 <span class="normal"> 85</span>
 <span class="normal"> 86</span>
 <span class="normal"> 87</span>
@@ -5148,7 +5676,9 @@ Converts dictionary configurations to actual reward module instances using the r
 <span class="normal">134</span>
 <span class="normal">135</span>
 <span class="normal">136</span>
-<span class="normal">137</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span><span class="w"> </span><span class="nf">evaluate</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">:</span> <span class="n">DataSample</span><span class="p">,</span> <span class="n">thread_pool</span><span class="p">:</span> <span class="n">ThreadPoolExecutor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DataSample</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
