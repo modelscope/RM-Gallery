@@ -5,9 +5,31 @@ from copy import deepcopy
 from typing import List
 
 import jsonlines
+import pandas as pd
 import yaml
 
 from rm_gallery.core.data.schema import DataSample
+
+
+def load_parquet(file_path: str):
+    """
+    Load data from Parquet file.
+
+    Args:
+        file_path: Path to the data file
+
+    Returns:
+        List of data records as dictionaries
+
+    Raises:
+        FileNotFoundError: If the file doesn't exist
+        ValueError: If the file format is not supported
+    """
+    if not os.path.exists(file_path):
+        raise FileNotFoundError(f"Data file not found: {file_path}")
+
+    df = pd.read_parquet(file_path)
+    return df.to_dict("records")
 
 
 def read_json(file_path):
