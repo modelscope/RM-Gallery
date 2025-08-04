@@ -74,6 +74,9 @@ The included `HelpSteer3DataProcessor` shows how to handle this specific format.
 ### 1. Run Training
 
 ```bash
+# cd into directory
+cd ./examples/train/bradley-terry
+
 # Make the script executable
 chmod +x run_qwen_rm.sh
 
@@ -100,7 +103,7 @@ accelerate launch trainer.py \
 ## Configuration Options
 
 ### Model & Training
-- `--model_name`: Base model to fine-tune (default: Meta-Llama-3-8B-Instruct)
+- `--model_name`: Base model to fine-tune (default: Qwen/Qwen3-1.7B)
 - `--max_length`: Maximum sequence length (default: 4096)
 - `--learning_rate`: Learning rate (default: 2e-6)
 - `--num_train_epochs`: Number of training epochs (default: 1)

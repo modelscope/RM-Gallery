@@ -1,7 +1,9 @@
 import json
+import os
 from typing import Any, Dict, List, Optional
 
 from datasets import Dataset
+from loguru import logger
 from transformers import AutoTokenizer
 
 from rm_gallery.core.train.dataset import BaseBradleyTerryTrainDataset
@@ -39,9 +41,13 @@ class HelpSteer3DataProcessor(BaseBradleyTerryTrainDataset):
         response_a = outputs[0]["answer"]
         response_b = outputs[1]["answer"]
 
-        # Determine preference
-        is_a_preferred = outputs[0]["answer"]["label"]["is_preferred"]
-        is_b_preferred = outputs[1]["answer"]["label"]["is_preferred"]
+        try:
+            # Determine preference
+            is_a_preferred = response_a["label"]["is_preferred"]
+            is_b_preferred = response_b["label"]["is_preferred"]
+        except KeyError:
+            is_a_preferred = response_a["label"].get("is_preferred", True)
+            is_b_preferred = response_b["label"].get("is_preferred", False)
 
         if is_a_preferred and not is_b_preferred:
             chosen_response = response_a
@@ -110,12 +116,12 @@ class HelpSteer3DataProcessor(BaseBradleyTerryTrainDataset):
                 converted = self._convert_to_preference_format(item)
                 train_preference_data.append(converted)
             except Exception as e:
-                print(f"Error converting training sample {i}: {e}")
+                logger.warning(f"Error converting training sample {i}: {e}")
                 continue
 
         # Create training dataset
         train_dataset = Dataset.from_list(train_preference_data)
-        num_proc = 24  # Number of processes for parallel processing
+        num_proc = os.cpu_count() or 1  # Number of processes for parallel processing
         train_dataset = train_dataset.map(tokenize_sample, num_proc=num_proc)
 
         # Create evaluation dataset
@@ -132,7 +138,8 @@ class HelpSteer3DataProcessor(BaseBradleyTerryTrainDataset):
                     converted = self._convert_to_preference_format(item)
                     eval_preference_data.append(converted)
                 except Exception as e:
-                    print(f"Error converting eval sample {i}: {e}")
+                    logger.warning(f"Error converting eval sample {i}: {e}")
+
                     continue
 
             eval_dataset = Dataset.from_list(eval_preference_data)

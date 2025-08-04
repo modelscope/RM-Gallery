@@ -112,9 +112,9 @@ class ScriptArguments:
 
     # Data processing
     custom_bt_dataset_path: Optional[str] = field(
-        default="helpsteer3",
+        default="./dataset.py",
         metadata={
-            "help": "Path to custom BT dataset Python file or built-in type (e.g., 'helpsteer3', './my_processors.py')"
+            "help": "Path to custom BT dataset Python file or built-in type (e.g., './dataset.py')"
         },
     )
     custom_bt_dataset_name: Optional[str] = field(

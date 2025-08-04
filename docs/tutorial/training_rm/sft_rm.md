@@ -87,6 +87,7 @@ export PROJECT_NAME="reasoning-rm-experiment"
 
 # Run training
 bash sft_rm.sh
+
 ```
 
 ### Multi-Node Training
@@ -102,6 +103,7 @@ export RANK="0"                     # Current node rank
 export N_GPUS_PER_NODE="8"         # GPUs per node
 
 bash sft_rm.sh
+
 ```
 
 **Worker Node (rank 1):**
@@ -113,4 +115,5 @@ export RANK="1"                     # Current node rank
 export N_GPUS_PER_NODE="8"         # GPUs per node
 
 bash sft_rm.sh
+
 ```

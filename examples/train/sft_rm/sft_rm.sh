@@ -8,7 +8,6 @@ MASTER_ADDR=${MASTER_ADDR:-localhost}
 MASTER_PORT=${MASTER_PORT:-29500}
 NNODES=${WORLD_SIZE:-2}
 NODE_RANK=${RANK}
-CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
 
 echo "=== Distributed Training Configuration ==="
 echo "MASTER_ADDR: $MASTER_ADDR"
