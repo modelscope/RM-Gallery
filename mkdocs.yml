@@ -18,16 +18,16 @@ nav:
       - Process: tutorial/data/process.ipynb
     - Train RM: tutorial/training_rm/training_rm.md
     - Build RM:
-      - Overview: docs/tutorial/building_rm/overview.ipynb
+      - Overview: tutorial/building_rm/overview.ipynb
       - Customization: tutorial/building_rm/custom_reward.ipynb
       - Auto Principle: tutorial/building_rm/autoprinciple.ipynb
-      - Built-in Rewards: tutorial/building_rm/built_in_rewards.md
+      - Built-in Rewards: tutorial/building_rm/ready2use_rewards.md
       - Benchmark: tutorial/building_rm/benchmark_practices.ipynb
-    - RM Server: tutorial/rm_servering/rm_server.md
+    - RM Server: tutorial/rm_serving/rm_server.md
     - Application:
-      - Best of N: tutorial/deploying_rm/best_of_n.ipynb
-      - Post Training with RM: tutorial/deploying_rm/post_traning.ipynb
-      - Refinement: tutorial/deploying_rm/data_refinement.ipynb
+      - Best of N: tutorial/rm_application/best_of_n.ipynb
+      - Post Training with RM: tutorial/rm_application/post_training.ipynb
+      - Refinement: tutorial/rm_application/data_refinement.ipynb
   - Contribution: contribution.md
 plugins:
   - search
