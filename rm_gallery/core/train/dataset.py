@@ -15,14 +15,33 @@
 import copy
 import os
 from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import datasets
 import verl.utils.torch_functional as verl_F
 from omegaconf import DictConfig, ListConfig
 from torch.utils.data import Dataset
-from transformers import PreTrainedTokenizer
+from transformers import AutoTokenizer, PreTrainedTokenizer
 from verl.utils.model import compute_position_id_with_mask
+
+
+class BaseBradleyTerryTrainDataset(Dataset, ABC):
+    """Base class for Bradley-Terry datasets with common functionality"""
+
+    def __init__(self, tokenizer: AutoTokenizer):
+        self.tokenizer = tokenizer
+
+    @abstractmethod
+    def _convert_to_preference_format(
+        self, data_item: Dict[str, Any]
+    ) -> Dict[str, List]:
+        """Convert data item to preference format."""
+        pass
+
+    @abstractmethod
+    def _build_dataset(self, train_path: str, eval_path: Optional[str] = None) -> tuple:
+        """Build training and evaluation datasets."""
+        pass
 
 
 class BaseTrainDataset(Dataset, ABC):
