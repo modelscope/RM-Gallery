@@ -76,8 +76,6 @@ For complex preference datasets with nested structures, you can create custom da
 
 The included `HelpSteer3Dataset` handles this specific format:
 
-[dataset_helpsteer3.py](../../../examples/train/bradley-terry/dataset_helpsteer3.py)
-
 ```json
 {
   "input": [{"role": "user", "content": "Question"}],
@@ -407,6 +405,7 @@ The training process is built on the **VERL framework** and uses **FSDP (Fully S
 3. **Hydra Configuration**: All parameters managed through YAML configuration files
 4. **Mixed Precision**: Uses bfloat16 for forward pass and float32 for gradient computation
 5. **Gradient Checkpointing**: Trades compute for memory by recomputing activations during backward pass
+
 
 ### Loss Function
 The Bradley-Terry loss is computed as:

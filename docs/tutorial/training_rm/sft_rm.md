@@ -53,6 +53,7 @@ The pairwise training approach expects data in `.parquet` format with the follow
      - `role`: Either "user" or "assistant"
      - `content`: The message content
 
+
 **Pairwise-Specific Fields:**
 
 3. **User Message Structure**

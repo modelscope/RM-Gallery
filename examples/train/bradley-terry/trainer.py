@@ -676,6 +676,5 @@ def run_bt_training(config):
 def main(config):
     run_bt_training(config)
 
-
 if __name__ == "__main__":
     main()
