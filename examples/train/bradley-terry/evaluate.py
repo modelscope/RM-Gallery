@@ -1,215 +1,132 @@
 """
-Reward Model Evaluation Script
+Simple Reward Model Evaluation Script
 
-This script evaluates a trained Bradley-Terry reward model on preference data.
-It computes accuracy by checking if the model assigns higher rewards to preferred responses.
+This script provides a basic test for a trained Bradley-Terry reward model.
+It takes simple text inputs and returns reward scores.
 
 """
-import json
 from argparse import ArgumentParser
-from dataclasses import dataclass
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List
 
 import torch
-from loguru import logger
 from transformers import AutoTokenizer, pipeline
 
-from rm_gallery.core.utils.file import load_parquet
 
+class SimpleRewardEvaluator:
+    """Simple evaluator for Bradley-Terry reward models."""
 
-@dataclass
-class RewardModelEvaluator:
-    """Evaluator class for Bradley-Terry reward models."""
-
-    model_path: str
-    max_length: int = 8192
-    device_map: str = "auto"
-    torch_dtype: torch.dtype = torch.bfloat16
-
-    def __post_init__(self):
+    def __init__(self, model_path: str):
         """Initialize tokenizer and model pipeline."""
-        self.tokenizer = AutoTokenizer.from_pretrained(self.model_path)
+        self.model_path = model_path
+        self.tokenizer = AutoTokenizer.from_pretrained(model_path)
         self.pipeline = pipeline(
             "text-classification",
-            model=self.model_path,
-            device_map=self.device_map,
+            model=model_path,
+            device_map="auto",
             tokenizer=self.tokenizer,
-            model_kwargs={"torch_dtype": self.torch_dtype},
+            model_kwargs={"torch_dtype": torch.bfloat16},
         )
 
-        # Pipeline configuration
-        self.pipe_kwargs = {"top_k": 1, "function_to_apply": "none", "batch_size": 1}
-
-    def truncate_text(self, text: str) -> str:
-        """Truncate text to fit model's maximum length.
-
-        Args:
-            text: Input text to truncate
-
-        Returns:
-            Truncated text that fits within model's context window
-        """
-        tokens = self.tokenizer.encode(text)
-        if len(tokens) > self.max_length:
-            tokens = tokens[: self.max_length]
-            text = self.tokenizer.decode(tokens)
-        return text
-
-    def get_reward(
-        self, chat: List[Dict[str, str]]
-    ) -> Tuple[Optional[float], Optional[str]]:
+    def get_reward(self, conversation: List[Dict[str, str]]) -> float:
         """Get reward score for a conversation.
 
         Args:
-            chat: List of conversation messages in chat format
+            conversation: List of messages in format [{"role": "user/assistant", "content": "text"}]
 
         Returns:
-            Tuple of (reward_score, error_message)
-            - reward_score: Float score if successful, None if error
-            - error_message: Error description if failed, None if successful
+            Reward score as float
         """
-        try:
-            # Truncate each message
-            truncated_chat = [
-                {**msg, "content": self.truncate_text(msg["content"])} for msg in chat
-            ]
+        # Convert conversation to model input format
+        model_input = self.tokenizer.apply_chat_template(
+            conversation, tokenize=False, add_generation_prompt=False
+        )
 
-            # Convert to model input format
-            model_input = self.tokenizer.apply_chat_template(
-                truncated_chat, tokenize=False, add_generation_prompt=False
-            )
+        # Get model prediction
+        output = self.pipeline(model_input, top_k=1, function_to_apply="none")
+        return output[0]["score"]
 
-            # Get model prediction
-            output = self.pipeline([model_input], **self.pipe_kwargs)
-            reward = output[0][0]["score"]
-
-            return reward, None
-
-        except Exception as e:
-            return None, str(e)
-
-    def get_sample_scores(self, data: Dict) -> Dict[str, float]:
-        """Get reward scores for a pair of responses.
+    def compare_responses(self, user_message: str, response_a: str, response_b: str):
+        """Compare two responses to the same user message.
 
         Args:
-            data: Dictionary containing input and two responses in the required format:
-                {
-                    "input": [{"role": "user", "content": str}],
-                    "output": [
-                        {
-                            "answer": {"role": "assistant", "content": str},
-                            "label": {"is_preferred": bool}
-                        },
-                        {
-                            "answer": {"role": "assistant", "content": str},
-                            "label": {"is_preferred": bool}
-                        }
-                    ]
-                }
+            user_message: The user's question or prompt
+            response_a: First response to compare
+            response_b: Second response to compare
 
         Returns:
-            Dictionary with reward scores for both responses
+            Tuple of (score_a, score_b, preferred_response)
         """
-        try:
-            # Extract conversations and parse JSON if needed
-            input_msg = data["input"]
-            if isinstance(input_msg, str):
-                try:
-                    input_msg = json.loads(input_msg)
-                except json.JSONDecodeError as e:
-                    logger.error(f"Failed to parse input JSON: {e}")
-                    return {}
+        # Create conversations
+        conv_a = [
+            {"role": "user", "content": user_message},
+            {"role": "assistant", "content": response_a},
+        ]
+        conv_b = [
+            {"role": "user", "content": user_message},
+            {"role": "assistant", "content": response_b},
+        ]
 
-            outputs = data["output"]
-            if isinstance(outputs, str):
-                try:
-                    outputs = json.loads(outputs)
-                except json.JSONDecodeError as e:
-                    logger.error(f"Failed to parse output JSON: {e}")
-                    return {}
+        # Get scores
+        score_a = self.get_reward(conv_a)
+        score_b = self.get_reward(conv_b)
 
-            # Extract answers safely
-            try:
-                answer_a = outputs[0]["answer"]
-                answer_b = outputs[1]["answer"]
-            except (IndexError, KeyError) as e:
-                logger.error(f"Error extracting answers: {e}")
-                return {}
+        # Determine preferred response
+        preferred = "A" if score_a > score_b else "B"
 
-            # Create chat contexts
-            chat_a = input_msg + [answer_a]
-            chat_b = input_msg + [answer_b]
-        except Exception as e:
-            logger.error(f"Error processing sample: {e}")
-            return {}
+        return score_a, score_b, preferred
 
-        # Get rewards
-        reward_a, error_a = self.get_reward(chat_a)
-        reward_b, error_b = self.get_reward(chat_b)
-
-        # Handle errors
-        if error_a or error_b:
-            if error_a:
-                logger.error(f"Error A: {error_a}")
-            if error_b:
-                logger.error(f"Error B: {error_b}")
-            return {}
-
-        return {"response_a_score": reward_a, "response_b_score": reward_b}
-
-    def process_dataset(self, data_path: str) -> None:
-        """Process dataset and output reward scores for each sample.
+    def simple_test(self, user_message: str, response: str) -> float:
+        """Simple test: get reward score for a single response.
 
         Args:
-            data_path: Path to evaluation data file (parquet format)
-        """
-        try:
-            # Load parquet data
-            data_rows = load_parquet(data_path)
-            # Process each row
-            for idx, data in enumerate(data_rows):
-                try:
-                    # Get scores for sample
-                    scores = self.get_sample_scores(data)
-                    # Output scores
-                    if scores:
-                        print(
-                            f"Score A: {scores['response_a_score']:.4f}, Score B: {scores['response_b_score']:.4f}"
-                        )
-                except Exception as e:
-                    logger.error(f"Error processing row {idx}: {str(e)}")
-                    continue
+            user_message: The user's question or prompt
+            response: The assistant's response
 
-        except Exception as e:
-            logger.error(f"Error loading parquet file: {str(e)}")
-            raise
+        Returns:
+            Reward score
+        """
+        conversation = [
+            {"role": "user", "content": user_message},
+            {"role": "assistant", "content": response},
+        ]
+        return self.get_reward(conversation)
 
 
 def main():
-    """Main evaluation function."""
-    parser = ArgumentParser(description="Evaluate Bradley-Terry reward model")
+    """Main function - simple test example."""
+    parser = ArgumentParser(description="Simple Bradley-Terry reward model test")
     parser.add_argument(
         "--model_path", type=str, required=True, help="Path to trained reward model"
-    )
-    parser.add_argument(
-        "--data_path",
-        type=str,
-        required=True,
-        help="Path to evaluation data file (parquet format)",
-    )
-    parser.add_argument(
-        "--max_length", type=int, default=8192, help="Maximum sequence length"
     )
     args = parser.parse_args()
 
     # Initialize evaluator
-    evaluator = RewardModelEvaluator(
-        model_path=args.model_path, max_length=args.max_length
+    evaluator = SimpleRewardEvaluator(args.model_path)
+
+    # Simple test examples
+    print("=== Simple Reward Model Test ===")
+
+    # Test 1: Single response scoring
+    user_msg = "What is the capital of France?"
+    response1 = "The capital of France is Paris."
+    response2 = "I don't know."
+
+    score1 = evaluator.simple_test(user_msg, response1)
+    score2 = evaluator.simple_test(user_msg, response2)
+
+    print(f"User: {user_msg}")
+    print(f"Response 1: {response1}")
+    print(f"Score 1: {score1:.4f}")
+    print(f"Response 2: {response2}")
+    print(f"Score 2: {score2:.4f}")
+
+    # Test 2: Compare two responses
+    print("\n=== Response Comparison ===")
+    score_a, score_b, preferred = evaluator.compare_responses(
+        user_msg, response1, response2
     )
-
-    # Process dataset and output scores
-    evaluator.process_dataset(args.data_path)
-
+    print(f"Score A: {score_a:.4f}, Score B: {score_b:.4f}")
+    print(f"Preferred response: {preferred}")
 
 if __name__ == "__main__":
     main()

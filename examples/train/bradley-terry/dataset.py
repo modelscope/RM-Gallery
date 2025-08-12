@@ -1,148 +1,155 @@
-import json
-import os
-from typing import Any, Dict, List, Optional
+"""
+Bradley-Terry Dataset for Reward Model Training
+- Loads preference data from parquet files
+- Each sample contains chosen and rejected responses
+- Returns data in format suitable for Bradley-Terry loss
+"""
 
-from datasets import Dataset
-from loguru import logger
-from transformers import AutoTokenizer
+from typing import Any, Dict, List, Union
 
-from rm_gallery.core.train.dataset import BaseBradleyTerryTrainDataset
-from rm_gallery.core.utils.file import load_parquet
+import pandas as pd
+import torch
+from torch.utils.data import Dataset
+from transformers import PreTrainedTokenizer
+from verl.utils import hf_tokenizer
+from verl.utils.fs import copy_to_local
 
 
-class HelpSteer3DataProcessor(BaseBradleyTerryTrainDataset):
-    """Data processor for HelpSteer3 dataset format."""
+class BTDataset(Dataset):
+    """
+    Bradley-Terry Dataset for preference learning
 
-    def __init__(self, tokenizer: AutoTokenizer):
-        super().__init__(tokenizer)
+    Expected data format in parquet:
+    - chosen: text of chosen response (string)
+    - rejected: text of rejected response (string)
 
-    def _convert_to_preference_format(
-        self, data_item: Dict[str, Any]
-    ) -> Dict[str, List]:
+    The dataset directly reads the chosen and rejected columns as text strings,
+    without any complex message format conversion.
+    """
+
+    def __init__(self, parquet_files: Union[str, List[str]], tokenizer, config):
+        self.max_length = config.get("max_length", 4096)
+        self.truncation = config.get("truncation", "left")
+        self.use_shm = config.get("use_shm", False)
+
+        # Keys for data columns
+        self.chosen_key = config.get("chosen_key", "chosen")
+        self.rejected_key = config.get("rejected_key", "rejected")
+
+        assert self.truncation in ["error", "left", "right"]
+
+        if not isinstance(parquet_files, list):
+            parquet_files = [parquet_files]
+
+        self.parquet_files = parquet_files
+        if isinstance(tokenizer, str):
+            tokenizer = hf_tokenizer(tokenizer)
+        self.tokenizer: PreTrainedTokenizer = tokenizer
+
+        self._download()
+        self._read_files_and_process()
+
+    def _download(self):
+        """Download parquet files to local if needed"""
+        for i, parquet_file in enumerate(self.parquet_files):
+            self.parquet_files[i] = copy_to_local(parquet_file, verbose=True)
+
+    def _read_files_and_process(self):
+        """Read and concatenate all parquet files"""
+        dataframes = []
+        for parquet_file in self.parquet_files:
+            dataframe = pd.read_parquet(parquet_file)
+            dataframes.append(dataframe)
+
+        self.dataframe = pd.concat(dataframes, ignore_index=True)
+
+        # Directly extract chosen and rejected text fields
+        self.chosen_texts = self.dataframe[self.chosen_key].tolist()
+        self.rejected_texts = self.dataframe[self.rejected_key].tolist()
+
+        # Ensure all entries are strings
+        self.chosen_texts = [str(text) for text in self.chosen_texts]
+        self.rejected_texts = [str(text) for text in self.rejected_texts]
+
+        print(
+            f"Loaded {len(self.chosen_texts)} preference pairs from {len(self.parquet_files)} files"
+        )
+
+    def __len__(self):
+        return len(self.chosen_texts)
+
+    def _tokenize_text(self, text: str) -> Dict[str, torch.Tensor]:
+        """Tokenize a single text and handle truncation/padding to fixed length"""
+        # Tokenize
+        encoding = self.tokenizer(
+            text,
+            add_special_tokens=True,
+            return_tensors="pt",
+            padding=False,
+            truncation=False,
+        )
+
+        input_ids = encoding["input_ids"].squeeze(0)
+        attention_mask = encoding["attention_mask"].squeeze(0)
+
+        sequence_length = input_ids.shape[0]
+
+        # Handle sequence length like SFT dataset
+        if sequence_length < self.max_length:
+            # Pad sequences
+            pad_token_id = (
+                self.tokenizer.pad_token_id
+                if self.tokenizer.pad_token_id is not None
+                else 0
+            )
+            padded_input_ids = (
+                torch.ones(
+                    size=(self.max_length - sequence_length,), dtype=input_ids.dtype
+                )
+                * pad_token_id
+            )
+            padded_attention_mask = torch.zeros(
+                size=(self.max_length - sequence_length,), dtype=attention_mask.dtype
+            )
+
+            input_ids = torch.cat((input_ids, padded_input_ids))
+            attention_mask = torch.cat((attention_mask, padded_attention_mask))
+        elif sequence_length > self.max_length:
+            if self.truncation == "left":
+                # Keep the end of the conversation (including conclusion)
+                input_ids = input_ids[-self.max_length :]
+                attention_mask = attention_mask[-self.max_length :]
+            elif self.truncation == "right":
+                input_ids = input_ids[: self.max_length]
+                attention_mask = attention_mask[: self.max_length]
+            elif self.truncation == "error":
+                raise ValueError(
+                    f"Sequence length {sequence_length} > max_length {self.max_length}"
+                )
+
+        return {"input_ids": input_ids, "attention_mask": attention_mask}
+
+    def __getitem__(self, item) -> Dict[str, Any]:
         """
-        Convert the new data format to preference format for training.
-
-        Args:
-            data_item: Single data item with 'input' and 'output' fields
+        Get a preference pair
 
         Returns:
-            Dictionary with 'chosen' and 'rejected' conversation lists
+            dict with keys:
+            - input_ids_j: chosen response tokens
+            - attention_mask_j: chosen response attention mask
+            - input_ids_k: rejected response tokens
+            - attention_mask_k: rejected response attention mask
         """
-        input_conversation = data_item["input"]
-        outputs = data_item["output"]
+        chosen_text = self.chosen_texts[item]
+        rejected_text = self.rejected_texts[item]
 
-        # Handle string JSON parsing if needed
-        if isinstance(outputs, str):
-            outputs = json.loads(outputs)
-        if isinstance(input_conversation, str):
-            input_conversation = json.loads(input_conversation)
+        # Tokenize both responses
+        chosen_tokens = self._tokenize_text(chosen_text)
+        rejected_tokens = self._tokenize_text(rejected_text)
 
-        # Extract responses
-        response_a = outputs[0]["answer"]
-        response_b = outputs[1]["answer"]
-
-        try:
-            # Determine preference
-            is_a_preferred = response_a["label"]["is_preferred"]
-            is_b_preferred = response_b["label"]["is_preferred"]
-        except KeyError:
-            is_a_preferred = response_a["label"].get("is_preferred", True)
-            is_b_preferred = response_b["label"].get("is_preferred", False)
-
-        if is_a_preferred and not is_b_preferred:
-            chosen_response = response_a
-            rejected_response = response_b
-        elif is_b_preferred and not is_a_preferred:
-            chosen_response = response_b
-            rejected_response = response_a
-        else:
-            # Use preference scores as fallback
-            score_a = outputs[0]["answer"]["label"].get("preference_score", 0)
-            score_b = outputs[1]["answer"]["label"].get("preference_score", 0)
-
-            if score_a > score_b:
-                chosen_response = response_a
-                rejected_response = response_b
-            else:
-                chosen_response = response_b
-                rejected_response = response_a
-
-        # Create conversation format
-        chosen_conversation = input_conversation + [chosen_response]
-        rejected_conversation = input_conversation + [rejected_response]
-
-        return {"chosen": chosen_conversation, "rejected": rejected_conversation}
-
-    def _build_dataset(self, train_path: str, eval_path: Optional[str] = None) -> tuple:
-        """
-        Build training and evaluation datasets from data files.
-
-        Args:
-            train_path: Path to training data file
-            eval_path: Path to evaluation data file (optional)
-
-        Returns:
-            Tuple of (train_dataset, eval_dataset)
-        """
-
-        def tokenize_sample(sample: Dict[str, Any]) -> Dict[str, Any]:
-            """Tokenize a single sample with chosen and rejected responses."""
-            # Apply chat template
-            sample["positive"] = self.tokenizer.apply_chat_template(
-                sample["chosen"], tokenize=False, add_generation_prompt=False
-            )
-            sample["negative"] = self.tokenizer.apply_chat_template(
-                sample["rejected"], tokenize=False, add_generation_prompt=False
-            )
-
-            # Tokenize responses
-            tokenized_pos = self.tokenizer(sample["positive"], truncation=True)
-            tokenized_neg = self.tokenizer(sample["negative"], truncation=True)
-
-            # Store tokenized data
-            sample["input_ids_j"] = tokenized_pos["input_ids"]
-            sample["attention_mask_j"] = tokenized_pos["attention_mask"]
-            sample["input_ids_k"] = tokenized_neg["input_ids"]
-            sample["attention_mask_k"] = tokenized_neg["attention_mask"]
-
-            return sample
-
-        # Load and process training data
-        raw_train_data = load_parquet(train_path)
-
-        train_preference_data = []
-        for i, item in enumerate(raw_train_data):
-            try:
-                converted = self._convert_to_preference_format(item)
-                train_preference_data.append(converted)
-            except Exception as e:
-                logger.warning(f"Error converting training sample {i}: {e}")
-                continue
-
-        # Create training dataset
-        train_dataset = Dataset.from_list(train_preference_data)
-        num_proc = os.cpu_count() or 1  # Number of processes for parallel processing
-        train_dataset = train_dataset.map(tokenize_sample, num_proc=num_proc)
-
-        # Create evaluation dataset
-        if eval_path is None or eval_path == train_path:
-            # Use subset of training data for evaluation
-            eval_size = min(500, len(train_dataset))
-            eval_dataset = train_dataset.select(range(eval_size))
-        else:
-            raw_eval_data = load_parquet(eval_path)
-
-            eval_preference_data = []
-            for i, item in enumerate(raw_eval_data):
-                try:
-                    converted = self._convert_to_preference_format(item)
-                    eval_preference_data.append(converted)
-                except Exception as e:
-                    logger.warning(f"Error converting eval sample {i}: {e}")
-
-                    continue
-
-            eval_dataset = Dataset.from_list(eval_preference_data)
-            eval_dataset = eval_dataset.map(tokenize_sample, num_proc=num_proc)
-
-        return train_dataset, eval_dataset
+        return {
+            "input_ids_j": chosen_tokens["input_ids"],
+            "attention_mask_j": chosen_tokens["attention_mask"],
+            "input_ids_k": rejected_tokens["input_ids"],
+            "attention_mask_k": rejected_tokens["attention_mask"],
+        }
