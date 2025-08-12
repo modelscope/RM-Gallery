@@ -1,0 +1,49 @@
+data:
+  train_batch_size: 128  # Global batch size across all GPUs (automatically distributed)
+  micro_batch_size_per_gpu: 1  # Bradley-Terry pairs are usually larger, use smaller batch size
+  train_files: hendrydong/preference_700K/train.parquet  # Training dataset path or HuggingFace dataset name
+  val_files: hendrydong/preference_700K/test.parquet  # Validation dataset path (set to null if no validation data)
+  # Bradley-Terry specific settings
+  chosen_key: chosen  # Column name for chosen responses in parquet files
+  rejected_key: rejected  # Column name for rejected responses in parquet files
+  custom_cls:
+    path: null  # Python module path (e.g., "./dataset_helpsteer3.py")
+    name: null  # Class name in the module (e.g., "HelpSteer3Dataset")
+  max_length: 4096  # Maximum sequence length (longer for preference data)
+  truncation: left  # Truncate from left to keep conversation conclusion
+
+model:
+  partial_pretrain: Qwen/Qwen2.5-7B-Instruct  # Base model path (local or HuggingFace)
+  fsdp_config:
+    model_dtype: bf16  # Use bfloat16 for better memory efficiency
+    wrap_policy:
+      min_num_params: 1000  # Wrap layers with more than 1000 parameters
+    cpu_offload: False  # Keep parameters on GPU for better performance
+    offload_params: False  # Don't offload parameters to CPU
+  external_lib: null  # External library to import (if needed)
+  enable_gradient_checkpointing: True  # Enable for memory savings on large models
+  trust_remote_code: True  # Required for Qwen and some other models
+  lora_rank: 0  # Set to positive value to enable LoRA (e.g., 32)
+  lora_alpha: 16  # LoRA scaling factor (only used if lora_rank > 0)
+  target_modules: all-linear  # Target modules for LoRA adaptation
+  use_liger: False  # Use Liger kernels for optimization (experimental)
+  strategy: fsdp  # Training strategy: fsdp (FSDP1) or fsdp2
+
+optim:
+  lr: 2e-6  # Lower learning rate for reward model fine-tuning
+  betas: [0.9, 0.999]  # Standard Adam optimizer betas
+  weight_decay: 0.001  # Light weight decay to prevent overfitting
+  warmup_steps_ratio: 0.03  # Short warmup for reward models (3% of total steps)
+  clip_grad: 1  # Gradient clipping norm to prevent instability
+  lr_scheduler: cosine  # Learning rate scheduler: cosine or wsd
+
+trainer:
+  default_local_dir: ./checkpoints  # Local directory for saving checkpoints
+  default_hdfs_dir: null  # Set to HDFS path if using distributed storage
+  project_name: qwen2.5-7b-bt  # Project name for experiment tracking
+  experiment_name: qwen2.5-7b-bt  # Experiment name (will be timestamped in scripts)
+  total_epochs: 1  # Usually 1 epoch is enough for reward models
+  total_training_steps: null  # Let it run for full epoch (null = auto-calculate)
+  logger: ['console','swanlab']  # Logging backends: console, wandb, swanlab, tensorboard
+  save_freq: 500  # Save checkpoint every N steps
+  test_freq: 500  # Run validation every N steps
