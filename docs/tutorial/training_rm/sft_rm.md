@@ -20,25 +20,9 @@ Ensure the following dependencies are installed:
 
 ## Data Processing
 
-### Pairwise Training Data Structure
+### Training Data Structure
 
-The pairwise training approach expects data in `.parquet` format with the following structure. Each sample represents a pair of responses with reasoning analysis and preference judgment:
-
-```json
-{
-    "id": "unique-sample-id",
-    "messages": [
-        {
-            "role": "user",
-            "content": "# Task Description\nPlease choose the better response.\n\n# Principles\n1. Relevance and Specificity\n2. Depth of Analysis\n3. Clarity and Structure\n4. Practicality and Actionability\n5. User-Centric Focus\n\n# Query\n[Previous conversation history]\n\n# Response A\n[First response option]\n\n# Response B\n[Second response option]\n\n# Output Requirement\n[Output format requirements]"
-        },
-        {
-            "role": "assistant",
-            "content": "<think>\n[Detailed analysis of responses based on principles]\n</think>\n\n<preference>B</preference>"
-        }
-    ]
-}
-```
+This training approach supports both pointwise and pairwise training paradigms, expecting data in `.parquet` format with the following structure.
 
 #### Required Fields
 
