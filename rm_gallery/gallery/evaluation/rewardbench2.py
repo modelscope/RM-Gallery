@@ -5,6 +5,8 @@ import random
 import re
 from typing import Dict, List, Type
 import os
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from functools import partial
 
 import fire
 import numpy as np
@@ -381,8 +383,60 @@ class RewardBench2Evaluator(BaseEvaluator):
         description="the reward module",
     )
     
-    def run(self, samples: List[DataSample], **kwargs) -> dict:
-        """Execute evaluation with Ties/non-Ties separation."""
+    def _evaluate_single_sample(self, sample: DataSample, **kwargs) -> DataSample:
+        """Evaluate a single sample - used for parallel processing."""
+        try:
+            result = self.reward.evaluate(sample=sample, **kwargs)
+            return result
+        except Exception as e:
+            logger.error(f"Failed to evaluate sample: {str(e)}")
+            # Return sample with error in metadata
+            sample.metadata = sample.metadata or {}
+            sample.metadata["evaluation_error"] = str(e)
+            return sample
+    
+    def _parallel_evaluate(self, samples: List[DataSample], desc: str, max_workers: int = 8, **kwargs) -> List[DataSample]:
+        """Parallel evaluation with progress bar."""
+        results = [None] * len(samples)
+        completed_count = 0
+        
+        def update_progress_bar(done, total):
+            """Simple progress indicator."""
+            progress = int(50 * done / total) if total > 0 else 0
+            print(f"\r[{'#' * progress}{'.' * (50 - progress)}] {done}/{total}", end='', flush=True)
+        
+        # Create evaluation function with kwargs bound
+        eval_func = partial(self._evaluate_single_sample, **kwargs)
+        
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit all tasks and map them to their original indices
+            future_to_index = {
+                executor.submit(eval_func, sample): i 
+                for i, sample in enumerate(samples)
+            }
+            
+            # Process completed tasks
+            for future in as_completed(future_to_index):
+                index = future_to_index[future]
+                try:
+                    result = future.result()
+                    results[index] = result
+                except Exception as e:
+                    logger.error(f"Task failed for sample {index}: {str(e)}")
+                    # Create error result
+                    sample = samples[index]
+                    sample.metadata = sample.metadata or {}
+                    sample.metadata["evaluation_error"] = str(e)
+                    results[index] = sample
+                
+                completed_count += 1
+                update_progress_bar(completed_count, len(samples))
+        
+        print()  # New line after progress bar
+        return results
+
+    def run(self, samples: List[DataSample], max_workers: int = 8, **kwargs) -> dict:
+        """Execute evaluation with parallel processing and Ties/non-Ties separation."""
         if not samples:
             return {"error": "No samples to evaluate"}
         
@@ -398,6 +452,7 @@ class RewardBench2Evaluator(BaseEvaluator):
                 non_ties_samples.append(sample)
         
         print(f"Processing {len(non_ties_samples)} non-Ties samples and {len(ties_samples)} Ties samples")
+        print(f"Using {max_workers} parallel workers")
         
         # Process non-Ties samples (with shuffling for position bias)
         non_ties_results = []
@@ -408,21 +463,17 @@ class RewardBench2Evaluator(BaseEvaluator):
                     random.shuffle(sample.output)
             
             print("Evaluating non-Ties samples...")
-            with tqdm(total=len(non_ties_samples), desc="Non-Ties samples", unit="sample") as pbar:
-                for sample in non_ties_samples:
-                    result = self.reward.evaluate(sample=sample, **kwargs)
-                    non_ties_results.append(result)
-                    pbar.update(1)
+            non_ties_results = self._parallel_evaluate(
+                non_ties_samples, "Non-Ties samples", max_workers, **kwargs
+            )
         
         # Process Ties samples (no shuffling needed)
         ties_results = []
         if ties_samples:
             print("Evaluating Ties samples...")
-            with tqdm(total=len(ties_samples), desc="Ties samples", unit="sample") as pbar:
-                for sample in ties_samples:
-                    result = self.reward.evaluate(sample=sample, **kwargs)
-                    ties_results.append(result)
-                    pbar.update(1)
+            ties_results = self._parallel_evaluate(
+                ties_samples, "Ties samples", max_workers, **kwargs
+            )
         
         # Combine all results
         all_results = non_ties_results + ties_results
@@ -433,7 +484,8 @@ class RewardBench2Evaluator(BaseEvaluator):
             summary.update({
                 "non_ties_count": len(non_ties_samples),
                 "ties_count": len(ties_samples),
-                "total_count": len(samples)
+                "total_count": len(samples),
+                "max_workers": max_workers
             })
             return summary
         except Exception as e:
@@ -598,12 +650,11 @@ def main(
             reward=RewardBench2Reward(
                 name="rewardbench2",
                 llm=llm,
-                max_workers=max_workers,
             )
         )
 
-        # Execute evaluation pipeline
-        results = evaluator.run(samples=samples)
+        # Execute evaluation pipeline with parallel processing
+        results = evaluator.run(samples=samples, max_workers=max_workers)
 
         # Ensure result directory exists
         result_dir = os.path.dirname(result_path)
