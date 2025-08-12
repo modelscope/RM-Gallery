@@ -20,8 +20,8 @@ echo "=========================================="
 # configuration
 SAVE_PATH=./checkpoints/bt
 MODEL_PATH=Qwen/Qwen2.5-7B-Instruct
-TRAIN_FILE=hendrydong/preference_700K
-VAL_FILE=null
+TRAIN_FILE=hendrydong/preference_700K/train.parquet
+VAL_FILE=hendrydong/preference_700K/test.parquet
 
 PROJECT_NAME=rm-gallery-bt
 EXPERIMENT_NAME=qwen2.5-7b-bt-${TIMESTAMP}

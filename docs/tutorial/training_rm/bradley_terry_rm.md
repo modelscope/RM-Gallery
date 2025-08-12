@@ -425,8 +425,7 @@ where `σ` is the sigmoid function and `r_chosen`, `r_rejected` are the reward s
 
 ### Evaluation
 
-The [evaluate.py](../../../examples/train/bradley-terry/evaluate.py)provides a simple interface for testing trained Bradley-Terry reward models. It uses the `SimpleRewardEvaluator` class for easy reward scoring and response comparison.
-
+The [evaluate.py](../../../examples/train/bradley-terry/evaluate.py) provides a simple interface for testing trained Bradley-Terry reward models. It uses the `SimpleRewardEvaluator` class for easy reward scoring and response comparison.
 
 #### Running Evaluation
 

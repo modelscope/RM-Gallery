@@ -331,14 +331,22 @@ class FSDPBTTrainer:
             )  # Shape: (batch_size, 1) -> (batch_size,)
 
             # Split into chosen and rejected pairs
+            # Since bt_collate_fn creates interleaved batch [chosen_1, rejected_1, chosen_2, rejected_2, ...]
+            # we need to use strided slicing to correctly separate them
             batch_size = logits.size(0) // 2
 
-            chosen_rewards = logits[:batch_size]
-            rejected_rewards = logits[batch_size:]
+            chosen_rewards = logits[
+                0::2
+            ]  # Take every 2nd element starting from 0: chosen responses
+            rejected_rewards = logits[
+                1::2
+            ]  # Take every 2nd element starting from 1: rejected responses
 
             # Check if we have valid pairs
             if batch_size == 0:
-                print("ERROR: batch_size is 0, cannot compute Bradley-Terry loss!")
+                logger.error(
+                    "ERROR: batch_size is 0, cannot compute Bradley-Terry loss!"
+                )
                 return torch.tensor(
                     0.0, device=logits.device, requires_grad=True
                 ), torch.tensor(0.0, device=logits.device)

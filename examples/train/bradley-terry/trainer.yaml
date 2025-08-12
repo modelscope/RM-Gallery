@@ -1,8 +1,8 @@
 data:
   train_batch_size: 128  # Global batch size across all GPUs (automatically distributed)
   micro_batch_size_per_gpu: 1  # Bradley-Terry pairs are usually larger, use smaller batch size
-  train_files: hendrydong/preference_700K  # Training dataset path or HuggingFace dataset name
-  val_files: null  # Validation dataset path (set to null if no validation data)
+  train_files: hendrydong/preference_700K/train.parquet  # Training dataset path or HuggingFace dataset name
+  val_files: hendrydong/preference_700K/test.parquet  # Validation dataset path (set to null if no validation data)
   # Bradley-Terry specific settings
   chosen_key: chosen  # Column name for chosen responses in parquet files
   rejected_key: rejected  # Column name for rejected responses in parquet files
