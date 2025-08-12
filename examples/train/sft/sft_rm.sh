@@ -18,13 +18,12 @@ echo "MASTER_PORT: $MASTER_PORT"
 echo "=========================================="
 
 # configuration
-SAVE_PATH=./models/reward_model
+SAVE_PATH=./checkpoints/sft
 MODEL_PATH=Qwen/Qwen3-1.7B
 TRAIN_FILE=./data/train.parquet
 VAL_FILE=./data/test.parquet
 
 PROJECT_NAME=rm-gallery-sft
-
 EXPERIMENT_NAME=sft-${TIMESTAMP}
 
 # use python -m torch.distributed.run for multi-node multi-gpu training
