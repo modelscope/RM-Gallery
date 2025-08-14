@@ -8,10 +8,14 @@ The RewardBench2 evaluation protocol uses a list-wise comparison approach where 
 
 ## Features
 
-- **List-wise Evaluation**: Compares multiple responses simultaneously rather than pairwise comparisons
+- **Dual Evaluation Modes**: 
+  - **Four-way Comparison** (Non-Ties): Selects best response from 4 candidates
+  - **Absolute Rating** (Ties): Independent 1-10 scale rating for multiple valid answers
+- **Automatic Subset Detection**: Automatically separates and processes Ties vs non-Ties samples
 - **Position Bias Mitigation**: Automatically shuffles responses to prevent position-based biases
+- **Parallel Processing**: Multi-threaded evaluation with configurable worker count for faster processing
 - **Comprehensive Metrics**: Provides accuracy metrics overall and by subset categories
-- **Parallel Processing**: Supports multi-threaded evaluation for faster processing
+- **Real-time Progress Tracking**: Progress bars for both subset types during evaluation
 
 ## Data Preparation
 
@@ -92,13 +96,19 @@ This should display the available command-line options. If you see an error abou
 
 ### Quick Start
 
-The easiest way to run RewardBench2 evaluation is directly from the command line:
+The easiest way to run RewardBench2 evaluation is directly from the command line. The evaluator now supports both standard four-way comparison (non-Ties subsets) and absolute rating evaluation (Ties subsets) with parallel processing:
 
 ```bash
-# Simplest command with default parameters
+# Simplest command with default parameters (evaluates 2 samples by default)
 python rm_gallery/gallery/evaluation/rewardbench2.py
 
-# Or with custom parameters
+# Quick test with 10 samples and 4 parallel workers
+python rm_gallery/gallery/evaluation/rewardbench2.py \
+    --max_samples 10 \
+    --max_workers 4 \
+    --result_path "test_results/rewardbench2_test.json"
+
+# Full evaluation with custom parameters
 python rm_gallery/gallery/evaluation/rewardbench2.py \
     --data_path "data/benchmarks/reward-bench-2/data/test-00000-of-00001.parquet" \
     --result_path "data/results/rewardbench2_results.json" \
@@ -109,10 +119,17 @@ python rm_gallery/gallery/evaluation/rewardbench2.py \
 
 **Expected Output:**
 ```
-Overall Accuracy: 0.7500
-Valid Samples: 100
-Model: deepseek-chat
-Results saved to: data/results/rewardbench2_results.json
+Loading data from: data/benchmarks/reward-bench-2/data/test-00000-of-00001.parquet
+Initializing model: deepseek-chat
+Loaded 10 samples for evaluation
+Processing 9 non-Ties samples and 1 Ties samples
+Using 4 parallel workers
+Evaluating non-Ties samples...
+[##################################################] 9/9
+Evaluating Ties samples...
+[##################################################] 1/1
+Results saved to: test_results/rewardbench2_test.json
+Evaluation completed successfully!
 ```
 
 ### Command Line Parameters
@@ -120,17 +137,31 @@ Results saved to: data/results/rewardbench2_results.json
 All parameters are optional and have default values:
 
 ```bash
-# Minimal command with defaults
+# Minimal command with defaults (evaluates 2 samples)
 python rm_gallery/gallery/evaluation/rewardbench2.py
+
+# Quick test with parallel processing
+python rm_gallery/gallery/evaluation/rewardbench2.py \
+    --max_samples 10 \
+    --max_workers 4
 
 # Full command with all parameters
 python rm_gallery/gallery/evaluation/rewardbench2.py \
     --data_path "data/benchmarks/reward-bench-2/data/test-00000-of-00001.parquet" \
     --result_path "data/results/rewardbench2.json" \
-    --max_samples 10 \
+    --max_samples 100 \
     --model "deepseek-chat" \
     --max_workers 8
 ```
+
+### Evaluation Modes
+
+The evaluator automatically detects and handles two types of subsets:
+
+1. **Non-Ties Subsets** (Standard): Four-way comparison where the model selects the best response from four candidates
+2. **Ties Subsets**: Absolute rating where each response is independently rated on a 1-10 scale
+
+The system automatically separates samples by subset type and processes them with the appropriate evaluation method.
 
 ### Programmatic Usage
 
@@ -139,14 +170,33 @@ You can also use the evaluation in your Python code:
 ```python
 from rm_gallery.gallery.evaluation.rewardbench2 import main
 
-# Run evaluation with custom settings
+# Run evaluation with parallel processing
 main(
     data_path="data/benchmarks/reward-bench-2/data/test-00000-of-00001.parquet",
     result_path="data/results/rewardbench2_results.json",
     max_samples=100,
     model="deepseek-chat",
-    max_workers=8
+    max_workers=8  # Parallel workers for faster evaluation
 )
+```
+
+### Environment Variables Setup
+
+For the evaluation to work properly, ensure you have the required environment variables set:
+
+```bash
+# Activate your conda environment
+conda activate rm
+
+# Set API credentials
+export OPENAI_API_KEY="your_api_key_here"
+export BASE_URL="your_base_url_here"  # Optional, for custom endpoints
+
+# Run evaluation
+python rm_gallery/gallery/evaluation/rewardbench2.py \
+    --max_samples 10 \
+    --max_workers 4 \
+    --result_path "test_results/rewardbench2.json"
 ```
 
 ### Important Notes
@@ -231,12 +281,14 @@ evaluator = RewardBench2Evaluator(
     reward=RewardBench2Reward(
         name="rewardbench2",
         llm=llm,
-        max_workers=8,
     )
 )
 
-# 5. Run evaluation
-results = evaluator.run(samples=dataset.get_data_samples())
+# 5. Run evaluation with parallel processing
+results = evaluator.run(
+    samples=dataset.get_data_samples(),
+    max_workers=8  # Adjust based on API rate limits
+)
 
 # 6. Save results
 write_json(results, "data/results/rewardbench2_detailed.json")
@@ -252,11 +304,20 @@ print(f"Valid Samples: {results['overall_accuracy']['valid_samples']}")
 
 | Parameter | Type | Default | Description |
 |-----------|------|---------|-------------|
-| `data_path` | str | Required | Path to the RewardBench2 dataset file |
-| `result_path` | str | Required | Path to save evaluation results |
-| `max_samples` | int | 10 | Maximum number of samples to evaluate |
+| `data_path` | str | "data/benchmarks/reward-bench-2/data/test-00000-of-00001.parquet" | Path to the RewardBench2 dataset file |
+| `result_path` | str | "data/results/rewardbench2.json" | Path to save evaluation results |
+| `max_samples` | int | 2 | Maximum number of samples to evaluate (-1 for all) |
 | `model` | str/dict | "deepseek-chat" | Model name or configuration dictionary |
-| `max_workers` | int | 8 | Number of parallel workers for evaluation |
+| `max_workers` | int | 8 | Number of parallel workers for evaluation (improves performance) |
+
+### Performance Notes
+
+- **Parallel Processing**: The `max_workers` parameter significantly improves evaluation speed. Recommended values:
+  - Small tests (≤50 samples): 2-4 workers
+  - Medium tests (50-500 samples): 4-8 workers  
+  - Large tests (500+ samples): 8-16 workers
+- **Automatic Subset Detection**: The evaluator automatically separates Ties and non-Ties samples for appropriate processing
+- **Progress Tracking**: Real-time progress bars show completion status for both subset types
 
 ### Model Configuration Options
 
@@ -278,7 +339,7 @@ model_config = {
 
 ### Result Structure
 
-The evaluation results contain:
+The evaluation results contain comprehensive metrics for both subset types:
 
 ```json
 {
@@ -288,103 +349,182 @@ The evaluation results contain:
         "correct_count": 75,
         "valid_samples": 100,
         "total_samples": 100,
-        "choice_distribution": {
-            "0": 25,
-            "1": 30,
-            "2": 25,
-            "3": 20
-        }
+        "ties_samples": 10,
+        "non_ties_samples": 90
     },
     "subset_accuracy": {
-        "chat": {
+        "Focus": {
             "accuracy": 0.80,
             "correct_count": 40,
             "valid_samples": 50,
-            "total_samples": 50
+            "total_samples": 50,
+            "ties_samples": 0,
+            "non_ties_samples": 50
         },
-        "reasoning": {
+        "Ties": {
             "accuracy": 0.70,
-            "correct_count": 35,
-            "valid_samples": 50,
-            "total_samples": 50
+            "correct_count": 7,
+            "valid_samples": 10,
+            "total_samples": 10,
+            "ties_samples": 10,
+            "non_ties_samples": 0
+        },
+        "Math": {
+            "accuracy": 0.68,
+            "correct_count": 27,
+            "valid_samples": 40,
+            "total_samples": 40,
+            "ties_samples": 0,
+            "non_ties_samples": 40
         }
-    }
+    },
+    "non_ties_count": 90,
+    "ties_count": 10,
+    "total_count": 100,
+    "max_workers": 8
 }
 ```
 
 ### Key Metrics
 
 - **accuracy**: Proportion of correct predictions (0.0 to 1.0)
-- **correct_count**: Number of correctly identified best responses
+- **correct_count**: Number of correctly identified best responses  
 - **valid_samples**: Number of successfully processed samples
-- **choice_distribution**: Distribution of selected best response positions
+- **total_samples**: Total number of samples in the subset
+- **ties_samples**: Number of Ties subset samples (evaluated with absolute rating)
+- **non_ties_samples**: Number of standard four-way comparison samples
+- **max_workers**: Number of parallel workers used for evaluation
 
 ### Interpreting Results
 
 1. **Overall Accuracy**: Higher values indicate better alignment with human preferences
 2. **Subset Performance**: Compare performance across different task categories
-3. **Choice Distribution**: Check for position bias - should be roughly uniform
-4. **Valid Samples**: Ensure most samples were processed successfully
+   - **Ties subsets**: Use absolute rating (1-10 scale) to handle multiple valid answers
+   - **Non-Ties subsets**: Use four-way comparison to select the single best response
+3. **Sample Distribution**: Check the balance between Ties and non-Ties samples
+4. **Valid Samples**: Ensure most samples were processed successfully (should be close to total_samples)
+5. **Performance Analysis**:
+   - Ties subsets often have different accuracy patterns due to multiple valid answers
+   - Non-Ties subsets provide more direct preference ranking insights
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Missing API Key**:
+1. **Missing Environment Variables**:
    ```bash
+   # Make sure to set both API key and activate correct environment
+   conda activate rm
    export OPENAI_API_KEY="your_api_key_here"
+   export BASE_URL="your_base_url_here"  # For custom endpoints
    ```
 
-2. **Data Path Issues**:
+2. **Import Errors**:
+   - Ensure you're using the correct conda environment (`conda activate rm`)
+   - Check that OpenAI package version is compatible
+   - Verify RM-Gallery installation
+
+3. **Data Path Issues**:
    - Ensure the parquet file exists at the specified path
    - Check file permissions
+   - Default path: `data/benchmarks/reward-bench-2/data/test-00000-of-00001.parquet`
 
-3. **Memory Issues**:
-   - Reduce `max_samples` for large datasets
-   - Adjust `max_workers` based on available resources
+4. **Connection Issues**:
+   - API timeout errors: Reduce `max_workers` to avoid rate limiting
+   - Network connectivity issues: Check `BASE_URL` and internet connection
+   - API key issues: Verify the key is valid and has sufficient quota
 
-4. **Model Connection Issues**:
-   - Verify `BASE_URL` is correct for custom endpoints
-   - Check network connectivity
+5. **Performance Issues**:
+   - Slow evaluation: Increase `max_workers` (but not too high to avoid rate limits)
+   - Memory issues: Reduce `max_samples` or `max_workers`
+   - Evaluation failures: Check logs for specific error messages
 
 ### Performance Optimization
 
-1. **Parallel Processing**: Increase `max_workers` for faster evaluation
-2. **Batch Size**: Process samples in smaller batches for memory efficiency
-3. **Model Selection**: Use faster models for preliminary evaluation
+1. **Parallel Processing**: 
+   - **Optimal worker count**: Start with 4-8 workers, adjust based on API rate limits
+   - **Rate limit awareness**: Too many workers may trigger API rate limiting
+   - **Resource monitoring**: Monitor CPU and memory usage
+
+2. **Sample Management**:
+   - **Testing**: Start with small samples (10-50) for validation
+   - **Production**: Gradually increase to full dataset
+   - **Batch processing**: Process in chunks for very large datasets
+
+3. **Model Selection**:
+   - **Fast models**: Use lighter models for preliminary testing
+   - **Quality vs Speed**: Balance model capability with evaluation speed
+   - **Custom configurations**: Adjust temperature and max_tokens for your needs
 
 ## Best Practices
 
-1. **Sample Size**: Start with small samples (10-100) for testing, then scale up
-2. **Position Bias**: The evaluator automatically handles position bias through shuffling
-3. **Result Validation**: Always check the `valid_samples` count in results
-4. **Subset Analysis**: Analyze performance across different task categories
-5. **Reproducibility**: Set random seeds for consistent results across runs
+1. **Environment Setup**: Always activate the correct conda environment and set API variables
+   ```bash
+   conda activate rm
+   export OPENAI_API_KEY="your_key"
+   export BASE_URL="your_endpoint"  # If using custom endpoint
+   ```
+
+2. **Progressive Testing**: 
+   - Start with 2-10 samples for initial testing
+   - Scale to 50-100 for validation
+   - Run full evaluation after confirming setup
+
+3. **Parallel Processing**:
+   - Start with 4 workers, adjust based on performance
+   - Monitor for API rate limit errors
+   - Higher worker count ≠ always faster (due to rate limits)
+
+4. **Automatic Handling**:
+   - **Position Bias**: Automatically mitigated through response shuffling
+   - **Subset Detection**: Ties vs non-Ties samples automatically separated
+   - **Progress Tracking**: Real-time progress bars for both subset types
+
+5. **Result Validation**: 
+   - Check `valid_samples` vs `total_samples` ratio
+   - Analyze both Ties and non-Ties performance separately
+   - Review subset-specific accuracy patterns
+
+6. **Reproducibility**: The system handles randomization automatically for bias prevention
 
 ## Examples
 
-### Example 1: Quick Evaluation
+### Example 1: Quick Testing
 
 ```bash
-# Quick evaluation for testing
+# Minimal test with environment setup
+conda activate rm && \
+export OPENAI_API_KEY="your_key_here" && \
+export BASE_URL="your_endpoint" && \
 python rm_gallery/gallery/evaluation/rewardbench2.py \
-    --data_path "data/benchmarks/reward-bench-2/data/test-00000-of-00001.parquet" \
-    --result_path "data/results/quick_test.json" \
-    --max_samples 50 \
-    --model "deepseek-chat" \
-    --max_workers 4
+    --max_samples 10 \
+    --max_workers 4 \
+    --result_path "test_results/quick_test.json"
+```
+
+**Expected Output:**
+```
+Processing 9 non-Ties samples and 1 Ties samples
+Using 4 parallel workers
+Evaluating non-Ties samples...
+[##################################################] 9/9
+Evaluating Ties samples...
+[##################################################] 1/1
+Results saved to: test_results/quick_test.json
 ```
 
 ### Example 2: Production Evaluation
 
 ```bash
-# Full evaluation with optimized settings
+# Full evaluation with environment setup and optimized settings
+conda activate rm && \
+export OPENAI_API_KEY="your_key_here" && \
+export BASE_URL="your_endpoint" && \
 python rm_gallery/gallery/evaluation/rewardbench2.py \
-    --data_path "data/benchmarks/reward-bench-2/data/test-00000-of-00001.parquet" \
-    --result_path "data/results/production_eval.json" \
-    --max_samples 1000 \
-    --model "qwen3-32b" \
-    --max_workers 16
+    --max_samples 500 \
+    --model "deepseek-chat" \
+    --max_workers 8 \
+    --result_path "results/production_eval.json"
 ```
 
 For complex model configurations, use the programmatic approach:
@@ -409,99 +549,94 @@ main(
 ### Example 3: Multiple Model Comparison
 
 ```bash
-# Compare different models
+# Compare different models with proper environment setup
+conda activate rm
+export OPENAI_API_KEY="your_key_here"
+export BASE_URL="your_endpoint"
+
 models=("deepseek-chat" "qwen3-32b" "gpt-4o-mini")
 
 for model in "${models[@]}"; do
     echo "Evaluating with model: $model"
     python rm_gallery/gallery/evaluation/rewardbench2.py \
-        --data_path "data/benchmarks/reward-bench-2/data/test-00000-of-00001.parquet" \
-        --result_path "data/results/rewardbench2_${model//\//_}.json" \
         --max_samples 100 \
         --model "$model" \
-        --max_workers 8
+        --max_workers 6 \
+        --result_path "results/rewardbench2_${model//\//_}.json"
 done
 
 echo "All model evaluations completed!"
+```
+
+### Example 4: Comprehensive Evaluation with Error Handling
+
+```bash
+#!/bin/bash
+# Comprehensive evaluation script with error handling
+
+set -e  # Exit on any error
+
+# Setup environment
+conda activate rm
+export OPENAI_API_KEY="your_key_here"
+export BASE_URL="your_endpoint"
+
+# Create results directory
+mkdir -p results
+
+echo "Starting RewardBench2 evaluation..."
+
+# Small test first
+echo "Running quick test..."
+if python rm_gallery/gallery/evaluation/rewardbench2.py \
+    --max_samples 5 \
+    --max_workers 2 \
+    --result_path "results/test.json"; then
+    echo "✅ Quick test passed"
+else
+    echo "❌ Quick test failed"
+    exit 1
+fi
+
+# Full evaluation
+echo "Running full evaluation..."
+python rm_gallery/gallery/evaluation/rewardbench2.py \
+    --max_samples 200 \
+    --max_workers 8 \
+    --result_path "results/rewardbench2_full.json"
+
+echo "🎉 Evaluation completed successfully!"
 ```
 
 ## Next Steps
 
 After running RewardBench2 evaluation:
 
-1. **Analyze Results**: Review accuracy metrics and subset performance
-2. **Compare Models**: Run evaluations with different models for comparison
-3. **Optimize Performance**: Use insights to improve your reward model
-4. **Integration**: Integrate evaluation into your development pipeline
+1. **Analyze Results**: 
+   - Review overall accuracy and subset-specific performance
+   - Compare Ties vs non-Ties subset accuracy patterns
+   - Check `valid_samples` vs `total_samples` ratio
 
-For more advanced evaluation scenarios, check out other evaluation tutorials in the RM-Gallery documentation.
+2. **Performance Analysis**:
+   - Monitor parallel processing efficiency (adjust `max_workers`)
+   - Identify bottlenecks (API rate limits, network issues)
+   - Optimize evaluation speed while maintaining quality
 
-## Integration with Other Benchmarks
+3. **Model Comparison**: 
+   - Run evaluations with different models using consistent parameters
+   - Compare performance across both Ties and non-Ties subsets
+   - Analyze cost vs accuracy trade-offs
 
-RewardBench2 can be integrated with other evaluation frameworks:
+4. **Production Integration**:
+   - Set up automated evaluation pipelines
+   - Integrate with your model development workflow
+   - Monitor evaluation performance over time
 
-```bash
-# Example: Combining with JudgeBench
-echo "Running RewardBench2 evaluation..."
-python rm_gallery/gallery/evaluation/rewardbench2.py \
-    --data_path "data/benchmarks/reward-bench-2/data/test-00000-of-00001.parquet" \
-    --result_path "data/results/rewardbench2.json" \
-    --max_samples 100 \
-    --model "deepseek-chat"
+5. **Advanced Usage**:
+   - Customize evaluation templates for specific use cases
+   - Integrate with other RM-Gallery evaluation tools
+   - Scale to larger datasets with optimized parallel processing
 
-echo "Running JudgeBench evaluation..."
-python rm_gallery/gallery/evaluation/judgebench.py \
-    --data_path "data/benchmarks/JudgeBench/data/dataset=judgebench,response_model=gpt-4o-2024-05-13.jsonl" \
-    --result_path "data/results/judgebench.json" \
-    --judge_type "arena_hard" \
-    --max_samples 100 \
-    --model "deepseek-chat"
+For more advanced evaluation scenarios and integration with other benchmarks, check out other evaluation tutorials in the RM-Gallery documentation.
 
-echo "Both evaluations completed!"
-```
 
-Or using Python to run both evaluations:
-
-```python
-import subprocess
-import sys
-
-# Example: Combining with JudgeBench
-def run_evaluation(script_path, **kwargs):
-    """Helper function to run evaluation scripts"""
-    cmd = [sys.executable, script_path]
-    for key, value in kwargs.items():
-        cmd.extend([f"--{key}", str(value)])
-    
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode == 0:
-        print(f"✅ {script_path} completed successfully")
-    else:
-        print(f"❌ {script_path} failed: {result.stderr}")
-    return result.returncode == 0
-
-# Run both evaluations
-print("Running RewardBench2 evaluation...")
-rewardbench2_success = run_evaluation(
-    "rm_gallery/gallery/evaluation/rewardbench2.py",
-    data_path="data/benchmarks/reward-bench-2/data/test-00000-of-00001.parquet",
-    result_path="data/results/rewardbench2.json",
-    max_samples=100,
-    model="deepseek-chat"
-)
-
-print("Running JudgeBench evaluation...")
-judgebench_success = run_evaluation(
-    "rm_gallery/gallery/evaluation/judgebench.py",
-    data_path="data/benchmarks/JudgeBench/data/dataset=judgebench,response_model=gpt-4o-2024-05-13.jsonl",
-    result_path="data/results/judgebench.json",
-    judge_type="arena_hard",
-    max_samples=100,
-    model="deepseek-chat"
-)
-
-if rewardbench2_success and judgebench_success:
-    print("🎉 Both evaluations completed successfully!")
-else:
-    print("⚠️  Some evaluations failed. Check the logs above.")
-``` 
