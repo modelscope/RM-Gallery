@@ -589,7 +589,7 @@ class RewardBench2Evaluator(BaseEvaluator):
 def main(
     data_path: str = "data/benchmarks/reward-bench-2/data/test-00000-of-00001.parquet",
     result_path: str = "data/results/rewardbench2.json",
-    max_samples: int = 2,
+    max_samples: int = -1,
     model: str | dict = "deepseek-chat",
     max_workers: int = 8,
 ):
