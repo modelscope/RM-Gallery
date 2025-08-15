@@ -329,6 +329,17 @@ class RewardBench2Reward(BaseLLMReward, BaseListWiseReward):
         query = sample.input[-1].content
         answers = [output.answer.content for output in sample.output]
 
+        # Identify correct and incorrect answers based on preference labels
+        correct_indices = []
+        incorrect_indices = []
+        for i, output in enumerate(sample.output):
+            if (hasattr(output.answer, 'label') and
+                isinstance(output.answer.label, dict) and
+                output.answer.label.get("preference") == "chosen"):
+                correct_indices.append(i)
+            else:
+                incorrect_indices.append(i)
+
         # Rate each answer individually
         ratings = []
         rating_details = []
@@ -348,7 +359,8 @@ class RewardBench2Reward(BaseLLMReward, BaseListWiseReward):
                 "rating": response.rating,
                 "reasoning": response.reasoning,
                 "prompt": prompt,
-                "response": response_text
+                "response": response_text,
+                "is_correct": i in correct_indices
             })
 
         # Find winners (highest valid ratings)
@@ -382,7 +394,9 @@ class RewardBench2Reward(BaseLLMReward, BaseListWiseReward):
                 "rating_details": rating_details,
                 "is_ties": True,
                 "valid_ratings_count": len(valid_ratings),
-                "max_rating": max(r for _, r in valid_ratings) if valid_ratings else -1
+                "max_rating": max(r for _, r in valid_ratings) if valid_ratings else -1,
+                "correct_indices": correct_indices,
+                "incorrect_indices": incorrect_indices
             }
         )
 
@@ -397,6 +411,55 @@ class RewardBench2Evaluator(BaseEvaluator):
         default=...,
         description="the reward module",
     )
+
+    def _compute_ties_stats(self, correct_scores: List[float], incorrect_scores: List[float]) -> dict:
+        """
+        Compute ties statistics following original RewardBench2 evaluation protocol.
+        
+        Args:
+            correct_scores: List of scores for correct answers
+            incorrect_scores: List of scores for incorrect answers
+            
+        Returns:
+            Dictionary containing accuracy and margin statistics
+        """
+        if not correct_scores or not incorrect_scores:
+            return {
+                "accurate": False,
+                "different_correct_margin": None,
+                "correct_incorrect_margin": None
+            }
+
+        best_correct = max(correct_scores)
+        worst_correct = min(correct_scores)
+        best_incorrect = max(incorrect_scores)
+        
+        # Calculate margins
+        different_correct_margin = best_correct - worst_correct if len(correct_scores) > 1 else None
+        correct_incorrect_margin = worst_correct - best_incorrect
+        
+        # Basic accuracy: all correct answers must outscore the best incorrect answer
+        accurate = correct_incorrect_margin > 0
+        
+        # Margin reasonableness: correct answer spread should be less than correct-incorrect gap
+        # This avoids over-discriminating between correct answers
+        margin_reasonable = True
+        if different_correct_margin is not None and correct_incorrect_margin > 0:
+            margin_reasonable = different_correct_margin < correct_incorrect_margin
+        
+        # Both conditions must be satisfied for strict correctness
+        strict_correct = accurate and margin_reasonable
+        
+        return {
+            "accurate": accurate,
+            "margin_reasonable": margin_reasonable,
+            "strict_correct": strict_correct,
+            "different_correct_margin": different_correct_margin,
+            "correct_incorrect_margin": correct_incorrect_margin,
+            "best_correct": best_correct,
+            "worst_correct": worst_correct,
+            "best_incorrect": best_incorrect
+        }
 
     def _evaluate_single_sample(self, sample: DataSample, **kwargs) -> DataSample:
         """Evaluate a single sample - used for parallel processing."""
@@ -526,6 +589,12 @@ class RewardBench2Evaluator(BaseEvaluator):
         valid_count = 0
         ties_count = 0
         non_ties_count = 0
+        
+        # Detailed ties metrics
+        ties_basic_accuracy = 0
+        ties_margin_reasonable = 0
+        ties_strict_correct = 0
+        ties_valid_count = 0
 
         for sample in results:
             try:
@@ -546,26 +615,29 @@ class RewardBench2Evaluator(BaseEvaluator):
 
                 if is_ties:
                     ties_count += 1
-                    # For Ties samples, check if any chosen answer got the highest rating
-                    if "ratings" in extra_data:
+                    # For Ties samples, apply strict evaluation following original RewardBench2 protocol
+                    if "ratings" in extra_data and "correct_indices" in extra_data and "incorrect_indices" in extra_data:
                         ratings = extra_data["ratings"]
+                        correct_indices = extra_data["correct_indices"]
+                        incorrect_indices = extra_data["incorrect_indices"]
 
-                        # Find indices of chosen answers
-                        chosen_indices = []
-                        for i, output in enumerate(sample.output):
-                            if (hasattr(output.answer, 'label') and
-                                isinstance(output.answer.label, dict) and
-                                output.answer.label.get("preference") == "chosen"):
-                                chosen_indices.append(i)
+                        if correct_indices and incorrect_indices and ratings:
+                            # Get valid scores for correct and incorrect answers
+                            correct_scores = [ratings[i] for i in correct_indices if i < len(ratings) and ratings[i] != -1]
+                            incorrect_scores = [ratings[i] for i in incorrect_indices if i < len(ratings) and ratings[i] != -1]
 
-                        if chosen_indices and ratings:
-                            # Check if any chosen answer has the maximum rating
-                            valid_ratings = [r for r in ratings if r != -1]
-                            if valid_ratings:
-                                max_rating = max(valid_ratings)
-                                chosen_ratings = [ratings[i] for i in chosen_indices if i < len(ratings) and ratings[i] != -1]
-
-                                if chosen_ratings and max(chosen_ratings) == max_rating:
+                            if correct_scores and incorrect_scores:
+                                # Apply strict evaluation criteria following original RewardBench2
+                                stats = self._compute_ties_stats(correct_scores, incorrect_scores)
+                                
+                                # Collect detailed ties metrics
+                                ties_valid_count += 1
+                                if stats["accurate"]:
+                                    ties_basic_accuracy += 1
+                                if stats["margin_reasonable"]:
+                                    ties_margin_reasonable += 1
+                                if stats["strict_correct"]:
+                                    ties_strict_correct += 1
                                     correct_count += 1
                                 valid_count += 1
                 else:
@@ -584,6 +656,11 @@ class RewardBench2Evaluator(BaseEvaluator):
 
         accuracy = correct_count / valid_count if valid_count > 0 else 0.0
 
+        # Calculate ties-specific rates
+        ties_basic_accuracy_rate = ties_basic_accuracy / ties_valid_count if ties_valid_count > 0 else 0.0
+        ties_margin_reasonable_rate = ties_margin_reasonable / ties_valid_count if ties_valid_count > 0 else 0.0
+        ties_strict_correct_rate = ties_strict_correct / ties_valid_count if ties_valid_count > 0 else 0.0
+
         return {
             "accuracy": float(accuracy),
             "correct_count": correct_count,
@@ -591,6 +668,11 @@ class RewardBench2Evaluator(BaseEvaluator):
             "total_samples": len(results),
             "ties_samples": ties_count,
             "non_ties_samples": non_ties_count,
+            # Detailed ties metrics
+            "ties_basic_accuracy": float(ties_basic_accuracy_rate),
+            "ties_margin_reasonable": float(ties_margin_reasonable_rate),
+            "ties_strict_correct": float(ties_strict_correct_rate),
+            "ties_valid_count": ties_valid_count,
         }
 
     def summary(self, results: List[DataSample]) -> dict:
@@ -705,6 +787,14 @@ def main(
         print(f"  Total samples: {overall_acc.get('total_samples', 0)}")
         print(f"  Non-Ties samples: {overall_acc.get('non_ties_samples', 0)}")
         print(f"  Ties samples: {overall_acc.get('ties_samples', 0)}")
+        
+        # Print detailed Ties metrics if available
+        if overall_acc.get('ties_valid_count', 0) > 0:
+            print(f"\nTies Evaluation Details:")
+            print(f"  Basic Accuracy: {overall_acc.get('ties_basic_accuracy', 0):.4f} ({overall_acc.get('ties_basic_accuracy', 0)*100:.2f}%)")
+            print(f"  Margin Reasonable: {overall_acc.get('ties_margin_reasonable', 0):.4f} ({overall_acc.get('ties_margin_reasonable', 0)*100:.2f}%)")
+            print(f"  Strict Correct: {overall_acc.get('ties_strict_correct', 0):.4f} ({overall_acc.get('ties_strict_correct', 0)*100:.2f}%)")
+            print(f"  Valid Ties samples: {overall_acc.get('ties_valid_count', 0)}")
 
         # Print subset accuracy
         subset_acc = results.get('subset_accuracy', {})
@@ -716,6 +806,15 @@ def main(
                 valid = metrics.get('valid_samples', 0)
                 total = metrics.get('total_samples', 0)
                 print(f"  {subset:15s}: {accuracy:.4f} ({accuracy*100:5.2f}%) - {correct:2d}/{valid:2d} correct, {total:2d} total")
+                
+                # If this is ties subset, show detailed metrics
+                if subset.lower() == 'ties' and metrics.get('ties_valid_count', 0) > 0:
+                    basic_acc = metrics.get('ties_basic_accuracy', 0)
+                    margin_reasonable = metrics.get('ties_margin_reasonable', 0)
+                    strict_correct = metrics.get('ties_strict_correct', 0)
+                    print(f"    ├─ Basic Accuracy: {basic_acc:.4f} ({basic_acc*100:5.2f}%)")
+                    print(f"    ├─ Margin Reasonable: {margin_reasonable:.4f} ({margin_reasonable*100:5.2f}%)")
+                    print(f"    └─ Strict Correct: {strict_correct:.4f} ({strict_correct*100:5.2f}%)")
 
         print("\n" + "="*80)
 
