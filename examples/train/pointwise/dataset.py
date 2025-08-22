@@ -1,3 +1,4 @@
+import json
 from typing import Any, Dict, List
 
 from examples.train.pointwise.template import PointwiseTrainTemplate
@@ -17,6 +18,20 @@ class HelpfulnessPointwiseTrainDataset(BaseTrainDataset):
         )
 
         super().__init__(*args, **kwargs)
+
+    @staticmethod
+    def _normalize_row(row_dict: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert JSON string fields to python objects"""
+        for key in ["input", "output", "metadata"]:
+            if key in row_dict and isinstance(row_dict[key], str):
+                try:
+                    row_dict[key] = json.loads(row_dict[key])
+                except json.JSONDecodeError as e:
+                    print(f"Warning: Failed to parse JSON for field '{key}': {e}")
+                    # For debugging, print the problematic content
+                    print(f"Problematic content: {row_dict[key][:200]}...")
+                    pass
+        return row_dict
 
     def _get_examples(self) -> List[str]:
         """Get training examples for the helpfulness evaluation as a list"""
@@ -75,6 +90,7 @@ helpfulness score: 4""",
 
     def _build_messages(self, example: Dict[str, Any]) -> List[Dict[str, str]]:
         """Build formatted messages directly from DataSample using reward module"""
+        example = self._normalize_row(example)
         result = self.helpfulness_reward.format(sample=example, enable_thinking=False)
         formatted_prompt = (
             result.output[0]
@@ -86,6 +102,7 @@ helpfulness score: 4""",
 
     def _extract_ground_truth(self, row_dict: Dict[str, Any]) -> str:
         """Extract ground truth for principle evaluation"""
+        row_dict = self._normalize_row(row_dict)
         try:
             output_data = row_dict.get("output", [])
             if output_data:
@@ -99,4 +116,5 @@ helpfulness score: 4""",
 
     def _get_data_source(self, row_dict: Dict[str, Any]) -> str:
         """Get data source for principle evaluation"""
+        row_dict = self._normalize_row(row_dict)
         return row_dict.get("data_source", "helpsteer2")
