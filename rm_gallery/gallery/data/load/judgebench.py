@@ -11,16 +11,16 @@ from rm_gallery.core.data.schema import ChatMessage, DataOutput, DataSample, Ste
 class JudgeBenchConverter(DataConverter):
     """
     Data converter: converts JudgeBench data format to DataSample format
-    
+
     JudgeBench data format:
     {
         "pair_id": "unique identifier",
-        "original_id": "original question ID", 
+        "original_id": "original question ID",
         "source": "data source",
         "question": "question content",
         "response_model": "model used to generate responses",
         "response_A": "response A",
-        "response_B": "response B", 
+        "response_B": "response B",
         "label": "ground truth label (A>B, B>A, A=B)"
     }
     """
@@ -29,7 +29,7 @@ class JudgeBenchConverter(DataConverter):
         self, data_dict: Dict[str, Any], source_info: Dict[str, Any]
     ) -> DataSample:
         """Convert JudgeBench data to DataSample format"""
-        
+
         # Use pair_id as unique identifier
         unique_id = str(data_dict.get("pair_id", ""))
         if not unique_id:
@@ -40,15 +40,15 @@ class JudgeBenchConverter(DataConverter):
         # Create input: question as user message
         data_input = [
             ChatMessage(
-                role="user", 
+                role="user",
                 content=str(data_dict.get("question", "")),
-                additional_kwargs={"judgebench": {"label": data_dict.get("label", "")}}
+                additional_kwargs={"judgebench": {"label": data_dict.get("label", "")}},
             )
         ]
 
         # Create output: two responses as assistant answers
         data_output = []
-        
+
         # Add response_A
         if "response_A" in data_dict:
             data_output.append(
@@ -56,11 +56,11 @@ class JudgeBenchConverter(DataConverter):
                     answer=Step(
                         role="assistant",
                         content=str(data_dict["response_A"]),
-                        label={"response_type": "A"}
+                        label={"response_type": "A"},
                     )
                 )
             )
-        
+
         # Add response_B
         if "response_B" in data_dict:
             data_output.append(
@@ -68,7 +68,7 @@ class JudgeBenchConverter(DataConverter):
                     answer=Step(
                         role="assistant",
                         content=str(data_dict["response_B"]),
-                        label={"response_type": "B"}
+                        label={"response_type": "B"},
                     )
                 )
             )
@@ -87,17 +87,21 @@ class JudgeBenchConverter(DataConverter):
 
             # Add source-specific metadata
             if source_info.get("load_type") == "local":
-                metadata.update({
-                    "source_file_path": source_info.get("source_file_path"),
-                    "load_type": "local",
-                })
+                metadata.update(
+                    {
+                        "source_file_path": source_info.get("source_file_path"),
+                        "load_type": "local",
+                    }
+                )
             elif source_info.get("load_type") == "huggingface":
-                metadata.update({
-                    "dataset_name": source_info.get("dataset_name"),
-                    "dataset_config": source_info.get("dataset_config"),
-                    "split": source_info.get("split", "train"),
-                    "load_type": "huggingface",
-                })
+                metadata.update(
+                    {
+                        "dataset_name": source_info.get("dataset_name"),
+                        "dataset_config": source_info.get("dataset_config"),
+                        "split": source_info.get("split", "train"),
+                        "load_type": "huggingface",
+                    }
+                )
 
             data_sample = DataSample(
                 unique_id=unique_id,
@@ -112,4 +116,4 @@ class JudgeBenchConverter(DataConverter):
 
         except Exception as e:
             logger.error(f"Error creating JudgeBench DataSample: {str(e)}")
-            return None 
+            return None
