@@ -1,18 +1,16 @@
 """
 RewardBench2 Evaluator
 """
+import os
 import random
 import re
-from typing import Dict, List, Type
-import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import partial
+from typing import Dict, List, Type
 
 import fire
-import numpy as np
 from loguru import logger
 from pydantic import Field
-from tqdm import tqdm
 
 from rm_gallery.core.data.load.base import create_loader
 from rm_gallery.core.data.schema import DataSample
@@ -20,9 +18,8 @@ from rm_gallery.core.model.openai_llm import OpenaiLLM
 from rm_gallery.core.reward.base import BaseListWiseReward, BaseLLMReward
 from rm_gallery.core.reward.evaluator import BaseEvaluator
 from rm_gallery.core.reward.schema import RewardDimensionWithRank, RewardResult
-from rm_gallery.core.reward.template import PrincipleListWiseTemplate, BasePromptTemplate
+from rm_gallery.core.reward.template import BasePromptTemplate
 from rm_gallery.core.utils.file import write_json
-
 
 # Standard prompts from RewardBench generative_v2.py
 REWARDBENCH2_SYSTEM_PROMPT = (
@@ -65,34 +62,43 @@ Notes:
 
 class RewardBench2Template(BasePromptTemplate):
     """Template class for Reward-Bench-2 evaluation protocol matching original implementation.
-    
+
     Supports both four-way comparison (non-Ties) and absolute rating (Ties) modes.
     """
-    
+
     # Template response fields
     reasoning: str = Field(default="", description="detailed reasoning for evaluation")
-    best_answer: str = Field(default="", description="the best answer letter (A, B, C, or D)")
-    rating: int = Field(default=-1, description="rating for individual response (1-10, used for Ties subset)")
+    best_answer: str = Field(
+        default="", description="the best answer letter (A, B, C, or D)"
+    )
+    rating: int = Field(
+        default=-1,
+        description="rating for individual response (1-10, used for Ties subset)",
+    )
     raw_judgment: str = Field(default="", description="raw LLM response")
-    
+
     @classmethod
-    def format_four_way(cls, question: str, answer_a: str, answer_b: str, answer_c: str, answer_d: str) -> str:
+    def format_four_way(
+        cls, question: str, answer_a: str, answer_b: str, answer_c: str, answer_d: str
+    ) -> str:
         """Format four-way comparison prompt matching original RewardBench format."""
         return REWARDBENCH2_USER_TEMPLATE.format(
             question=question,
             answer_a=answer_a,
             answer_b=answer_b,
             answer_c=answer_c,
-            answer_d=answer_d
+            answer_d=answer_d,
         )
-    
+
     @classmethod
     def format_ties_rating(cls, question: str, answer: str) -> str:
         """Format Ties rating prompt for individual response evaluation."""
         return TIES_RATING_PROMPT.format(prompt=question, completion=answer)
-    
+
     @classmethod
-    def format(cls, query: str, answers: List[str], is_ties: bool = False, **kwargs) -> str:
+    def format(
+        cls, query: str, answers: List[str], is_ties: bool = False, **kwargs
+    ) -> str:
         """Main format method that routes to appropriate sub-format.
 
         Args:
@@ -112,8 +118,12 @@ class RewardBench2Template(BasePromptTemplate):
         else:
             # For non-Ties, we need exactly 4 answers for four-way comparison
             if len(answers) != 4:
-                raise ValueError(f"Four-way comparison requires exactly 4 answers, got {len(answers)}")
-            return cls.format_four_way(query, answers[0], answers[1], answers[2], answers[3])
+                raise ValueError(
+                    f"Four-way comparison requires exactly 4 answers, got {len(answers)}"
+                )
+            return cls.format_four_way(
+                query, answers[0], answers[1], answers[2], answers[3]
+            )
 
     @classmethod
     def parse_four_way(cls, text: str):
@@ -130,11 +140,7 @@ class RewardBench2Template(BasePromptTemplate):
         else:
             best_answer = "A"  # Default fallback
 
-        return cls(
-            reasoning=text.strip(),
-            best_answer=best_answer,
-            raw_judgment=text
-        )
+        return cls(reasoning=text.strip(), best_answer=best_answer, raw_judgment=text)
 
     @classmethod
     def parse_ties_rating(cls, text: str):
@@ -147,11 +153,7 @@ class RewardBench2Template(BasePromptTemplate):
             if 1 <= potential_rating <= 10:
                 rating = potential_rating
 
-        return cls(
-            reasoning=text.strip(),
-            rating=rating,
-            raw_judgment=text
-        )
+        return cls(reasoning=text.strip(), rating=rating, raw_judgment=text)
 
     @classmethod
     def parse(cls, text: str, is_ties: bool = False):
@@ -175,7 +177,7 @@ class RewardBench2Template(BasePromptTemplate):
                 reasoning=f"Parse error: {str(e)[:100]}",
                 best_answer="A",
                 rating=-1,
-                raw_judgment=text
+                raw_judgment=text,
             )
 
     def get_system_prompt(self) -> str:
@@ -185,7 +187,7 @@ class RewardBench2Template(BasePromptTemplate):
     @property
     def best_index(self) -> int:
         """Convert letter answer to zero-based index."""
-        letter_to_index = {'A': 0, 'B': 1, 'C': 2, 'D': 3}
+        letter_to_index = {"A": 0, "B": 1, "C": 2, "D": 3}
         return letter_to_index.get(self.best_answer, 0)
 
 
@@ -197,27 +199,27 @@ class RewardBench2Reward(BaseLLMReward, BaseListWiseReward):
 
     template: Type[RewardBench2Template] = Field(
         default=RewardBench2Template,
-        description="Template class for prompt generation and response parsing"
+        description="Template class for prompt generation and response parsing",
     )
 
     # Mode detection - automatically determined from subset metadata
     is_ties_mode: bool = Field(
         default=False,
-        description="Whether to use Ties absolute rating mode or four-way comparison mode"
+        description="Whether to use Ties absolute rating mode or four-way comparison mode",
     )
 
     def _detect_ties_mode(self, sample: DataSample) -> bool:
         """Detect if this is a Ties subset based on metadata."""
-        if hasattr(sample, 'metadata') and sample.metadata:
-            subset = sample.metadata.get('subset', '').lower()
-            return subset == 'ties'
+        if hasattr(sample, "metadata") and sample.metadata:
+            subset = sample.metadata.get("subset", "").lower()
+            return subset == "ties"
         return False
 
     def _evaluate(self, **kwargs) -> RewardResult:
         """Evaluate using appropriate mode (four-way or Ties rating)."""
         assert self.llm is not None
 
-        sample = kwargs.get('sample')
+        sample = kwargs.get("sample")
         if sample:
             self.is_ties_mode = self._detect_ties_mode(sample)
 
@@ -258,9 +260,11 @@ class RewardBench2Reward(BaseLLMReward, BaseListWiseReward):
         # Find the index of the chosen (correct) answer
         chosen_index = None
         for i, output in enumerate(sample.output[:4]):  # Only check first 4 outputs
-            if (hasattr(output.answer, 'label') and
-                isinstance(output.answer.label, dict) and
-                output.answer.label.get("preference") == "chosen"):
+            if (
+                hasattr(output.answer, "label")
+                and isinstance(output.answer.label, dict)
+                and output.answer.label.get("preference") == "chosen"
+            ):
                 chosen_index = i
                 break
 
@@ -280,8 +284,11 @@ class RewardBench2Reward(BaseLLMReward, BaseListWiseReward):
 
         # Format prompt
         prompt = self.template.format_four_way(
-            query, shuffled_answers[0], shuffled_answers[1],
-            shuffled_answers[2], shuffled_answers[3]
+            query,
+            shuffled_answers[0],
+            shuffled_answers[1],
+            shuffled_answers[2],
+            shuffled_answers[3],
         )
 
         # Get LLM judgment
@@ -293,11 +300,11 @@ class RewardBench2Reward(BaseLLMReward, BaseListWiseReward):
 
         # Convert back to original indices
         predicted_index = response.best_index
-        letter_map = {0: 'A', 1: 'B', 2: 'C', 3: 'D'}
+        letter_map = {0: "A", 1: "B", 2: "C", 3: "D"}
         correct_letter = letter_map[correct_position_after_shuffle]
 
         # Check if prediction is correct
-        is_correct = (response.best_answer == correct_letter)
+        is_correct = response.best_answer == correct_letter
 
         # Create result scores: chosen answer gets 1.0 if predicted correctly
         scores = [0.0] * len(sample.output)
@@ -308,9 +315,7 @@ class RewardBench2Reward(BaseLLMReward, BaseListWiseReward):
             name=self.name,
             details=[
                 RewardDimensionWithRank(
-                    name=self.name,
-                    reason=response.reasoning,
-                    rank=scores
+                    name=self.name, reason=response.reasoning, rank=scores
                 )
             ],
             extra_data={
@@ -320,8 +325,8 @@ class RewardBench2Reward(BaseLLMReward, BaseListWiseReward):
                 "correct_letter": correct_letter,
                 "is_correct": is_correct,
                 "chosen_index": chosen_index,
-                "shuffle_mapping": dict(zip(original_indices, shuffle_indices))
-            }
+                "shuffle_mapping": dict(zip(original_indices, shuffle_indices)),
+            },
         )
 
     def _evaluate_ties(self, sample: DataSample, **kwargs) -> RewardResult:
@@ -333,9 +338,11 @@ class RewardBench2Reward(BaseLLMReward, BaseListWiseReward):
         correct_indices = []
         incorrect_indices = []
         for i, output in enumerate(sample.output):
-            if (hasattr(output.answer, 'label') and
-                isinstance(output.answer.label, dict) and
-                output.answer.label.get("preference") == "chosen"):
+            if (
+                hasattr(output.answer, "label")
+                and isinstance(output.answer.label, dict)
+                and output.answer.label.get("preference") == "chosen"
+            ):
                 correct_indices.append(i)
             else:
                 incorrect_indices.append(i)
@@ -354,14 +361,16 @@ class RewardBench2Reward(BaseLLMReward, BaseListWiseReward):
             response = self.template.parse_ties_rating(response_text)
             ratings.append(response.rating)
 
-            rating_details.append({
-                "answer_index": i,
-                "rating": response.rating,
-                "reasoning": response.reasoning,
-                "prompt": prompt,
-                "response": response_text,
-                "is_correct": i in correct_indices
-            })
+            rating_details.append(
+                {
+                    "answer_index": i,
+                    "rating": response.rating,
+                    "reasoning": response.reasoning,
+                    "prompt": prompt,
+                    "response": response_text,
+                    "is_correct": i in correct_indices,
+                }
+            )
 
         # Find winners (highest valid ratings)
         valid_ratings = [(i, r) for i, r in enumerate(ratings) if r != -1]
@@ -386,7 +395,7 @@ class RewardBench2Reward(BaseLLMReward, BaseListWiseReward):
                 RewardDimensionWithRank(
                     name=self.name,
                     reason=f"Ties evaluation: {len(valid_ratings)}/{len(answers)} valid ratings",
-                    rank=scores
+                    rank=scores,
                 )
             ],
             extra_data={
@@ -396,8 +405,8 @@ class RewardBench2Reward(BaseLLMReward, BaseListWiseReward):
                 "valid_ratings_count": len(valid_ratings),
                 "max_rating": max(r for _, r in valid_ratings) if valid_ratings else -1,
                 "correct_indices": correct_indices,
-                "incorrect_indices": incorrect_indices
-            }
+                "incorrect_indices": incorrect_indices,
+            },
         )
 
 
@@ -412,14 +421,16 @@ class RewardBench2Evaluator(BaseEvaluator):
         description="the reward module",
     )
 
-    def _compute_ties_stats(self, correct_scores: List[float], incorrect_scores: List[float]) -> dict:
+    def _compute_ties_stats(
+        self, correct_scores: List[float], incorrect_scores: List[float]
+    ) -> dict:
         """
         Compute ties statistics following original RewardBench2 evaluation protocol.
-        
+
         Args:
             correct_scores: List of scores for correct answers
             incorrect_scores: List of scores for incorrect answers
-            
+
         Returns:
             Dictionary containing accuracy and margin statistics
         """
@@ -427,29 +438,31 @@ class RewardBench2Evaluator(BaseEvaluator):
             return {
                 "accurate": False,
                 "different_correct_margin": None,
-                "correct_incorrect_margin": None
+                "correct_incorrect_margin": None,
             }
 
         best_correct = max(correct_scores)
         worst_correct = min(correct_scores)
         best_incorrect = max(incorrect_scores)
-        
+
         # Calculate margins
-        different_correct_margin = best_correct - worst_correct if len(correct_scores) > 1 else None
+        different_correct_margin = (
+            best_correct - worst_correct if len(correct_scores) > 1 else None
+        )
         correct_incorrect_margin = worst_correct - best_incorrect
-        
+
         # Basic accuracy: all correct answers must outscore the best incorrect answer
         accurate = correct_incorrect_margin > 0
-        
+
         # Margin reasonableness: correct answer spread should be less than correct-incorrect gap
         # This avoids over-discriminating between correct answers
         margin_reasonable = True
         if different_correct_margin is not None and correct_incorrect_margin > 0:
             margin_reasonable = different_correct_margin < correct_incorrect_margin
-        
+
         # Both conditions must be satisfied for strict correctness
         strict_correct = accurate and margin_reasonable
-        
+
         return {
             "accurate": accurate,
             "margin_reasonable": margin_reasonable,
@@ -458,7 +471,7 @@ class RewardBench2Evaluator(BaseEvaluator):
             "correct_incorrect_margin": correct_incorrect_margin,
             "best_correct": best_correct,
             "worst_correct": worst_correct,
-            "best_incorrect": best_incorrect
+            "best_incorrect": best_incorrect,
         }
 
     def _evaluate_single_sample(self, sample: DataSample, **kwargs) -> DataSample:
@@ -472,13 +485,10 @@ class RewardBench2Evaluator(BaseEvaluator):
             sample.metadata["evaluation_result"] = {
                 "name": result.name,
                 "details": [
-                    {
-                        "name": detail.name,
-                        "reason": detail.reason,
-                        "rank": detail.rank
-                    } for detail in result.details
+                    {"name": detail.name, "reason": detail.reason, "rank": detail.rank}
+                    for detail in result.details
                 ],
-                "extra_data": result.extra_data
+                "extra_data": result.extra_data,
             }
 
             return sample
@@ -489,7 +499,9 @@ class RewardBench2Evaluator(BaseEvaluator):
             sample.metadata["evaluation_error"] = str(e)
             return sample
 
-    def _parallel_evaluate(self, samples: List[DataSample], desc: str, max_workers: int = 8, **kwargs) -> List[DataSample]:
+    def _parallel_evaluate(
+        self, samples: List[DataSample], desc: str, max_workers: int = 8, **kwargs
+    ) -> List[DataSample]:
         """Parallel evaluation with progress bar."""
         results = [None] * len(samples)
         completed_count = 0
@@ -497,7 +509,11 @@ class RewardBench2Evaluator(BaseEvaluator):
         def update_progress_bar(done, total):
             """Simple progress indicator."""
             progress = int(50 * done / total) if total > 0 else 0
-            print(f"\r[{'#' * progress}{'.' * (50 - progress)}] {done}/{total}", end='', flush=True)
+            print(
+                f"\r[{'#' * progress}{'.' * (50 - progress)}] {done}/{total}",
+                end="",
+                flush=True,
+            )
 
         # Create evaluation function with kwargs bound
         eval_func = partial(self._evaluate_single_sample, **kwargs)
@@ -539,13 +555,17 @@ class RewardBench2Evaluator(BaseEvaluator):
         non_ties_samples = []
 
         for sample in samples:
-            subset = sample.metadata.get('subset', '').lower() if sample.metadata else ''
-            if subset == 'ties':
+            subset = (
+                sample.metadata.get("subset", "").lower() if sample.metadata else ""
+            )
+            if subset == "ties":
                 ties_samples.append(sample)
             else:
                 non_ties_samples.append(sample)
 
-        print(f"Processing {len(non_ties_samples)} non-Ties samples and {len(ties_samples)} Ties samples")
+        print(
+            f"Processing {len(non_ties_samples)} non-Ties samples and {len(ties_samples)} Ties samples"
+        )
         print(f"Using {max_workers} parallel workers")
 
         # Process non-Ties samples
@@ -570,12 +590,14 @@ class RewardBench2Evaluator(BaseEvaluator):
         # Generate summary
         try:
             summary = self.summary(all_results)
-            summary.update({
-                "non_ties_count": len(non_ties_samples),
-                "ties_count": len(ties_samples),
-                "total_count": len(samples),
-                "max_workers": max_workers
-            })
+            summary.update(
+                {
+                    "non_ties_count": len(non_ties_samples),
+                    "ties_count": len(ties_samples),
+                    "total_count": len(samples),
+                    "max_workers": max_workers,
+                }
+            )
             return summary
         except Exception as e:
             return {"error": f"Summary generation failed: {str(e)}"}
@@ -589,7 +611,7 @@ class RewardBench2Evaluator(BaseEvaluator):
         valid_count = 0
         ties_count = 0
         non_ties_count = 0
-        
+
         # Detailed ties metrics
         ties_basic_accuracy = 0
         ties_margin_reasonable = 0
@@ -610,26 +632,40 @@ class RewardBench2Evaluator(BaseEvaluator):
                 extra_data = eval_result.get("extra_data", {})
 
                 # Check if this is Ties sample
-                subset = sample.metadata.get('subset', '').lower()
-                is_ties = (subset == 'ties')
+                subset = sample.metadata.get("subset", "").lower()
+                is_ties = subset == "ties"
 
                 if is_ties:
                     ties_count += 1
                     # For Ties samples, apply strict evaluation following original RewardBench2 protocol
-                    if "ratings" in extra_data and "correct_indices" in extra_data and "incorrect_indices" in extra_data:
+                    if (
+                        "ratings" in extra_data
+                        and "correct_indices" in extra_data
+                        and "incorrect_indices" in extra_data
+                    ):
                         ratings = extra_data["ratings"]
                         correct_indices = extra_data["correct_indices"]
                         incorrect_indices = extra_data["incorrect_indices"]
 
                         if correct_indices and incorrect_indices and ratings:
                             # Get valid scores for correct and incorrect answers
-                            correct_scores = [ratings[i] for i in correct_indices if i < len(ratings) and ratings[i] != -1]
-                            incorrect_scores = [ratings[i] for i in incorrect_indices if i < len(ratings) and ratings[i] != -1]
+                            correct_scores = [
+                                ratings[i]
+                                for i in correct_indices
+                                if i < len(ratings) and ratings[i] != -1
+                            ]
+                            incorrect_scores = [
+                                ratings[i]
+                                for i in incorrect_indices
+                                if i < len(ratings) and ratings[i] != -1
+                            ]
 
                             if correct_scores and incorrect_scores:
                                 # Apply strict evaluation criteria following original RewardBench2
-                                stats = self._compute_ties_stats(correct_scores, incorrect_scores)
-                                
+                                stats = self._compute_ties_stats(
+                                    correct_scores, incorrect_scores
+                                )
+
                                 # Collect detailed ties metrics
                                 ties_valid_count += 1
                                 if stats["accurate"]:
@@ -657,9 +693,15 @@ class RewardBench2Evaluator(BaseEvaluator):
         accuracy = correct_count / valid_count if valid_count > 0 else 0.0
 
         # Calculate ties-specific rates
-        ties_basic_accuracy_rate = ties_basic_accuracy / ties_valid_count if ties_valid_count > 0 else 0.0
-        ties_margin_reasonable_rate = ties_margin_reasonable / ties_valid_count if ties_valid_count > 0 else 0.0
-        ties_strict_correct_rate = ties_strict_correct / ties_valid_count if ties_valid_count > 0 else 0.0
+        ties_basic_accuracy_rate = (
+            ties_basic_accuracy / ties_valid_count if ties_valid_count > 0 else 0.0
+        )
+        ties_margin_reasonable_rate = (
+            ties_margin_reasonable / ties_valid_count if ties_valid_count > 0 else 0.0
+        )
+        ties_strict_correct_rate = (
+            ties_strict_correct / ties_valid_count if ties_valid_count > 0 else 0.0
+        )
 
         return {
             "accuracy": float(accuracy),
@@ -689,7 +731,8 @@ class RewardBench2Evaluator(BaseEvaluator):
 
         for subset_label in subset_labels:
             subset_results = [
-                sample for sample in results
+                sample
+                for sample in results
                 if sample.metadata and sample.metadata.get("subset") == subset_label
             ]
             if subset_results:
@@ -750,7 +793,9 @@ def main(
         elif isinstance(model, dict):
             llm = OpenaiLLM(**model)
         else:
-            raise ValueError(f"Invalid model type: {type(model)}. Expected str or dict.")
+            raise ValueError(
+                f"Invalid model type: {type(model)}. Expected str or dict."
+            )
 
         # Load evaluation dataset
         dataset = load_module.run()
@@ -773,62 +818,80 @@ def main(
         results = evaluator.run(samples=samples, max_workers=max_workers)
 
         # Print detailed evaluation results
-        print("\n" + "="*80)
+        print("\n" + "=" * 80)
         print("EVALUATION RESULTS")
-        print("="*80)
+        print("=" * 80)
 
         print(f"\nModel: {results.get('model', 'Unknown')}")
 
         # Print overall accuracy
-        overall_acc = results.get('overall_accuracy', {})
-        print(f"\nOverall Performance:")
-        print(f"  Accuracy: {overall_acc.get('accuracy', 0):.4f} ({overall_acc.get('accuracy', 0)*100:.2f}%)")
-        print(f"  Correct: {overall_acc.get('correct_count', 0)}/{overall_acc.get('valid_samples', 0)}")
+        overall_acc = results.get("overall_accuracy", {})
+        print("\nOverall Performance:")
+        print(
+            f"  Accuracy: {overall_acc.get('accuracy', 0):.4f} ({overall_acc.get('accuracy', 0)*100:.2f}%)"
+        )
+        print(
+            f"  Correct: {overall_acc.get('correct_count', 0)}/{overall_acc.get('valid_samples', 0)}"
+        )
         print(f"  Total samples: {overall_acc.get('total_samples', 0)}")
         print(f"  Non-Ties samples: {overall_acc.get('non_ties_samples', 0)}")
         print(f"  Ties samples: {overall_acc.get('ties_samples', 0)}")
-        
+
         # Print detailed Ties metrics if available
-        if overall_acc.get('ties_valid_count', 0) > 0:
-            print(f"\nTies Evaluation Details:")
-            print(f"  Basic Accuracy: {overall_acc.get('ties_basic_accuracy', 0):.4f} ({overall_acc.get('ties_basic_accuracy', 0)*100:.2f}%)")
-            print(f"  Margin Reasonable: {overall_acc.get('ties_margin_reasonable', 0):.4f} ({overall_acc.get('ties_margin_reasonable', 0)*100:.2f}%)")
-            print(f"  Strict Correct: {overall_acc.get('ties_strict_correct', 0):.4f} ({overall_acc.get('ties_strict_correct', 0)*100:.2f}%)")
+        if overall_acc.get("ties_valid_count", 0) > 0:
+            print("\nTies Evaluation Details:")
+            print(
+                f"  Basic Accuracy: {overall_acc.get('ties_basic_accuracy', 0):.4f} ({overall_acc.get('ties_basic_accuracy', 0)*100:.2f}%)"
+            )
+            print(
+                f"  Margin Reasonable: {overall_acc.get('ties_margin_reasonable', 0):.4f} ({overall_acc.get('ties_margin_reasonable', 0)*100:.2f}%)"
+            )
+            print(
+                f"  Strict Correct: {overall_acc.get('ties_strict_correct', 0):.4f} ({overall_acc.get('ties_strict_correct', 0)*100:.2f}%)"
+            )
             print(f"  Valid Ties samples: {overall_acc.get('ties_valid_count', 0)}")
 
         # Print subset accuracy
-        subset_acc = results.get('subset_accuracy', {})
+        subset_acc = results.get("subset_accuracy", {})
         if subset_acc:
-            print(f"\nSubset Performance:")
+            print("\nSubset Performance:")
             for subset, metrics in subset_acc.items():
-                accuracy = metrics.get('accuracy', 0)
-                correct = metrics.get('correct_count', 0)
-                valid = metrics.get('valid_samples', 0)
-                total = metrics.get('total_samples', 0)
-                print(f"  {subset:15s}: {accuracy:.4f} ({accuracy*100:5.2f}%) - {correct:2d}/{valid:2d} correct, {total:2d} total")
-                
-                # If this is ties subset, show detailed metrics
-                if subset.lower() == 'ties' and metrics.get('ties_valid_count', 0) > 0:
-                    basic_acc = metrics.get('ties_basic_accuracy', 0)
-                    margin_reasonable = metrics.get('ties_margin_reasonable', 0)
-                    strict_correct = metrics.get('ties_strict_correct', 0)
-                    print(f"    ├─ Basic Accuracy: {basic_acc:.4f} ({basic_acc*100:5.2f}%)")
-                    print(f"    ├─ Margin Reasonable: {margin_reasonable:.4f} ({margin_reasonable*100:5.2f}%)")
-                    print(f"    └─ Strict Correct: {strict_correct:.4f} ({strict_correct*100:5.2f}%)")
+                accuracy = metrics.get("accuracy", 0)
+                correct = metrics.get("correct_count", 0)
+                valid = metrics.get("valid_samples", 0)
+                total = metrics.get("total_samples", 0)
+                print(
+                    f"  {subset:15s}: {accuracy:.4f} ({accuracy*100:5.2f}%) - {correct:2d}/{valid:2d} correct, {total:2d} total"
+                )
 
-        print("\n" + "="*80)
+                # If this is ties subset, show detailed metrics
+                if subset.lower() == "ties" and metrics.get("ties_valid_count", 0) > 0:
+                    basic_acc = metrics.get("ties_basic_accuracy", 0)
+                    margin_reasonable = metrics.get("ties_margin_reasonable", 0)
+                    strict_correct = metrics.get("ties_strict_correct", 0)
+                    print(
+                        f"    ├─ Basic Accuracy: {basic_acc:.4f} ({basic_acc*100:5.2f}%)"
+                    )
+                    print(
+                        f"    ├─ Margin Reasonable: {margin_reasonable:.4f} ({margin_reasonable*100:5.2f}%)"
+                    )
+                    print(
+                        f"    └─ Strict Correct: {strict_correct:.4f} ({strict_correct*100:5.2f}%)"
+                    )
+
+        print("\n" + "=" * 80)
 
         # Ensure result directory exists
         result_dir = os.path.dirname(result_path)
         if result_dir:
             os.makedirs(result_dir, exist_ok=True)
-        
+
         # Persist evaluation results to file
         print(f"Results saved to: {result_path}")
         write_json(results, result_path)
-        
+
         print("Evaluation completed successfully!")
-        
+
     except Exception as e:
         print(f"Evaluation failed: {e}")
         raise
