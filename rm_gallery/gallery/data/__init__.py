@@ -6,6 +6,7 @@ from rm_gallery.gallery.data.load.helpsteer2_pairwise import HelpSteer2PairwiseC
 from rm_gallery.gallery.data.load.helpsteer2_pointwise import (
     HelpSteer2PointwiseConverter,
 )
+from rm_gallery.gallery.data.load.judgebench import JudgeBenchConverter
 from rm_gallery.gallery.data.load.prmbench import PRMBenchConverter
 from rm_gallery.gallery.data.load.rewardbench import RewardBenchConverter
 from rm_gallery.gallery.data.load.rewardbench2 import RewardBench2Converter
@@ -15,6 +16,7 @@ from rm_gallery.gallery.data.load.rmbbenchmark_bestofn import (
 from rm_gallery.gallery.data.load.rmbbenchmark_pairwise import (
     RMBBenchmarkPairwiseConverter,
 )
+from rm_gallery.gallery.data.load.rmbench import RMBenchConverter
 
 LOAD_STRATEGIES = {
     "rewardbench": RewardBenchConverter,
@@ -24,6 +26,8 @@ LOAD_STRATEGIES = {
     "rewardbench2": RewardBench2Converter,
     "rmbbenchmark_bestofn": RMBBenchmarkBestOfNConverter,
     "rmbbenchmark_pairwise": RMBBenchmarkPairwiseConverter,
+    "rmbench": RMBenchConverter,
+    "judgebench": JudgeBenchConverter,
 }
 
 ANNOTATION_TEMPLATES = {
