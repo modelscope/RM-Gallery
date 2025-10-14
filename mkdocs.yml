@@ -6,6 +6,9 @@ repo_name: modelscope/RM-Gallery
 theme:
   name: shadcn
   show_stargazers: true
+  features:
+    - content.code.copy
+    - content.code.annotate
 nav:
   - Overview: index.md
   - Tutorials:
@@ -34,11 +37,6 @@ plugins:
 
 markdown_extensions:
   - admonition
-  - codehilite:
-      css_class: highlight
-      use_pygments: true
-      pygments_style: default
-  - fenced_code
   - footnotes
   - extra
   - pymdownx.blocks.details
@@ -51,20 +49,14 @@ markdown_extensions:
   - pymdownx.snippets
   - pymdownx.arithmatex:
       generic: true
-  - pymdownx.superfences
   - pymdownx.highlight:
       anchor_linenums: true
       line_spans: __span
       pygments_lang_class: true
   - pymdownx.inlinehilite
+  - pymdownx.superfences
   - shadcn.extensions.iconify
 
 extra_css:
-  - https://cdn.jsdelivr.net/npm/prismjs/themes/prism-coy.css
-  - https://cdn.jsdelivr.net/npm/prismjs/plugins/line-numbers/prism-line-numbers.css
-  - stylesheets/coy-enhancements.css
-
-extra_javascript:
-  - https://cdn.jsdelivr.net/npm/prismjs/prism.js
-  - https://cdn.jsdelivr.net/npm/prismjs/plugins/line-numbers/prism-line-numbers.js
-  - https://cdn.jsdelivr.net/npm/prismjs/plugins/autoloader/prism-autoloader.js
+  - https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap
+  - stylesheets/code-enhancements.css
