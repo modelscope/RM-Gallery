@@ -1,27 +1,86 @@
-<!-- # RM-Gallery: A One-Stop Reward Model Platform -->
-<h2 align="center">RM-Gallery: A One-Stop Reward Model Platform</h2>
+---
+title: Welcome to RM-Gallery
+summary: A One-Stop Reward Model Platform
+order: 1
+show_datetime: true
+---
 
-[![](https://img.shields.io/badge/python-3.10+-blue)](https://pypi.org/project/rm-gallery/)
-[![](https://img.shields.io/badge/pypi-v0.1.0-blue?logo=pypi)](https://pypi.org/project/rm-gallery/)
-[![](https://img.shields.io/badge/Docs-English%7C%E4%B8%AD%E6%96%87-blue?logo=markdown)](https://modelscope.github.io/RM-Gallery/)
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-----
+<div style="text-align: center; margin: 3rem 0 2rem 0;">
+  <div style="display: inline-block; position: relative;">
+    <div style="font-size: 4.5rem; font-weight: 700; letter-spacing: -0.03em; line-height: 0.9; margin-bottom: 1rem; font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+      <span style="background: linear-gradient(135deg, #22d3ee 0%, #3b82f6 30%, #6366f1 70%, #8b5cf6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-shadow: 0 0 25px rgba(59, 130, 246, 0.3);">RM</span><span style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 30%, #a855f7 70%, #ec4899 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-shadow: 0 0 25px rgba(139, 92, 246, 0.3);">Gallery</span>
+    </div>
+    <div style="position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px; background: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.1) 0%, transparent 70%); border-radius: 20px; z-index: -1;"></div>
+  </div>
+</div>
 
-## 📢 News
-- **[2025-07-09]** We release RM Gallery v0.1.0 now, which is also available in [PyPI](https://pypi.org/simple/rm-gallery/)!
-----
-
-## 🌟 Why RM-Gallery?
-
-RM-Gallery is a one-stop platform for training, building and applying reward models. It provides a comprehensive solution for implementing reward models at both task-level and atomic-level, with high-throughput and fault-tolerant capabilities.
+<div style="display: flex; justify-content: center; align-items: center; gap: 0.5rem; margin: 1.5rem 0; flex-wrap: wrap;">
+  <a href="https://pypi.org/project/rm-gallery/" style="text-decoration: none;">
+    <img src="https://img.shields.io/badge/python-3.10+-blue" alt="Python Version">
+  </a>
+  <a href="https://pypi.org/project/rm-gallery/" style="text-decoration: none;">
+    <img src="https://img.shields.io/badge/pypi-v0.1.4-blue?logo=pypi" alt="PyPI Version">
+  </a>
+  <a href="https://github.com/modelscope/RM-Gallery/blob/main/LICENSE" style="text-decoration: none;">
+    <img src="https://img.shields.io/badge/license-Apache--2.0-black" alt="License">
+  </a>
+  <a href="https://github.com/modelscope/RM-Gallery" style="text-decoration: none;">
+    <img src="https://img.shields.io/github/stars/modelscope/RM-Gallery?style=social" alt="GitHub Stars">
+  </a>
+</div>
 
 <p align="center">
- <img src="./images/framework.png" alt="Framework" width="75%">
- <br/>
- <em>RM-Gallery Framework </em>
+  <strong>RM-Gallery: A One-Stop Reward Model Platform</strong><br>
+  <em>Train, Build, and Apply Reward Models with Ease.</em>
 </p>
 
-### 🏋️‍♂️ Training RM
+---
+
+RM-Gallery provides AI researchers and practitioners with a unified platform for reward model development—enabling the ability to train, build, and apply reward models across diverse tasks and domains.
+
+!!! info "Training + Building + Applying = Complete RM Solution"
+
+**Training** helps "**improve model performance**", **Building** helps "**customize reward logic**", and **Applying** helps "**enhance real-world deployment**".
+
+## Architecture Overview
+
+<p align="center">
+ <img src="images/framework.png" alt="RM-Gallery Framework" width="100%">
+</p>
+
+!!! note "🏋️‍♂️ Training RM"
+
+    ---
+
+    Integrated RM training pipeline with RL-based framework compatibility
+
+    - **RL-based Framework**: Compatible with popular frameworks (e.g., verl)
+    - **Performance Gains**: Improves accuracy from 55.8% to 62.5% on RM Bench
+    - **Easy Integration**: Provides examples for seamless framework integration
+
+!!! note "🏗️ Building RM"
+
+    ---
+
+    Flexible reward model architecture with comprehensive gallery
+
+    - **Unified Architecture**: Supports various architectures, reward formats, and scoring patterns
+    - **Rich Gallery**: Ready-to-use models for math, coding, preference alignment tasks
+    - **Principle-Critic-Score**: Advanced reasoning paradigm with significant performance gains
+
+!!! note "🛠️ Applying RM"
+
+    ---
+
+    Multiple usage scenarios with high-performance serving capabilities
+
+    - **Versatile Scenarios**: Training with rewards, inference optimization, data correction
+    - **High-Performance Serving**: High-throughput, fault-tolerant reward model deployment
+    - **Best Practices**: Detailed guides for post-training, Best-of-N, and more
 - **Integrated RM Training Pipeline**: Provides an RL-based framework for training reasoning reward models, compatible with popular frameworks (e.g., verl), and offers examples for integrating RM-Gallery into the framework.
 <p align="center">
   <img src="./images/building_rm/helpsteer2_pairwise_training_RM-Bench_eval_accuracy.png" alt="Training RM Accuracy Curve" width="60%">
