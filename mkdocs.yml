@@ -6,35 +6,60 @@ repo_name: modelscope/RM-Gallery
 theme:
   name: shadcn
   show_stargazers: true
+  git_enabled: false
   features:
     - content.code.copy
     - content.code.annotate
 nav:
-  - Overview: index.md
-  - Tutorials:
-    - Data:
-      - Annotation: tutorial/data/annotation.ipynb
-      - Load: tutorial/data/load.ipynb
-      - Pipeline: tutorial/data/pipeline.ipynb
-      - Process: tutorial/data/process.ipynb
-    - Train RM: tutorial/training_rm/training_rm.md
-    - Build RM:
+  - Welcome: index.md
+  - Contribution Guide: contribution.md
+  - Library:
+      - RM Library: library/rm_library.md
+      - Rubric Library: library/rubric_library.md
+  - Training RM:
+      - Data:
+          - Pipeline: tutorial/data/pipeline.ipynb
+          - Annotation: tutorial/data/annotation.ipynb
+          - Load: tutorial/data/load.ipynb
+          - Process: tutorial/data/process.ipynb
+      - Training RM: tutorial/training_rm/training_rm.md
+      - Bradley-Terry Training: tutorial/training_rm/bradley_terry_rm.md
+      - SFT Training: tutorial/training_rm/sft_rm.md
+  - Building RM:
       - Overview: tutorial/building_rm/overview.ipynb
+      - Auto Rubric: tutorial/building_rm/autoprinciple.ipynb
       - Customization: tutorial/building_rm/custom_reward.ipynb
-      - Auto Principle: tutorial/building_rm/autoprinciple.ipynb
       - Built-in Rewards: tutorial/building_rm/ready2use_rewards.md
       - Benchmark: tutorial/building_rm/benchmark_practices.ipynb
-    - RM Server: tutorial/rm_serving/rm_server.md
-    - Application:
-      - Best of N: tutorial/rm_application/best_of_n.ipynb
+  - Evaluating RM:
+      - RewardBench: tutorial/evaluation/rewardbench2.md
+  - Using RM:
+      - RM Server: tutorial/rm_serving/rm_server.md
+      - Boosting Strategy: using_rm/boosting_strategy.md
       - Post Training with RM: tutorial/rm_application/post_training.ipynb
       - Refinement: tutorial/rm_application/data_refinement.ipynb
-  - Contribution: contribution.md
+      - Best of N: tutorial/rm_application/best_of_n.ipynb
+  - API Reference: api_reference.md
 plugins:
   - search
   - mkdocs-jupyter:
       ignore_h1_titles: True
-
+      execute: False
+      include_source: True
+      theme: light
+      show_input: True
+      allow_errors: False
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [.]
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            show_root_full_path: false
+            members_order: source
+            show_submodules: true
 markdown_extensions:
   - admonition
   - footnotes
