@@ -37,23 +37,72 @@ code {
 }
 
 /* Copy button styling */
-.md-clipboard {
+.copy-button {
   position: absolute;
   top: 0.8em;
   right: 0.8em;
-  width: 2em;
-  height: 2em;
-  border-radius: 4px;
+  width: 2.2em;
+  height: 2.2em;
+  border-radius: 6px;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #e6e6e6;
   cursor: pointer;
   transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  z-index: 10;
+}
+
+.highlight:hover .copy-button {
+  opacity: 1;
+}
+
+.copy-button:hover {
+  background: rgba(59, 130, 246, 0.3);
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: scale(1.05);
+}
+
+.copy-button:active {
+  transform: scale(0.95);
+}
+
+.copy-button.copied {
+  background: rgba(34, 197, 94, 0.3);
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+.copy-button svg {
+  width: 16px;
+  height: 16px;
+  display: inline;
+}
+
+.md-clipboard {
+  position: absolute;
+  top: 0.8em;
+  right: 0.8em;
+  width: 2.2em;
+  height: 2.2em;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #e6e6e6;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0;
+}
+
+.highlight:hover .md-clipboard {
+  opacity: 1;
 }
 
 .md-clipboard:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.3);
+  background: rgba(59, 130, 246, 0.3);
+  border-color: rgba(59, 130, 246, 0.5);
   transform: scale(1.05);
 }
 
