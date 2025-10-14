@@ -40,47 +40,22 @@ show_datetime: true
 
 ---
 
-RM-Gallery provides AI researchers and practitioners with a unified platform for reward model development—enabling the ability to train, build, and apply reward models across diverse tasks and domains.
+## 📢 News
+- **[2025-07-09]** We release RM Gallery v0.1.0 now, which is also available in [PyPI](https://pypi.org/simple/rm-gallery/)!
 
-!!! info "Training + Building + Applying = Complete RM Solution"
+---
 
-**Training** helps "**improve model performance**", **Building** helps "**customize reward logic**", and **Applying** helps "**enhance real-world deployment**".
+## 🌟 Why RM-Gallery?
 
-## Architecture Overview
+RM-Gallery is a one-stop platform for training, building and applying reward models. It provides a comprehensive solution for implementing reward models at both task-level and atomic-level, with high-throughput and fault-tolerant capabilities.
 
 <p align="center">
- <img src="images/framework.png" alt="RM-Gallery Framework" width="100%">
+ <img src="./images/framework.png" alt="Framework" width="75%">
+ <br/>
+ <em>RM-Gallery Framework </em>
 </p>
 
-!!! note "🏋️‍♂️ Training RM"
-
-    ---
-
-    Integrated RM training pipeline with RL-based framework compatibility
-
-    - **RL-based Framework**: Compatible with popular frameworks (e.g., verl)
-    - **Performance Gains**: Improves accuracy from 55.8% to 62.5% on RM Bench
-    - **Easy Integration**: Provides examples for seamless framework integration
-
-!!! note "🏗️ Building RM"
-
-    ---
-
-    Flexible reward model architecture with comprehensive gallery
-
-    - **Unified Architecture**: Supports various architectures, reward formats, and scoring patterns
-    - **Rich Gallery**: Ready-to-use models for math, coding, preference alignment tasks
-    - **Principle-Critic-Score**: Advanced reasoning paradigm with significant performance gains
-
-!!! note "🛠️ Applying RM"
-
-    ---
-
-    Multiple usage scenarios with high-performance serving capabilities
-
-    - **Versatile Scenarios**: Training with rewards, inference optimization, data correction
-    - **High-Performance Serving**: High-throughput, fault-tolerant reward model deployment
-    - **Best Practices**: Detailed guides for post-training, Best-of-N, and more
+### 🏋️‍♂️ Training RM
 - **Integrated RM Training Pipeline**: Provides an RL-based framework for training reasoning reward models, compatible with popular frameworks (e.g., verl), and offers examples for integrating RM-Gallery into the framework.
 <p align="center">
   <img src="./images/building_rm/helpsteer2_pairwise_training_RM-Bench_eval_accuracy.png" alt="Training RM Accuracy Curve" width="60%">
