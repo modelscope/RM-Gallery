@@ -38,6 +38,7 @@ plugins:
 markdown_extensions:
   - admonition
   - footnotes
+  - tables
   - extra
   - pymdownx.blocks.details
   - pymdownx.tabbed:
@@ -60,6 +61,7 @@ markdown_extensions:
 extra_css:
   - https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap
   - stylesheets/code-enhancements.css
+  - stylesheets/table-enhancements.css
 
 extra_javascript:
   - javascripts/code-copy.js
