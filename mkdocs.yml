@@ -34,7 +34,10 @@ plugins:
 
 markdown_extensions:
   - admonition
-  - codehilite
+  - codehilite:
+      css_class: highlight
+      use_pygments: true
+      pygments_style: default
   - fenced_code
   - footnotes
   - extra
@@ -49,4 +52,19 @@ markdown_extensions:
   - pymdownx.arithmatex:
       generic: true
   - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
   - shadcn.extensions.iconify
+
+extra_css:
+  - https://cdn.jsdelivr.net/npm/prismjs/themes/prism-coy.css
+  - https://cdn.jsdelivr.net/npm/prismjs/plugins/line-numbers/prism-line-numbers.css
+  - stylesheets/coy-enhancements.css
+
+extra_javascript:
+  - https://cdn.jsdelivr.net/npm/prismjs/prism.js
+  - https://cdn.jsdelivr.net/npm/prismjs/plugins/line-numbers/prism-line-numbers.js
+  - https://cdn.jsdelivr.net/npm/prismjs/plugins/autoloader/prism-autoloader.js

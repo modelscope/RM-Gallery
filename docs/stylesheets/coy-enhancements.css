@@ -1,0 +1,147 @@
+/* Enhanced Coy Theme Styles for Code Blocks */
+
+/* Override default code block styles to use Prism Coy theme */
+.highlight pre,
+pre[class*="language-"] {
+    background: #fdfdfd !important;
+    border: 1px solid #e1e5e9 !important;
+    border-left: 10px solid #358ccb !important;
+    box-shadow: 1px 1px 0px #d3d3d3, 2px 2px 0px #d3d3d3 !important;
+    border-radius: 0 !important;
+    margin: 1.5em 0 !important;
+    padding: 1em !important;
+    font-family: 'Fira Code', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
+    font-size: 0.9em !important;
+    line-height: 1.5 !important;
+    overflow: auto !important;
+}
+
+/* Code block content styling */
+.highlight code,
+code[class*="language-"] {
+    background: transparent !important;
+    color: #5e6687 !important;
+    font-family: 'Fira Code', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
+    font-size: inherit !important;
+    text-shadow: none !important;
+    white-space: pre !important;
+    word-spacing: normal !important;
+    word-break: normal !important;
+    word-wrap: normal !important;
+    tab-size: 4 !important;
+    hyphens: none !important;
+}
+
+/* Inline code styling */
+code:not([class*="language-"]) {
+    background: #f8f8f8 !important;
+    color: #e91e63 !important;
+    padding: 0.2em 0.4em !important;
+    border-radius: 3px !important;
+    font-family: 'Fira Code', 'Monaco', 'Menlo', 'Ubuntu Mono', monospace !important;
+    font-size: 0.85em !important;
+    border: 1px solid #e1e5e9 !important;
+}
+
+/* Line numbers styling for Prism */
+.line-numbers .line-numbers-rows {
+    border-right: 1px solid #d3d3d3 !important;
+    background: #f5f5f5 !important;
+}
+
+.line-numbers-rows > span:before {
+    color: #999 !important;
+}
+
+/* Syntax highlighting colors for Coy theme */
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+    color: #7D8B99 !important;
+}
+
+.token.punctuation {
+    color: #5F6364 !important;
+}
+
+.token.property,
+.token.tag,
+.token.boolean,
+.token.number,
+.token.constant,
+.token.symbol,
+.token.deleted {
+    color: #c92c2c !important;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+    color: #2f9c0a !important;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string {
+    color: #a67f59 !important;
+    background: rgba(255, 255, 255, 0.5) !important;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.keyword {
+    color: #1990b8 !important;
+}
+
+.token.function,
+.token.class-name {
+    color: #DD4A68 !important;
+}
+
+.token.regex,
+.token.important,
+.token.variable {
+    color: #e90 !important;
+}
+
+/* Hover effects for code blocks */
+.highlight pre:hover,
+pre[class*="language-"]:hover {
+    box-shadow: 2px 2px 0px #d3d3d3, 3px 3px 0px #d3d3d3 !important;
+    transform: translateY(-1px) !important;
+    transition: all 0.2s ease !important;
+}
+
+/* Copy button styling (if available) */
+.copy-button {
+    background: #358ccb !important;
+    color: white !important;
+    border: none !important;
+    padding: 0.5em 1em !important;
+    border-radius: 3px !important;
+    font-size: 0.8em !important;
+    cursor: pointer !important;
+    position: absolute !important;
+    top: 0.5em !important;
+    right: 0.5em !important;
+}
+
+.copy-button:hover {
+    background: #2980b9 !important;
+}
+
+/* Responsive design for mobile */
+@media (max-width: 768px) {
+    .highlight pre,
+    pre[class*="language-"] {
+        font-size: 0.8em !important;
+        padding: 0.8em !important;
+        margin: 1em 0 !important;
+    }
+}
