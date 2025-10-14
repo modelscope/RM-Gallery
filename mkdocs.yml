@@ -1,13 +1,11 @@
 site_name: RM-Gallery
+site_url: https://modelscope.github.io/RM-Gallery/
+site_description: "A One-Stop Reward Model Platform"
 repo_url: https://github.com/modelscope/RM-Gallery
+repo_name: modelscope/RM-Gallery
 theme:
-  name: material
-  features:
-    - navigation.tabs
-    - navigation.sections
-    - navigation.expand
-  palette:
-    primary: light blue
+  name: shadcn
+  show_stargazers: true
 nav:
   - Overview: index.md
   - Tutorials:
@@ -31,14 +29,24 @@ nav:
   - Contribution: contribution.md
 plugins:
   - search
-  - mkdocs-autoapi:
-      autoapi_dir: rm_gallery
-      # autoapi_add_nav_entry: true
   - mkdocs-jupyter:
       ignore_h1_titles: True
-  - mkdocstrings:
-      handlers:
-        python:
-          paths: [.]
-          rendering:
-            show_root_toc_entry: true
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - fenced_code
+  - footnotes
+  - extra
+  - pymdownx.blocks.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.blocks.tab:
+      combine_header_slug: true
+      separator: ___
+  - pymdownx.progressbar
+  - pymdownx.snippets
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.superfences
+  - shadcn.extensions.iconify
