@@ -2,19 +2,22 @@
 """
 Rubric Structurer Runner Script
 
-Transform rubrics into Theme-Tips format using LLM-based semantic analysis.
-This script takes a list of rubrics and structures them into coherent themes
-with supporting tips for better evaluation clarity.
+Transform raw rubrics into hierarchical Theme-Tips format using LLM-based semantic analysis.
+This script takes a list of generated rubrics and organizes them into coherent themes
+with supporting tips for better evaluation clarity and interpretability.
+
+This is useful for:
+1. Organizing large sets of generated rubrics
+2. Creating interpretable evaluation frameworks
+3. Converting raw rubrics into structured Theme-Tips format
 
 Features:
 - Load rubrics from JSON files (rubrics.json or results.json)
 - LLM-based semantic analysis and grouping
-- Theme-Tips format output
+- Theme-Tips hierarchical format output
 - Multiple output formats (detailed JSON, ready-to-use strings)
+- Automatic theme extraction and tip generation
 
-Usage:
-    python run_rubric_structurer.py --input rubrics.json --themes 5
-    python run_rubric_structurer.py --input results.json --output structured_results/ --model qwen3-32b
 """
 
 import argparse

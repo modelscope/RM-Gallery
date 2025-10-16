@@ -1,11 +1,23 @@
 #!/usr/bin/env python3
 """
-Simple Rubric Analysis Runner
+Rubric Analysis Runner Script
 
-Test rubric performance on validation dataset.
+Evaluate rubric performance on validation datasets using comprehensive metrics.
+This script analyzes generated or structured rubrics to assess their quality,
+coverage, precision, and contribution to ensemble performance.
 
-Usage:
-    python run_rubric_analysis.py --rubrics ready_to_use_rubrics.json
+This is useful for:
+1. Evaluating rubric quality and effectiveness
+2. Comparing different rubric sets or generation methods
+3. Analyzing individual rubric contributions to ensemble performance
+
+Features:
+- Comprehensive rubric evaluation (Coverage, Precision, Contribution)
+- Ensemble accuracy calculation with multiple rubrics
+- Source vs. Target rubric comparison analysis
+- Multithreaded evaluation for high performance
+- Detailed statistics and performance metrics
+
 """
 
 import argparse
@@ -141,7 +153,7 @@ def main():
     )
     parser.add_argument(
         "--dataset",
-        default="/Users/xielipeng/github_version/RM-Gallery/data/helpsteer3_preference_valid.jsonl",
+        default="./data/helpsteer3_preference_valid.jsonl",
         help="Validation dataset path",
     )
     parser.add_argument("--model", default="qwen3-32b", help="Model name")
