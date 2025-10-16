@@ -190,8 +190,8 @@ os.environ["BASE_URL"] = "your_base_url"
 
 # 初始化LLM客户端，启用思考能力
 tllm = OpenaiLLM(model="qwen3-8b", enable_thinking=True)
-customRubricdReward = BaseListWiseRubricReward(
-        name="demo_custom_rubricd_reward",
+customRubricReward = BaseListWiseRubricReward(
+        name="demo_custom_rubric_reward",
         desc="your task description",
         scenario="your scenario description",
         rubrics=["your Rubric 1", "your Rubric 2"],

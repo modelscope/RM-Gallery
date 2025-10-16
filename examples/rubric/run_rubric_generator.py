@@ -2,7 +2,9 @@
 """
 Rubric Generator Runner Script
 
-Simple script to run rubric generation on a dataset.
+Generate evaluation rubrics from preference datasets using LLM-based iterative refinement.
+This script implements the Propose-Evaluate-Revise loop for creating high-quality rubrics.
+
 This is useful for:
 1. Testing rubric generation on new datasets
 2. Quick prototyping and experimentation
@@ -11,6 +13,9 @@ This is useful for:
 Features:
 - Incremental saving: Save progress periodically
 - Resume support: Continue from last checkpoint
+- Batch processing with configurable batch sizes
+- Domain filtering for specialized rubric generation
+- Comprehensive statistics and error tracking
 """
 
 import argparse
