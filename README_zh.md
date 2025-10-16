@@ -54,7 +54,7 @@ RM-Gallery 是一个集奖励模型训练、构建与应用于一体的一站式
 
 - **丰富的奖励模型库**：内置多种任务（如Math、Code、Alignment）现成可用的奖励模型，支持任务级（RMComposition）与组件级（RewardModel）调用。用户可直接应用RMComposition/RewardModel，或按需组装自定义RMComposition。
 
-- **Principle-Critic-Score范式**：采用Principle-Critic-Score的推理奖励模型范式，提供最佳实践，助力用户在偏好数据有限时高效生成原则。
+- **Rubric-Critic-Score范式**：采用Rubric-Critic-Score的推理奖励模型范式，提供最佳实践，助力用户在偏好数据有限时高效生成原则。
 
 <div style="display: flex; flex-wrap: wrap;">
   <img src="./docs/images/building_rm/rewardbench2_exp_result.png" style="width: 48%; min-width: 200px; margin: 1%;">
@@ -173,14 +173,14 @@ BaseReward
 │   └── BasePairWiseReward                          # 专用对式比较
 ├── BaseStepWiseReward                              # 多步响应评测
 └── BaseLLMReward                                   # 基于LLM的评测框架
-    ├── BasePrincipleReward                         # 原则引导评测
-    │   ├── BasePointWisePrincipleReward            # 点式原则评测
-    │   └── BaseListWisePrincipleReward             # 列表式原则评测
+    ├── BaseRubricReward                         # 原则引导评测
+    │   ├── BasePointWiseRubricReward            # 点式原则评测
+    │   └── BaseListWiseRubricReward             # 列表式原则评测
 ```
 可按需选择不同抽象层级的基类。典型用法如下, 详细教程请看 [自定义RM教程](./docs/tutorial/building_rm/custom_reward.ipynb)
 
-**1️⃣ Custom Principles with Principle-Critic-Score Paradigm**
-如仅需自定义Principles：
+**1️⃣ Custom Rubrics with Rubric-Critic-Score Paradigm**
+如仅需自定义Rubrics：
 
 ```python
 import os
@@ -190,11 +190,11 @@ os.environ["BASE_URL"] = "your_base_url"
 
 # 初始化LLM客户端，启用思考能力
 tllm = OpenaiLLM(model="qwen3-8b", enable_thinking=True)
-customPrincipledReward = BaseListWisePrincipleReward(
-        name="demo_custom_principled_reward",
+customRubricReward = BaseListWiseRubricReward(
+        name="demo_custom_rubric_reward",
         desc="your task description",
         scenario="your scenario description",
-        principles=["your Principle 1", "your Principle 2"],
+        rubrics=["your Rubric 1", "your Rubric 2"],
         llm=llm
     )
 ```
@@ -394,7 +394,7 @@ print(sample_best_of_n.model_dump_json())
 | **构建RM** | [overview](docs/tutorial/building_rm/overview.ipynb)                     | 自定义奖励模型构建概览                                                     |
 |                 | [ready-to-use RMs](docs/tutorial/building_rm/ready2use_rewards.md)        | 内置奖励模型列表与用法                                        |
 |                 | [building a custom RM](docs/tutorial/building_rm/custom_reward.ipynb)     | 自定义奖励模型设计与实现                                             |
-|                 | [auto principle](docs/tutorial/building_rm/autoprinciple.ipynb)          | 奖励模型评测原则自动生成                              |
+|                 | [auto rubric](docs/tutorial/building_rm/autorubric.md)          | 奖励模型评测原则自动生成                              |
 |                 | [benchmark practices](docs/tutorial/building_rm/benchmark_practices.ipynb)| 奖励模型评测最佳实践与基准                                    |
 | **RM服务**  | [High-Performance RM Serving](docs/tutorial/rm_serving/rm_server.md)     | 奖励模型生产级服务部署                                |
 | **RM应用** | [post training](docs/tutorial/rm_application/post_training.ipynb)     | 奖励模型集成至RLHF/后训练流程                                   |

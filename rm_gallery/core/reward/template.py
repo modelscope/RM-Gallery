@@ -105,26 +105,24 @@ class BasePromptTemplate(BaseModel):
         ...
 
 
-class PrinciplePointWiseTemplate(BasePromptTemplate):
+class RubricPointWiseTemplate(BasePromptTemplate):
     """
-    Template implementation for principle-based point-wise evaluation tasks.
+    Template implementation for rubric-based point-wise evaluation tasks.
 
-    This template structure is designed for scenarios requiring analysis of principle
+    This template structure is designed for scenarios requiring analysis of rubric
     violations in specific contexts, with support for detailed scenario descriptions
     and example-based guidance.
 
     Attributes:
-        violation (List[str]): List of identified principle violations
+        violation (List[str]): List of identified rubric violations
     """
 
-    violation: List[str] = Field(
-        default=..., description="a list of violated principles"
-    )
+    violation: List[str] = Field(default=..., description="a list of violated rubrics")
 
     @classmethod
     def parse(cls, text: str):
         """
-        Parses text input containing principle violation information.
+        Parses text input containing rubric violation information.
 
         Processes standard template format and converts violation field
         from string representation to Python list.
@@ -133,7 +131,7 @@ class PrinciplePointWiseTemplate(BasePromptTemplate):
             text (str): Input string containing XML-style tagged content
 
         Returns:
-            PrinciplePointWiseTemplate: Constructed instance with parsed values
+            RubricPointWiseTemplate: Constructed instance with parsed values
         """
         contents = cls._parse(text)
         try:
@@ -147,7 +145,7 @@ class PrinciplePointWiseTemplate(BasePromptTemplate):
         cls,
         desc: str,
         scenario: str,
-        principles: str,
+        rubrics: str,
         examples: str,
         query: str,
         context: str,
@@ -157,13 +155,13 @@ class PrinciplePointWiseTemplate(BasePromptTemplate):
         """
         Formats evaluation components into structured prompt template.
 
-        Combines task description, scenario context, principles, and response
+        Combines task description, scenario context, rubrics, and response
         requirements into standardized prompt format.
 
         Args:
             desc (str): Task description text
             scenario (str): Scenario context description
-            principles (str): List of relevant principles
+            rubrics (str): List of relevant rubrics
             examples (str): Example-based guidance
             query (str): Evaluation query text
             context (str): Additional contextual information
@@ -186,8 +184,8 @@ class PrinciplePointWiseTemplate(BasePromptTemplate):
 {desc}
 {scenario}
 
-# Principles
-{principles}
+# Rubrics
+{rubrics}
 {examples}
 
 # Query
@@ -202,15 +200,15 @@ class PrinciplePointWiseTemplate(BasePromptTemplate):
 """
 
 
-class PrincipleListWiseTemplate(BasePromptTemplate):
+class RubricListWiseTemplate(BasePromptTemplate):
     """
-    Template implementation for principle-based list-wise evaluation tasks.
+    Template implementation for rubric-based list-wise evaluation tasks.
 
     Designed for comparative evaluation scenarios where multiple answers need
-    to be assessed against defined principles to determine the optimal choice.
+    to be assessed against defined rubrics to determine the optimal choice.
 
     Attributes:
-        best (int): Index of the best-performing answer according to principles
+        best (int): Index of the best-performing answer according to rubrics
     """
 
     best: int = Field(
@@ -230,7 +228,7 @@ class PrincipleListWiseTemplate(BasePromptTemplate):
             text (str): Input string containing XML-style tagged content
 
         Returns:
-            PrincipleListWiseTemplate: Constructed instance with parsed values
+            RubricListWiseTemplate: Constructed instance with parsed values
         """
         contents = cls._parse(text)
         contents["best"] = int(contents["best"])
@@ -241,7 +239,7 @@ class PrincipleListWiseTemplate(BasePromptTemplate):
         cls,
         desc: str,
         scenario: str,
-        principles: str,
+        rubrics: str,
         examples: str,
         query: str,
         context: str,
@@ -251,13 +249,13 @@ class PrincipleListWiseTemplate(BasePromptTemplate):
         """
         Formats comparative evaluation components into structured prompt template.
 
-        Combines task description, scenario context, principles, and multiple
+        Combines task description, scenario context, rubrics, and multiple
         candidate answers into standardized prompt format for list-wise evaluation.
 
         Args:
             desc (str): Task description text
             scenario (str): Scenario context description
-            principles (str): List of relevant principles
+            rubrics (str): List of relevant rubrics
             examples (str): Example-based guidance
             query (str): Evaluation query text
             context (str): Additional contextual information
@@ -280,14 +278,14 @@ class PrincipleListWiseTemplate(BasePromptTemplate):
         if context:
             context = f"\n# Context\n{context}\n"
 
-        if principles:
-            principles = f"# Principles\n{principles}\n"
+        if rubrics:
+            rubrics = f"# Rubrics\n{rubrics}\n"
 
         return f"""# Task Description
 {desc}
 {scenario}
 
-{principles}
+{rubrics}
 {examples}
 
 # Query

@@ -18,8 +18,8 @@ from rm_gallery.core.reward.schema import (
 )
 from rm_gallery.core.reward.template import (
     BasePromptTemplate,
-    PrincipleListWiseTemplate,
-    PrinciplePointWiseTemplate,
+    RubricListWiseTemplate,
+    RubricPointWiseTemplate,
 )
 
 
@@ -994,41 +994,41 @@ class BaseLLMReward(BaseReward):
         )
 
 
-class BasePrincipleReward(BaseLLMReward):
+class BaseRubricReward(BaseLLMReward):
     """
-    Principle-based reward module using LLM evaluation.
+    Rubric-based reward module using LLM evaluation.
 
-    Evaluates responses against defined ethical/principle guidelines.
+    Evaluates responses against defined ethical/rubric guidelines.
     """
 
-    principles: List[str] = Field(default=..., description="principles")
+    rubrics: List[str] = Field(default=..., description="rubrics")
     examples: List[str] = Field(default=[], description="examples")
     template: Type[BasePromptTemplate] = Field(
-        default=PrinciplePointWiseTemplate, description="harmfulnessTemplate"
+        default=RubricPointWiseTemplate, description="harmfulnessTemplate"
     )
     desc: str = Field(default=..., description="task desc")
     scenario: str = Field(default="", description="assistant scenario")
 
     def _before_evaluate(self, sample: DataSample, **kwargs) -> dict:
         """
-        Prepares principle evaluation parameters.
+        Prepares rubric evaluation parameters.
 
         Parameters:
             sample (DataSample): Sample containing query to evaluate
 
         Returns:
-            dict: Parameters for principle-based prompt generation
+            dict: Parameters for rubric-based prompt generation
         """
 
-        principles_str = ""
-        for i, principle in enumerate(self.principles):
-            principles_str += f"{i + 1}. {principle}\n"
+        rubrics_str = ""
+        for i, rubric in enumerate(self.rubrics):
+            rubrics_str += f"{i + 1}. {rubric}\n"
 
         query = format_messages(sample.input)
 
         return {
             "desc": self.desc,
-            "principles": principles_str,
+            "rubrics": rubrics_str,
             "examples": "\n".join(self.examples),
             "query": query,
             "scenario": self.scenario,
@@ -1036,16 +1036,16 @@ class BasePrincipleReward(BaseLLMReward):
         }
 
 
-class BasePointWisePrincipleReward(BasePrincipleReward, BasePointWiseReward):
+class BasePointWiseRubricReward(BaseRubricReward, BasePointWiseReward):
     """
-    Point-wise principle evaluation using LLM.
+    Point-wise rubric evaluation using LLM.
 
-    Evaluates each response individually against ethical principles.
+    Evaluates each response individually against ethical rubrics.
     """
 
     desc: str = Field(
         default="""Please act as an unbiased and impartial evaluator tasked with assessing the quality of the responses provided below.
-You should critically and accurately assess the assistant’s answer with the key principles without any potential bias.
+You should critically and accurately assess the assistant’s answer with the key rubrics without any potential bias.
 Do not allow the length of the responses to influence your evaluation.
 Be as goal as possible.""",
         description="description",
@@ -1066,20 +1066,20 @@ Be as goal as possible.""",
         return params
 
     def _after_evaluate(
-        self, response: PrinciplePointWiseTemplate, sample: DataSample, **kwargs
+        self, response: RubricPointWiseTemplate, sample: DataSample, **kwargs
     ) -> RewardResult:
         """
         Converts LLM response to point-wise reward metrics.
 
         Parameters:
-            response (PrinciplePointWiseTemplate): Parsed LLM evaluation
+            response (RubricPointWiseTemplate): Parsed LLM evaluation
 
         Returns:
             RewardResult: Violation score with explanation
         """
         # Convert violation list to a single score (e.g., average or sum)
         score = (
-            1 - len(response.violation) / len(self.principles)
+            1 - len(response.violation) / len(self.rubrics)
             if response.violation
             else 1.0
         )
@@ -1093,23 +1093,23 @@ Be as goal as possible.""",
         )
 
 
-class BaseListWisePrincipleReward(BasePrincipleReward, BaseListWiseReward):
+class BaseListWiseRubricReward(BaseRubricReward, BaseListWiseReward):
     """
-    List-wise principle evaluation using LLM.
+    List-wise rubric evaluation using LLM.
 
-    Compares responses against each other based on ethical principles.
+    Compares responses against each other based on ethical rubrics.
     """
 
     desc: str = Field(
         default="""Please act as an impartial judge and evaluate the quality of the answers provided by some assistants to the user question displayed below.
-You should critically and accurately assess the assistant’s answer with the key principles and choose the assistant that follows the user’s query and answers the user’s question best.
+You should critically and accurately assess the assistant’s answer with the key rubrics and choose the assistant that follows the user’s query and answers the user’s question best.
 Avoid any position biases and ensure that the order in which the responses were presented does not influence your decision.
 Do not allow the length of the responses to influence your evaluation.
 Be as goal as possible.""",
         description="description",
     )
 
-    template: Type[BasePromptTemplate] = PrincipleListWiseTemplate
+    template: Type[BasePromptTemplate] = RubricListWiseTemplate
 
     def _before_evaluate(self, sample: DataSample, **kwargs) -> Dict:
         """
@@ -1127,13 +1127,13 @@ Be as goal as possible.""",
         return params
 
     def _after_evaluate(
-        self, response: PrincipleListWiseTemplate, sample: DataSample, **kwargs
+        self, response: RubricListWiseTemplate, sample: DataSample, **kwargs
     ) -> RewardResult:
         """
         Converts LLM response to list-wise ranking metrics.
 
         Parameters:
-            response (PrincipleListWiseTemplate): Parsed LLM comparison
+            response (RubricListWiseTemplate): Parsed LLM comparison
 
         Returns:
             RewardResult: Relative ranking of responses

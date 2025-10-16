@@ -5,7 +5,7 @@ from pydantic import Field
 from rm_gallery.core.reward.registry import RewardRegistry
 from rm_gallery.gallery.rm.alignment.base import BaseHelpfulnessListWiseReward
 
-PRINCIPLES = []
+RUBRICS = []
 
 
 SCENARIO = "Classification: Entails assigning predefined categories or labels to text based on its content."
@@ -23,5 +23,5 @@ class ClassificationListWiseReward(BaseHelpfulnessListWiseReward):
         default="classification_listwise_reward", description="reward name"
     )
     scenario: str = Field(default=SCENARIO, description="assistant scenario")
-    principles: List[str] = Field(default=PRINCIPLES)
+    rubrics: List[str] = Field(default=RUBRICS)
     desc: str = Field(default=DESC)

@@ -23,7 +23,7 @@ def reward_instance():
                 name="Test Reward",
                 desc="Test Description",
                 scenario="Test Scenario",
-                principles=["Test Principle"],
+                rubrics=["Test Rubric"],
                 template=TestTemplate,  # Use valid template instance
             )
 
@@ -35,7 +35,7 @@ class TestBaseHelpfulnessListWiseReward:
 
     def test_required_attributes_exist(self, reward_instance):
         """Test presence of required attributes from parent classes"""
-        assert hasattr(reward_instance, "principles")
+        assert hasattr(reward_instance, "rubrics")
         assert hasattr(reward_instance, "desc")
         assert hasattr(reward_instance, "scenario")
         assert hasattr(reward_instance, "template")
@@ -43,7 +43,7 @@ class TestBaseHelpfulnessListWiseReward:
     def test_initialization_with_defaults(self, reward_instance):
         """Test initialization with default values from parent classes"""
         assert reward_instance.desc == "Test Description"
-        assert reward_instance.principles == ["Test Principle"]
+        assert reward_instance.rubrics == ["Test Rubric"]
 
     def test_abstract_methods_implemented(self, reward_instance):
         """Test implementation of abstract methods from parent classes"""
@@ -75,5 +75,5 @@ class TestBaseHelpfulnessListWiseReward:
         result = reward_instance._before_evaluate(sample=sample_input)
         assert isinstance(result, dict)
         assert "desc" in result
-        assert "principles" in result
+        assert "rubrics" in result
         assert "query" in result
