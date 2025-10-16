@@ -41,7 +41,7 @@ class PairwiseComparisonTemplate(BasePromptTemplate):
     def format(
         cls,
         desc: str,
-        principles: str,
+        rubrics: str,
         examples: str,
         query: str,
         response_a: str,
@@ -54,8 +54,8 @@ class PairwiseComparisonTemplate(BasePromptTemplate):
         return f"""# Task Description
 {desc}
 
-# Principles
-{principles}
+# Rubrics
+{rubrics}
 
 {examples}
 
