@@ -80,7 +80,7 @@ Response B is significantly better than Response A. Response A is very basic and
 
         prompt = PairwiseComparisonTemplate.format(
             desc="Please choose the better response.",
-            principles="",
+            rubrics="",
             examples="",
             query=query,
             response_a=response_a,

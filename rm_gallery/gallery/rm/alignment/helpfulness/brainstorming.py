@@ -10,7 +10,7 @@ Your role is that of a professional evaluation expert. I will provide you with a
 """
 SCENARIO = "Brainstorming: Generating text to come up with new ideas or solutions, with an emphasis on creativity and driving thinking."
 
-PRINCIPLES = [
+RUBRICS = [
     "Creative Relevance and Contextual Alignment: Prioritize completions that balance novel ideas with direct ties to the scenario's core context, ensuring ideas are both imaginative and grounded in the specific problem or theme.",
     "Practical Feasibility and Actionable Detail: Favor completions that offer concrete, implementable solutions or insights, avoiding abstract or overly speculative suggestions that lack real-world applicability.",
     "Structural Coherence and Logical Organization: Prefer completions that present ideas in a clear, logically sequenced framework (e.g., categorized sections, step-by-step processes) to enhance readability and development potential.",
@@ -23,5 +23,5 @@ class BrainstormingListWiseReward(BaseHelpfulnessListWiseReward):
 
     name: str = Field(default="brainstorming_listwise_reward")
     scenario: str = Field(default=SCENARIO, description="assistant scenario")
-    principles: List[str] = Field(default=PRINCIPLES)
+    rubrics: List[str] = Field(default=RUBRICS)
     desc: str = Field(default=DESC)
