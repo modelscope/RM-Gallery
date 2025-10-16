@@ -9,7 +9,7 @@ DESC = """
 Your role is that of a professional evaluation expert. I will provide you with a question and several candidate answers. Your task is to select the single best answer from the candidates.
 """
 SCENARIO = "Code: Involves generating, understanding, or modifying programming language code within text."
-PRINCIPLES = []
+RUBRICS = []
 
 
 @RewardRegistry.register("code_listwise_reward")
@@ -18,5 +18,5 @@ class CodeListWiseReward(BaseHelpfulnessListWiseReward):
 
     name: str = Field(default="code_listwise_reward")
     scenario: str = Field(default=SCENARIO, description="assistant scenario")
-    principles: List[str] = Field(default=PRINCIPLES)
+    rubrics: List[str] = Field(default=RUBRICS)
     desc: str = Field(default=DESC)

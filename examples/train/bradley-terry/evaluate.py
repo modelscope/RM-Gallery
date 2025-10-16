@@ -128,5 +128,6 @@ def main():
     print(f"Score A: {score_a:.4f}, Score B: {score_b:.4f}")
     print(f"Preferred response: {preferred}")
 
+
 if __name__ == "__main__":
     main()

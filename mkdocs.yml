@@ -20,7 +20,7 @@ nav:
     - Build RM:
       - Overview: tutorial/building_rm/overview.ipynb
       - Customization: tutorial/building_rm/custom_reward.ipynb
-      - Auto Principle: tutorial/building_rm/autoprinciple.ipynb
+      - Auto Rubric: tutorial/building_rm/autorubric.md
       - Built-in Rewards: tutorial/building_rm/ready2use_rewards.md
       - Benchmark: tutorial/building_rm/benchmark_practices.ipynb
     - RM Server: tutorial/rm_serving/rm_server.md

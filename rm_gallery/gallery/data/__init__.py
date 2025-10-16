@@ -6,6 +6,9 @@ from rm_gallery.gallery.data.load.helpsteer2_pairwise import HelpSteer2PairwiseC
 from rm_gallery.gallery.data.load.helpsteer2_pointwise import (
     HelpSteer2PointwiseConverter,
 )
+from rm_gallery.gallery.data.load.helpsteer3_preference import (
+    HelpSteer3PreferenceConverter,
+)
 from rm_gallery.gallery.data.load.judgebench import JudgeBenchConverter
 from rm_gallery.gallery.data.load.prmbench import PRMBenchConverter
 from rm_gallery.gallery.data.load.rewardbench import RewardBenchConverter
@@ -28,6 +31,7 @@ LOAD_STRATEGIES = {
     "rmbbenchmark_pairwise": RMBBenchmarkPairwiseConverter,
     "rmbench": RMBenchConverter,
     "judgebench": JudgeBenchConverter,
+    "helpsteer3_preference": HelpSteer3PreferenceConverter,
 }
 
 ANNOTATION_TEMPLATES = {

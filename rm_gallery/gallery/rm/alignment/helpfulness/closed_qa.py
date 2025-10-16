@@ -7,7 +7,7 @@ from rm_gallery.gallery.rm.alignment.base import BaseHelpfulnessListWiseReward
 
 SCENARIO = "Closed QA: Search for direct answers to specific questions in given text sources (i.e. given context, given options)."
 
-PRINCIPLES = []
+RUBRICS = []
 DESC = """
 Your role is that of a professional evaluation expert. I will provide you with a question and several candidate answers. Your task is to select the single best answer from the candidates.
 """
@@ -19,5 +19,5 @@ class ClosedQAListWiseReward(BaseHelpfulnessListWiseReward):
 
     name: str = Field(default="closed_qa_listwise_reward", description="reward name")
     scenario: str = Field(default=SCENARIO, description="assistant scenario")
-    principles: List[str] = Field(default=PRINCIPLES)
+    rubrics: List[str] = Field(default=RUBRICS)
     desc: str = Field(default=DESC)
