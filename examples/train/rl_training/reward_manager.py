@@ -125,7 +125,7 @@ class DGRRewardManager(AbstractRewardManager):
 
                 # 提取额外信息
                 prompt_raw_list = data.non_tensor_batch.get("prompt_raw", [])
-                if prompt_raw_list and idx < len(prompt_raw_list):
+                if len(prompt_raw_list) > 0 and idx < len(prompt_raw_list):
                     x_data = prompt_raw_list[idx]
                 else:
                     x_data = {}
@@ -137,20 +137,24 @@ class DGRRewardManager(AbstractRewardManager):
                 # 添加ground truth信息（如果有）
                 if "reward_model" in data.non_tensor_batch:
                     rm_list = data.non_tensor_batch["reward_model"]
-                    if rm_list and idx < len(rm_list):
+                    if len(rm_list) > 0 and idx < len(rm_list):
                         rm_data = rm_list[idx]
                         if isinstance(rm_data, dict) and "ground_truth" in rm_data:
                             extra_info.update(rm_data["ground_truth"])
 
                 extras.append(extra_info)
 
-            # 获取data_source（安全访问）
+            # 获取data_source（安全访问，避免numpy数组ambiguous truth value）
             data_source_list = data.non_tensor_batch.get(
                 self.reward_fn_key, ["alignment"]
             )
-            if data_source_list and indices[0] < len(data_source_list):
-                data_source = data_source_list[indices[0]]
-            else:
+            try:
+                if len(data_source_list) > 0 and indices[0] < len(data_source_list):
+                    data_source = data_source_list[indices[0]]
+                else:
+                    data_source = "alignment"
+            except (TypeError, ValueError):
+                # 如果data_source_list是numpy数组或其他特殊类型
                 data_source = "alignment"
 
             # 调用compute_score进行组评估
