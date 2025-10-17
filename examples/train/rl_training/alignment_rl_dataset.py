@@ -13,16 +13,31 @@
 # limitations under the License.
 
 import copy
+import os
 from typing import List
 
 import verl.utils.torch_functional as verl_F
 from verl.utils.model import compute_position_id_with_mask
 
 # Import base dataset
+import sys
+import os
+current_dir = os.path.dirname(os.path.abspath(__file__))
+if current_dir not in sys.path:
+    sys.path.insert(0, current_dir)
+
 try:
     from .base_dataset import BaseChatRLDataset
 except ImportError:
-    from base_dataset import BaseChatRLDataset
+    try:
+        from base_dataset import BaseChatRLDataset
+    except ImportError:
+        # If still failing, try importing from current directory
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("base_dataset", os.path.join(current_dir, "base_dataset.py"))
+        base_dataset_module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(base_dataset_module)
+        BaseChatRLDataset = base_dataset_module.BaseChatRLDataset
 
 
 class DataKeys:
