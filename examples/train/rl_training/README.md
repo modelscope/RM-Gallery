@@ -14,24 +14,41 @@
 
 ```
 rl_training/
-├── README.md                    # 本文档
-├── config.py                    # 配置文件（DataKeys等）
-├── base_dataset.py              # 基础数据集类
-├── alignment_rl_dataset.py     # Alignment数据集类
-├── alignment_reward_fn.py      # RM-Gallery奖励函数
-├── reward_manager.py           # DGR Reward Manager
-├── grpo_training.sh            # GRPO训练脚本
-├── config_example.yaml         # 配置示例
-├── INTEGRATION_CHECKLIST.md    # 集成检查清单
-└── data/                       # 训练数据
-    ├── wildchat_10k_train.parquet
-    └── wildchat_10k_test.parquet
+├── 📖 文档
+│   ├── README.md                    # 本文档
+│   ├── INTEGRATION_CHECKLIST.md    # 集成检查清单
+│   └── FILE_LIST.txt               # 文件清单说明
+│
+├── 🔧 核心代码（4个，自包含）
+│   ├── base_dataset.py              # 基础数据集类（与VERL原版一致）
+│   ├── alignment_rl_dataset.py     # Alignment数据集类（含DataKeys配置）
+│   ├── alignment_reward_fn.py      # RM-Gallery奖励函数
+│   └── reward_manager.py           # DGR Reward Manager
+│
+├── 🚀 训练脚本
+│   ├── grpo_training.sh            # GRPO训练脚本
+│   └── config_example.yaml         # 配置示例
+│
+└── 📊 data/（示例数据）
+    ├── wildchat_10k_train.parquet (2.2MB, 800条)
+    └── wildchat_10k_test.parquet (583KB, 200条)
 ```
 
 **自包含设计**：
 - ✅ 所有必需文件都在此目录中
-- ✅ 无需从其他地方复制代码
+- ✅ 无需从其他地方复制依赖代码
+- ✅ `base_dataset.py` 与VERL原版 `BaseChatRLDataset` 完全一致
+- ✅ `alignment_rl_dataset.py` 内置DataKeys配置类
 - ✅ 数据格式完全兼容原DGR
+
+**文件说明**：
+
+| 文件名 | 大小 | 说明 |
+|--------|------|------|
+| `base_dataset.py` | 8KB | 基础数据集类，与VERL原版一致，处理数据加载和分词 |
+| `alignment_rl_dataset.py` | 9KB | Alignment数据集（含DataKeys），处理chosen/rejected格式 |
+| `alignment_reward_fn.py` | 7KB | 奖励函数接口，调用RM-Gallery进行评估 |
+| `reward_manager.py` | 7KB | DGR Reward Manager，需复制到VERL框架（已修复索引安全问题） |
 
 ## 🚀 快速开始
 

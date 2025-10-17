@@ -124,22 +124,34 @@ class DGRRewardManager(AbstractRewardManager):
                 prompts.append(prompt_text)
 
                 # 提取额外信息
+                prompt_raw_list = data.non_tensor_batch.get("prompt_raw", [])
+                if prompt_raw_list and idx < len(prompt_raw_list):
+                    x_data = prompt_raw_list[idx]
+                else:
+                    x_data = {}
+
                 extra_info = {
-                    "x": data.non_tensor_batch.get("prompt_raw", [{}])[idx],
+                    "x": x_data,
                 }
 
                 # 添加ground truth信息（如果有）
                 if "reward_model" in data.non_tensor_batch:
-                    rm_data = data.non_tensor_batch["reward_model"][idx]
-                    if isinstance(rm_data, dict) and "ground_truth" in rm_data:
-                        extra_info.update(rm_data["ground_truth"])
+                    rm_list = data.non_tensor_batch["reward_model"]
+                    if rm_list and idx < len(rm_list):
+                        rm_data = rm_list[idx]
+                        if isinstance(rm_data, dict) and "ground_truth" in rm_data:
+                            extra_info.update(rm_data["ground_truth"])
 
                 extras.append(extra_info)
 
-            # 获取data_source
-            data_source = data.non_tensor_batch.get(self.reward_fn_key, ["alignment"])[
-                indices[0]
-            ]
+            # 获取data_source（安全访问）
+            data_source_list = data.non_tensor_batch.get(
+                self.reward_fn_key, ["alignment"]
+            )
+            if data_source_list and indices[0] < len(data_source_list):
+                data_source = data_source_list[indices[0]]
+            else:
+                data_source = "alignment"
 
             # 调用compute_score进行组评估
             result = self.compute_score(
