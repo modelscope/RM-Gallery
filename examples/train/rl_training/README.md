@@ -337,11 +337,29 @@ TRAIN_BATCH_SIZE=32
 REWARD_FN_PATH="examples/train/rl_training/alignment_reward_fn.py"
 ```
 
+## ⚠️ 注意事项
+
+### 可能的阻塞问题
+
+虽然OpenAI客户端有60秒超时，但在并发评估时可能出现延迟累积。
+
+**预防措施**：
+1. 首次运行使用Pointwise模式测试API响应速度
+2. 设置合理的MAX_WORKERS（建议10-20）
+3. 监控训练日志，注意评估时间
+4. 如遇阻塞，降低并发数或切换评估模式
+
+**详细说明**：参见 `POTENTIAL_ISSUES.md`
+
+---
+
 ## 📚 相关文档
 
 - [RM-Gallery VERL Integration](../../integrations/verl/README.md)
 - [VERL Documentation](https://github.com/volcengine/verl)
 - [DGR Algorithm Paper](链接到相关论文)
+- `POTENTIAL_ISSUES.md` - 潜在问题和解决方案
+- `CHANGELOG.md` - Bug修复记录
 
 ## 🤝 贡献
 

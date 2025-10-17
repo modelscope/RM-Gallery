@@ -36,6 +36,8 @@ class PairwiseEvaluator:
         elo_k_factor: float = 32.0,
         elo_max_iterations: int = 100,
         elo_convergence_threshold: float = 0.01,
+        llm_timeout: float = 30.0,  # 每次LLM调用的超时时间（秒）
+        max_retries: int = 2,  # 失败时的最大重试次数
         **kwargs,
     ):
         self.llm = llm
@@ -47,6 +49,8 @@ class PairwiseEvaluator:
         self.elo_k_factor = elo_k_factor
         self.elo_max_iterations = elo_max_iterations
         self.elo_convergence_threshold = elo_convergence_threshold
+        self.llm_timeout = llm_timeout  # 超时控制
+        self.max_retries = max_retries  # 重试控制
         self.kwargs = kwargs
 
     def evaluate(
@@ -98,6 +102,8 @@ class PairwiseEvaluator:
         """
         Pairwise compare all response pairs (using RM-Gallery LLM)
 
+        优化版：添加超时控制和非阻塞处理
+
         Returns:
             [
                 {'i': 0, 'j': 1, 'result': 'A', 'winner': 0},
@@ -111,13 +117,18 @@ class PairwiseEvaluator:
         # Generate all pairs to compare
         pairs = [(i, j) for i in range(n) for j in range(i + 1, n)]
 
-        # Concurrent LLM calls
+        if self.verbose:
+            print(
+                f"[Pairwise] Comparing {len(pairs)} pairs with timeout={self.llm_timeout}s, max_workers={self.max_workers}"
+            )
+
+        # Concurrent LLM calls with timeout control
         with concurrent.futures.ThreadPoolExecutor(
             max_workers=self.max_workers
         ) as executor:
             future_to_pair = {
                 executor.submit(
-                    self._compare_pair,
+                    self._compare_pair_with_retry,
                     prompt,
                     responses[i],
                     responses[j],
@@ -128,26 +139,110 @@ class PairwiseEvaluator:
                 for i, j in pairs
             }
 
-            for future in concurrent.futures.as_completed(future_to_pair):
-                i, j = future_to_pair[future]
-                try:
-                    comparison = future.result()
-                    comparisons.append(comparison)
-                except Exception as e:
-                    if self.verbose:
-                        print(f"Error comparing {i} vs {j}: {e}")
-                    # Default to tie
-                    comparisons.append(
-                        {
-                            "i": i,
-                            "j": j,
-                            "result": "tie",
-                            "winner": None,
-                            "error": str(e),
-                        }
-                    )
+            # 使用超时控制避免无限等待
+            total_timeout = (
+                self.llm_timeout * (len(pairs) // self.max_workers + 1) + 10.0
+            )
+
+            try:
+                for future in concurrent.futures.as_completed(
+                    future_to_pair, timeout=total_timeout
+                ):
+                    i, j = future_to_pair[future]
+                    try:
+                        # 为每个future设置超时
+                        comparison = future.result(timeout=self.llm_timeout + 5.0)
+                        comparisons.append(comparison)
+                    except concurrent.futures.TimeoutError:
+                        if self.verbose:
+                            print(
+                                f"⚠️  Timeout comparing {i} vs {j} after {self.llm_timeout}s"
+                            )
+                        # Default to tie on timeout
+                        comparisons.append(
+                            {
+                                "i": i,
+                                "j": j,
+                                "result": "tie",
+                                "winner": None,
+                                "error": "timeout",
+                            }
+                        )
+                    except Exception as e:
+                        if self.verbose:
+                            print(f"❌ Error comparing {i} vs {j}: {e}")
+                        # Default to tie on error
+                        comparisons.append(
+                            {
+                                "i": i,
+                                "j": j,
+                                "result": "tie",
+                                "winner": None,
+                                "error": str(e),
+                            }
+                        )
+            except concurrent.futures.TimeoutError:
+                if self.verbose:
+                    print(f"⚠️  Total comparison timeout after {total_timeout}s")
+                # 取消剩余的任务
+                for future in future_to_pair:
+                    future.cancel()
+                # 对未完成的pairs添加tie结果
+                completed_pairs = {(comp["i"], comp["j"]) for comp in comparisons}
+                for i, j in pairs:
+                    if (i, j) not in completed_pairs:
+                        comparisons.append(
+                            {
+                                "i": i,
+                                "j": j,
+                                "result": "tie",
+                                "winner": None,
+                                "error": "total_timeout",
+                            }
+                        )
 
         return comparisons
+
+    def _compare_pair_with_retry(
+        self,
+        prompt: str,
+        response_a: str,
+        response_b: str,
+        reference: str,
+        idx_a: int,
+        idx_b: int,
+    ) -> Dict:
+        """
+        使用LLM比较一对响应（带重试机制）
+        """
+        import time
+
+        last_error = None
+        for attempt in range(self.max_retries + 1):
+            try:
+                return self._compare_pair(
+                    prompt, response_a, response_b, reference, idx_a, idx_b
+                )
+            except Exception as e:
+                last_error = e
+                if attempt < self.max_retries:
+                    if self.verbose:
+                        print(
+                            f"⚠️  Retry {attempt + 1}/{self.max_retries} for pair ({idx_a}, {idx_b}): {e}"
+                        )
+                    time.sleep(0.5 * (attempt + 1))  # 指数退避
+                    continue
+                else:
+                    if self.verbose:
+                        print(f"❌ All retries failed for pair ({idx_a}, {idx_b}): {e}")
+                    # 所有重试都失败，返回tie
+                    return {
+                        "i": idx_a,
+                        "j": idx_b,
+                        "result": "tie",
+                        "winner": None,
+                        "error": f"max_retries_exceeded: {str(last_error)}",
+                    }
 
     def _compare_pair(
         self,

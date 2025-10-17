@@ -13,9 +13,15 @@ export JUDGE_API_KEY="your-api-key"
 
 # Evaluation Mode
 export EVAL_MODE="pairwise"        # pairwise, pointwise, listwise
-export PAIRWISE_MODE="dgr"         # dgr, copeland, winrate, elo (only for pairwise)
+export PAIRWISE_MODE="winrate"         # dgr, copeland, winrate, elo (only for pairwise)
 export MAX_WORKERS=10
 export VERBOSE="false"
+
+# ============================================================================
+# Performance & Timeout Configuration (防止阻塞)
+# ============================================================================
+export LLM_TIMEOUT="30.0"          # 每次LLM调用超时（秒）
+export MAX_RETRIES="2"             # LLM失败重试次数
 
 # ============================================================================
 # Path Configuration
@@ -84,6 +90,7 @@ ray job submit --address="http://127.0.0.1:8265" \
     data.custom_cls.path="${CUSTOM_CHAT_RL_DATASET_PATH}" \
     data.custom_cls.name="AlignmentChatRLDataset" \
     reward_model.reward_manager='dgr' \
+    reward_model.launch_reward_fn_async=True \
     custom_reward_function.path="${CUSTOM_REWARD_FUNCTION_PATH}" \
     custom_reward_function.name='compute_score' \
     actor_rollout_ref.model.path=${MODEL_PATH} \
