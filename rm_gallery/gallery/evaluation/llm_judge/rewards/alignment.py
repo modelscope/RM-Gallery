@@ -51,6 +51,8 @@ class AlignmentReward:
         max_tokens: int = 2048,
         max_workers: int = 10,
         verbose: bool = False,
+        llm_timeout: float = 30.0,  # LLM调用超时（秒）
+        max_retries: int = 2,  # LLM调用失败时的重试次数
         **kwargs,
     ):
         """
@@ -82,6 +84,8 @@ class AlignmentReward:
             "model": model_name,
             "temperature": temperature,
             "max_tokens": max_tokens,
+            "timeout": llm_timeout,  # 添加超时配置
+            "max_retries": max_retries,  # 添加重试配置
         }
 
         if api_key:
@@ -124,6 +128,8 @@ class AlignmentReward:
                 mode=pairwise_mode,
                 max_workers=max_workers,
                 verbose=verbose,
+                llm_timeout=llm_timeout,  # 传递超时配置
+                max_retries=max_retries,  # 传递重试配置
                 **kwargs,
             )
         elif eval_mode == "pointwise":
