@@ -15,17 +15,38 @@
 ```
 rl_training/
 ├── README.md                    # 本文档
+├── config.py                    # 配置文件（DataKeys等）
+├── base_dataset.py              # 基础数据集类
+├── alignment_rl_dataset.py     # Alignment数据集类
 ├── alignment_reward_fn.py      # RM-Gallery奖励函数
-├── alignment_rl_dataset.py     # 数据集类
 ├── reward_manager.py           # DGR Reward Manager
 ├── grpo_training.sh            # GRPO训练脚本
 ├── config_example.yaml         # 配置示例
+├── INTEGRATION_CHECKLIST.md    # 集成检查清单
 └── data/                       # 训练数据
     ├── wildchat_10k_train.parquet
     └── wildchat_10k_test.parquet
 ```
 
+**自包含设计**：
+- ✅ 所有必需文件都在此目录中
+- ✅ 无需从其他地方复制代码
+- ✅ 数据格式完全兼容原DGR
+
 ## 🚀 快速开始
+
+### 前置要求
+
+1. **安装VERL框架**：
+   ```bash
+   # 参考 VERL 官方文档
+   # https://github.com/volcengine/verl
+   ```
+
+2. **安装RM-Gallery**：
+   ```bash
+   pip install -e .  # 在rm-gallery-git根目录
+   ```
 
 ### 步骤 1: 配置Judge API
 
@@ -54,22 +75,30 @@ cp reward_manager.py $VERL_ROOT/verl/workers/reward_manager/dgr.py
 
 ```python
 from .dgr import DGRRewardManager
+
+__all__ = [
+    ...
+    "DGRRewardManager",  # 添加这一行
+]
 ```
 
-只需配置一次！
+**只需配置一次！**
 
 ### 步骤 3: 配置训练参数
 
 编辑 `grpo_training.sh` 中的训练配置：
 
 ```bash
+# RM-Gallery Root (where you cloned rm-gallery-git)
+RM_GALLERY_ROOT="/path/to/rm-gallery-git"
+
 # VERL Root Directory
 VERL_ROOT="/path/to/verl"
 
 # Model Paths
 ACTOR_MODEL_PATH="/path/to/base/model"
 
-# Data Paths
+# Data Paths (relative to RM_GALLERY_ROOT)
 TRAIN_DATA="examples/train/rl_training/data/wildchat_10k_train.parquet"
 VAL_DATA="examples/train/rl_training/data/wildchat_10k_test.parquet"
 ```
