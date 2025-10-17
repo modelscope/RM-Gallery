@@ -13,23 +13,29 @@
 # limitations under the License.
 
 import copy
-import os
 from typing import List
 
 import verl.utils.torch_functional as verl_F
-from recipe.rm_gallery.chat_rl_dataset import BaseChatRLDataset
 from verl.utils.model import compute_position_id_with_mask
 
-# 导入配置类
+# Import base dataset
 try:
-    from .alignment_evaluator import DataKeys
+    from .base_dataset import BaseChatRLDataset
 except ImportError:
-    # 如果相对导入失败，尝试绝对导入
-    import sys
+    from base_dataset import BaseChatRLDataset
 
-    current_dir = os.path.dirname(os.path.abspath(__file__))
-    sys.path.append(current_dir)
-    from alignment_evaluator import DataKeys
+
+class DataKeys:
+    """Data field names configuration"""
+
+    # Data field keys
+    CHOSEN = "chosen"
+    REJECTED = "rejected"
+    CONVERSATIONS = "conversations"
+    SOURCE = "source"
+
+    # Default values
+    DEFAULT_SOURCE = "alignment"
 
 
 class AlignmentChatRLDataset(BaseChatRLDataset):
