@@ -22,12 +22,12 @@ MIN_SUCCESS_RATE=0.3
 
 # Structuring Settings
 NUM_CATEGORIES=5
-ENABLE_STRUCTURING="True"
+ENABLE_STRUCTURING=true
 
 python auto_rubric.py \
-    --data-path "$DATA_PATH" \
-    --model "$MODEL" \
-    --output-base "$OUTPUT_BASE" \
+    --data-path $DATA_PATH \
+    --model $MODEL \
+    --output-base $OUTPUT_BASE \
     --max-workers $MAX_WORKERS \
     --batch-size $BATCH_SIZE \
     --max-epochs $MAX_EPOCHS \
@@ -38,7 +38,7 @@ python auto_rubric.py \
     --max-iterations $MAX_ITERATIONS \
     --max-total-rubrics $MAX_TOTAL_RUBRICS \
     --min-success-rate $MIN_SUCCESS_RATE \
-    --enable-structuring "$ENABLE_STRUCTURING" \
+    --enable-structuring $ENABLE_STRUCTURING \
     --num-categories $NUM_CATEGORIES
 
 

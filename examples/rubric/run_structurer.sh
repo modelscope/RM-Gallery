@@ -6,9 +6,9 @@ OUTPUT_DIR="./rubric_structuring_results"
 MODEL="qwen3-32b"
 NUM_THEMES=5
 
-python run_rubric_structurer.py \
-    --input "$INPUT_FILE" \
-    --output "$OUTPUT_DIR" \
-    --model "$MODEL" \
+python structurer.py \
+    --input $INPUT_FILE \
+    --output $OUTPUT_DIR \
+    --model $MODEL \
     --themes $NUM_THEMES
 

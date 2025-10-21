@@ -134,9 +134,6 @@ def main():
         default="qwen3-32b",
         help="LLM model name",
     )
-    parser.add_argument(
-        "--enable-thinking", type=bool, default=True, help="Enable LLM thinking mode"
-    )
     # Generation settings
     parser.add_argument(
         "--max-samples",
@@ -214,7 +211,6 @@ def main():
     logger.info(f"Data path: {args.data_path}")
     logger.info(f"Output directory: {args.output_dir}")
     logger.info(f"Model: {args.model}")
-    logger.info(f"Enable thinking: {args.enable_thinking}")
     logger.info(f"Max samples: {args.max_samples if args.max_samples > 0 else 'All'}")
     logger.info(f"Domains: {args.domains if args.domains else 'All'}")
     logger.info(f"Generate number: {args.generate_number}")
@@ -265,7 +261,7 @@ def main():
 
     # Create LLM
     logger.info(f"\n🤖 Initializing LLM ({args.model})...")
-    llm = OpenaiLLM(model=args.model, enable_thinking=args.enable_thinking)
+    llm = OpenaiLLM(model=args.model)
 
     # Create generator
     logger.info("🔧 Creating rubric generator...")
@@ -381,7 +377,6 @@ def main():
         },
         "configuration": {
             "model": args.model,
-            "enable_thinking": args.enable_thinking,
             "generate_number": args.generate_number,
             "max_epochs": args.max_epochs,
             "max_workers": args.max_workers,
