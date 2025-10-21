@@ -1,4 +1,6 @@
-# Auto-Rubric: Learning to Extract Generalizable Criteria for Reward Modeling
+# Auto-Rubric
+
+📄 **[2025-10-20] We introduce [Auto-Rubric: Learning to Extract Generalizable Criteria for Reward Modeling](https://arxiv.org/abs/2510.17314).** A training-free framework that automatically discovers interpretable evaluation criteria from preference data, achieving SOTA performance with just 70 preference pairs (1.5% of source data) while providing human-readable "Theme-Tips" rubric hierarchies.
 
 ## 🚀 Key Features
 
@@ -11,11 +13,47 @@
 
 ## 📋 Table of Contents
 
+- [Overview](#overview)
 - [Quick Start](#quick-start)
 - [Pipeline Components](#pipeline-components)
 - [Configuration Guide](#configuration-guide)
 - [Data Format](#data-format)
 - [Advanced Usage](#advanced-usage)
+
+## 🎓 Overview
+
+### What is Auto-Rubric?
+
+**Auto-Rubric** is an automated framework that learns to extract generalizable evaluation criteria (called **rubrics**) from preference data.
+
+A **rubric** is an explicit evaluation criterion that specifies what aspects to focus on when assessing response quality. For example:
+- "The better answer correctly identifies that the chessboard rotation issue stems from calculating the chessboard pattern using unrotated UV coordinates."
+- "Prioritize factual accuracy and avoid unsupported claims by strictly adhering to the information explicitly presented in the source text."
+
+Instead of manually writing rubrics or training a neural reward model, Auto-Rubric automatically discovers the underlying criteria that distinguish good responses from bad ones, using a **Propose-Evaluate-Revise** loop combined with **information-theoretic selection (MCR²)**.
+
+### How Auto-Rubric Works
+
+The Auto-Rubric pipeline consists of three main stages:
+
+**1. Rubric Generation (Propose-Evaluate-Revise)**
+   - **Propose**: LLM generates candidate rubrics from preference pairs
+   - **Evaluate**: Test rubrics against ground-truth preferences
+   - **Revise**: Improve rubrics based on evaluation feedback
+   - **Iterate**: Repeat until rubrics converge
+
+**2. MCR² Selection (Maximal Coding Rate Reduction)**
+   - Apply information-theoretic selection to maximize rubric diversity
+   - Remove redundant or overlapping criteria
+   - Select optimal subset that covers diverse evaluation aspects
+   - Achieve high performance with minimal rubrics
+
+**3. Theme-Tips Structuring**
+   - Organize rubrics into hierarchical "Theme-Tips" format
+   - Group related rubrics under semantic themes
+   - Generate actionable tips for each theme
+   - Produce human-readable evaluation framework
+
 
 ## 🚀 Quick Start
 
@@ -65,7 +103,7 @@ NUM_CATEGORIES=5       # Number of Theme-Tips categories
 **`run_generator.sh`** - Rubric generation:
 ```bash
 MAX_SAMPLES=200        # Number of samples to process
-DOMAINS="multilingual" # Filter by domain (or remove for all)
+DOMAINS="general"      # Filter by domain (or set to "" for all)
 BATCH_SIZE=500         # Batch size for processing
 ```
 
@@ -91,13 +129,13 @@ python auto_rubric.py \
 3. **Theme-Tips Structuring**: Hierarchical organization into interpretable categories
 4. **Export**: Structured results ready for evaluation
 
-### 2. Rubric Generation (`run_rubric_generator.py`)
+### 2. Rubric Generation (`generator.py`)
 
 Standalone rubric generation with checkpoint support:
 
 ```bash
 # Generate rubrics with checkpointing
-python run_rubric_generator.py \
+python generator.py \
     --data-path data/helpsteer3_preference_train.jsonl \
     --output-dir rubric_generation_output \
     --model qwen3-32b \
@@ -112,13 +150,13 @@ python run_rubric_generator.py \
 - **Domain Filtering**: Focus on specific content domains
 - **Iterative Refinement**: Multi-epoch improvement cycles
 
-### 3. Rubric Structuring (`run_rubric_structurer.py`)
+### 3. Rubric Structuring (`structurer.py`)
 
 Transform raw rubrics into Theme-Tips format:
 
 ```bash
 # Structure rubrics into themes
-python run_rubric_structurer.py \
+python structurer.py \
     --input rubric_generation_output/rubrics.json \
     --output rubric_structuring_results \
     --themes 5 \
@@ -133,13 +171,13 @@ Theme: Evaluate response accuracy and factual correctness
 - Tip 3: Assess logical consistency of arguments
 ```
 
-### 4. Performance Analysis (`run_rubric_analysis.py`)
+### 4. Performance Analysis (`analysis.py`)
 
 Comprehensive evaluation of rubric performance:
 
 ```bash
 # Analyze rubric performance
-python run_rubric_analysis.py \
+python analysis.py \
     --rubrics rubric_structuring_results/ready_to_use_rubrics.json \
     --dataset data/helpsteer3_preference_valid.jsonl \
     --max-samples 100 \
@@ -171,21 +209,22 @@ python run_rubric_analysis.py \
 | `--enable-structuring` | `True` | Enable Theme-Tips structuring |
 | `--num-categories` | `5` | Number of Theme-Tips categories |
 
-### Rubric Generation (`run_rubric_generator.py`)
+### Rubric Generation (`generator.py`)
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `--data-path` | Required | Path to preference dataset (JSONL) |
 | `--model` | `"qwen3-32b"` | LLM model for generation |
 | `--max-samples` | `200` | Maximum samples to process (-1 for all) |
-| `--domains` | `"multilingual"` | Filter by domain (or remove for all) |
+| `--domains` | `None` | Filter by domain (e.g., "general", "multilingual") |
 | `--batch-size` | `500` | Batch size for processing |
 | `--max-epochs` | `10` | Maximum refinement epochs |
 | `--max-workers` | `256` | Worker threads |
+| `--max-retries` | `5` | Maximum retry attempts for LLM calls |
 | `--resume` | Flag | Resume from checkpoint |
 | `--disable-checkpoint` | Flag | Disable checkpoint saving |
 
-### Rubric Structuring (`run_rubric_structurer.py`)
+### Rubric Structuring (`structurer.py`)
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
@@ -194,12 +233,12 @@ python run_rubric_analysis.py \
 | `--model` | `"qwen3-32b"` | LLM model for structuring |
 | `--themes` | `5` | Number of themes to generate |
 
-### Performance Analysis (`run_rubric_analysis.py`)
+### Performance Analysis (`analysis.py`)
 
 | Parameter | Default | Description |
 |-----------|---------|-------------|
 | `--rubrics` | Required | Path to rubrics JSON file |
-| `--dataset` | `helpsteer3_preference_valid.jsonl` | Validation dataset |
+| `--dataset` | `"data/helpsteer3_preference_valid.jsonl"` | Validation dataset |
 | `--model` | `"qwen3-32b"` | Model for evaluation |
 | `--max-samples` | `100` | Maximum samples for evaluation |
 | `--max-workers` | `256` | Worker threads for parallel processing |
@@ -313,10 +352,10 @@ Filter training data by domain for specialized rubrics:
 
 ```bash
 # In run_generator.sh, set domain filter
-DOMAINS="multilingual"  # or "general", "math", etc.
+DOMAINS="general"  # or "multilingual", "math", etc.
 
-# Or remove domain filter for all data
-# DOMAINS=""
+# Or process all domains
+DOMAINS=""
 ```
 
 ### Custom Analysis
@@ -325,34 +364,11 @@ Compare different rubric sets:
 
 ```bash
 # Compare structured vs. raw rubrics
-python run_rubric_analysis.py \
+python analysis.py \
     --rubrics rubric_structuring_results/ready_to_use_rubrics.json \
     --source-rubrics rubric_generation_output/rubrics.json \
     --output comparison_analysis
 ```
-
-## 🔬 Technical Details
-
-### Propose-Evaluate-Revise Loop
-
-1. **Propose**: Generate rubrics using LLM with preference context
-2. **Evaluate**: Test rubrics against ground-truth preferences
-3. **Revise**: Improve rubrics based on evaluation feedback
-4. **Repeat**: Continue until convergence or max epochs
-
-### MCR² Selection Algorithm
-
-Information-theoretic selection maximizes rubric diversity while maintaining quality:
-- Selects rubrics that maximize coding rate
-- Promotes semantic diversity in rubric set
-- Prevents redundant or overlapping criteria
-
-### Theme-Tips Structuring
-
-Hierarchical organization of rubrics:
-- **Theme**: High-level evaluation focus
-- **Tips**: Specific actionable guidelines
-- LLM-based semantic clustering and synthesis
 
 ---
 
