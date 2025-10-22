@@ -5,7 +5,7 @@ from rm_gallery.core.reward.template import BasePromptTemplate
 
 class PointwiseTrainTemplate(BasePromptTemplate):
     """
-    The PrincipleTemplate class inherits from BasePromptTemplate and is used to define the template for principles reasoning.
+    The RubricTemplate class inherits from BasePromptTemplate and is used to define the template for rubrics reasoning.
     """
 
     score: int = Field(default=..., description="score of helpfulness from 0 to 4")
@@ -25,7 +25,7 @@ class PointwiseTrainTemplate(BasePromptTemplate):
     def format(
         cls,
         desc: str,
-        principles: str,
+        rubrics: str,
         examples: str,
         query: str,
         context: str,
@@ -37,8 +37,8 @@ class PointwiseTrainTemplate(BasePromptTemplate):
 
         return f"""# Task Description
         {desc}
-        # Principles
-        {principles}
+        # Rubrics
+        {rubrics}
 
         {examples}
 

@@ -8,6 +8,7 @@ __pycache__
 *.json
 *.parquet
 /log
+*.log
 /dist
 uv*
 _del

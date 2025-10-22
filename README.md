@@ -54,13 +54,13 @@ This image demonstrates the effectiveness of the RM Training Pipeline. On RM Ben
 
 - **Comprehensive RM Gallery**: Provides a rich collection of ready-to-use Reward Model instances for diverse tasks (e.g., math, coding, preference alignment) with both task-level(RMComposition) and component-level(RewardModel). Users can directly apply RMComposition/RewardModel for specific tasks or assemble custom RMComposition via component-level RewardModel.
 
-- **Principle-Critic-Score Paradigm**: Adopts the Principle+Critic+Score-based reasoning Reward Model  paradigm, offering best practices to help users generate principles with limited preference data.
+- **Rubric-Critic-Score Paradigm**: Adopts the Rubric+Critic+Score-based reasoning Reward Model  paradigm, offering best practices to help users generate rubrics with limited preference data.
 
 <div style="display: flex; flex-wrap: wrap;">
   <img src="./docs/images/building_rm/rewardbench2_exp_result.png" style="width: 48%; min-width: 200px; margin: 1%;">
   <img src="./docs/images/building_rm/rmb_pairwise_exp_result.png" style="width: 48%; min-width: 200px; margin: 1%;">
 </div>
-The two images above show that after applying the Principle+Critic+Score paradigm and adding 1–3 principles to the base model (Qwen3-32B), there were significant improvements on both RewardBench2 and RMB-pairwise.
+The two images above show that after applying the Rubric+Critic+Score paradigm and adding 1–3 rubrics to the base model (Qwen3-32B), there were significant improvements on both RewardBench2 and RMB-pairwise.
 
 ### 🛠️ Applying RM
 
@@ -175,13 +175,13 @@ BaseReward
 │   └── BasePairWiseReward                          # Specialized pairwise comparisons.
 ├── BaseStepWiseReward                              # Comparative evaluation of multiple responses.
 └── BaseLLMReward                                   # LLM-based evaluation framework.
-    ├── BasePrincipleReward                         # Principle-guided evaluation.
-    │   ├── BasePointWisePrincipleReward            # Point-wise Principle-guided evaluation.
-    │   └── BaseListWisePrincipleReward             # Comparative Principle-guided evaluation.
+    ├── BaseRubricReward                         # Rubric-guided evaluation.
+    │   ├── BasePointWiseRubricReward            # Point-wise Rubric-guided evaluation.
+    │   └── BaseListWiseRubricReward             # Comparative Rubric-guided evaluation.
 ```
 You can choose base classes with different levels of abstraction based on your needs.   Here are some typical use cases, and For details please check [building custom rewards tutorial](./docs/tutorial/building_rm/custom_reward.ipynb)
-**1️⃣ Custom Principles with Principle-Critic-Score Paradigm**
-If you follow the Principle-Critic-Score Paradigm and only want to use your own principles
+**1️⃣ Custom Rubrics with Rubric-Critic-Score Paradigm**
+If you follow the Rubric-Critic-Score Paradigm and only want to use your own rubrics
 
 ```python
 import os
@@ -191,11 +191,11 @@ os.environ["BASE_URL"] = "your_base_url"
 
 # Initialize the LLM client with thinking capability enabled
 llm = OpenaiLLM(model="qwen3-8b", enable_thinking=True)
-customPrincipledReward = BaseListWisePrincipleReward(
-        name="demo_custom_principled_reward",
+customRubricReward = BaseListWiseRubricReward(
+        name="demo_custom_rubric_reward",
         desc="your task description",
         scenario="your scenario description",
-        principles=["your Principle 1", "your Principle 2"],
+        rubrics=["your Rubric 1", "your Rubric 2"],
         llm=llm
     )
 ```
@@ -399,7 +399,7 @@ See Details in [data_refinement](./docs/tutorial/rm_application/data_refinement.
 | **Building RM** | [overview](docs/tutorial/building_rm/overview.ipynb)                     | Overview of building custom reward models                                                     |
 |                 | [ready-to-use RMs](docs/tutorial/building_rm/ready2use_rewards.md)        | List and usage of built-in, ready-to-use reward models                                        |
 |                 | [building a custom RM](docs/tutorial/building_rm/custom_reward.ipynb)     | How to design and implement your own reward model                                             |
-|                 | [auto principle](docs/tutorial/building_rm/autoprinciple.ipynb)           | Automatically generating evaluation principles for reward models                              |
+|                 | [auto rubric](docs/tutorial/building_rm/autorubric.md)           | Automatically generating evaluation rubrics for reward models                              |
 |                 | [benchmark practices](docs/tutorial/building_rm/benchmark_practices.ipynb)| Best practices and benchmarks for evaluating reward models                                    |
 | **RM Serving**  | [High-Performance RM Serving](docs/tutorial/rm_serving/rm_server.md)      | Deploying reward models as scalable, production-ready services                                |
 | **RM Application** | [post training](docs/tutorial/rm_application/post_training.ipynb)      | Integrating reward models into RLHF/post-training pipelines                                   |

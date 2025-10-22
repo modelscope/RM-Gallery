@@ -7,7 +7,7 @@ from rm_gallery.gallery.rm.alignment.base import BaseHelpfulnessPointWiseReward
 
 
 class HelpfulnessPointwiseTrainDataset(BaseTrainDataset):
-    """Specialized dataset for principle-based pointwise evaluation tasks"""
+    """Specialized dataset for rubric-based pointwise evaluation tasks"""
 
     def __init__(self, *args, **kwargs):
         self.helpfulness_reward = BaseHelpfulnessPointWiseReward(
@@ -83,7 +83,7 @@ helpfulness score: 4""",
         ]
 
     def _apply_chat_template(self, messages: List[Dict[str, str]]) -> str:
-        """Apply chat template with thinking enabled for principle evaluation"""
+        """Apply chat template with thinking enabled for rubric evaluation"""
         return self.tokenizer.apply_chat_template(
             messages, add_generation_prompt=True, tokenize=False, enable_thinking=True
         )
@@ -101,7 +101,7 @@ helpfulness score: 4""",
         return [{"role": "user", "content": formatted_prompt}]
 
     def _extract_ground_truth(self, row_dict: Dict[str, Any]) -> str:
-        """Extract ground truth for principle evaluation"""
+        """Extract ground truth for rubric evaluation"""
         row_dict = self._normalize_row(row_dict)
         try:
             output_data = row_dict.get("output", [])
@@ -115,6 +115,6 @@ helpfulness score: 4""",
             return ""
 
     def _get_data_source(self, row_dict: Dict[str, Any]) -> str:
-        """Get data source for principle evaluation"""
+        """Get data source for rubric evaluation"""
         row_dict = self._normalize_row(row_dict)
         return row_dict.get("data_source", "helpsteer2")
