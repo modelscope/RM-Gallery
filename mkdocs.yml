@@ -22,7 +22,7 @@ nav:
       - Overview: tutorial/building_rm/overview.ipynb
       - Using Built-in RMs: tutorial/building_rm/ready2use_rewards.md
       - Building Custom RMs: tutorial/building_rm/custom_reward.ipynb
-      - Building RMs with Auto-Rubric: tutorial/building_rm/autoprinciple.ipynb
+      - Building RMs with Auto-Rubric: tutorial/building_rm/autorubric.md
       - Benchmark: tutorial/building_rm/benchmark_practices.ipynb
 
   - Evaluating RM:
