@@ -477,21 +477,12 @@ class RewardBench2Evaluator(BaseEvaluator):
     def _evaluate_single_sample(self, sample: DataSample, **kwargs) -> DataSample:
         """Evaluate a single sample - used for parallel processing."""
         try:
-            # Get the evaluation result using _evaluate method which returns RewardResult
-            result = self.reward._evaluate(sample=sample, **kwargs)
+            # Use evaluate method instead of _evaluate to ensure _parallel is called
+            evaluated_sample = self.reward.evaluate(sample=sample, **kwargs)
 
-            # Store evaluation result in sample metadata for easy access
-            sample.metadata = sample.metadata or {}
-            sample.metadata["evaluation_result"] = {
-                "name": result.name,
-                "details": [
-                    {"name": detail.name, "reason": detail.reason, "rank": detail.rank}
-                    for detail in result.details
-                ],
-                "extra_data": result.extra_data,
-            }
-
-            return sample
+            # The evaluated_sample already has the reward details and additional_kwargs populated
+            # by the _parallel method, so we just need to return it
+            return evaluated_sample
         except Exception as e:
             logger.error(f"Failed to evaluate sample: {str(e)}")
             # Return sample with error in metadata
