@@ -550,7 +550,7 @@ After training, look for **LoRA** or full weights in `checkpoints/<TIMESTAMP>/ac
 
 This guide provides a complete workflow for training reward models using the VERL framework, including:
 
-1. **System Architecture Understanding**: Core components and working principles
+1. **System Architecture Understanding**: Core components and working rubrics
 2. **Environment Configuration**: Dependency installation and runtime setup
 3. **Data Preparation**: Download, conversion, and formatting
 4. **Two Training Modes**: Detailed implementation of Pointwise and Pairwise approaches
