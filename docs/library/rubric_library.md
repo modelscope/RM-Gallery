@@ -3,6 +3,27 @@ new: true
 ---
 # Rubric Library
 
+<div style="background: linear-gradient(135deg, rgba(139, 92, 246, 0.05) 0%, rgba(236, 72, 153, 0.05) 100%); padding: 1.5rem; border-radius: 0.5rem; margin-bottom: 2rem; border: 1px solid rgba(139, 92, 246, 0.15);">
+  <h2 style="margin-top: 0; font-size: 1.5rem; color: #7c3aed;">📋 Welcome to Rubric Library</h2>
+  <p style="margin-bottom: 0.75rem; line-height: 1.6;">
+    Discover our curated collection of <strong>evaluation rubrics</strong> designed to standardize and enhance response quality assessment.
+    Our library includes both query-agnostic rubrics for domain-specific evaluation and query-specific rubrics for targeted assessment scenarios.
+  </p>
+  <p style="margin-bottom: 0.75rem; line-height: 1.6;">
+    <strong>🎯 What you'll find:</strong>
+  </p>
+  <ul style="margin-left: 1.5rem; line-height: 1.8;">
+    <li><strong>Query-Agnostic Rubrics:</strong> Domain-specific evaluation criteria for general, code, math, science, technology, and engineering fields</li>
+    <li><strong>Query-Specific Rubrics:</strong> Targeted assessment frameworks tailored to specific user queries and scenarios</li>
+    <li><strong>Multi-Domain Coverage:</strong> From Python code quality to physics problem-solving, cybersecurity to system design</li>
+    <li><strong>Complexity Levels:</strong> Rubrics ranging from medium to very high complexity for various assessment needs</li>
+    <li><strong>Source Diversity:</strong> Community standards, academic frameworks, and industry best practices</li>
+  </ul>
+  <p style="margin-bottom: 0; line-height: 1.6; color: #4b5563;">
+    💡 <em>Use the search bar below to find specific rubrics, or browse by category and domain to explore our full collection.</em>
+  </p>
+</div>
+
 <div id="rubric-lib-root" class="ml-prose-container">
   <!-- 工具条 -->
   <div class="ml-card">
@@ -105,7 +126,7 @@ new: true
 <style>
 :root {
   --ml-radius: .75rem;
-  --ml-gap: 1rem;
+  --ml-gap: 1.25rem;
   --ml-shadow: 0 6px 24px rgba(0,0,0,.08);
 }
 .ml-prose-container { display: grid; gap: var(--ml-gap); }
@@ -124,8 +145,8 @@ new: true
   gap: var(--ml-gap);
   grid-template-columns: repeat(1, minmax(0,1fr));
 }
-@media (min-width: 640px){ .ml-grid{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
-@media (min-width: 1024px){ .ml-grid{ grid-template-columns: repeat(3, minmax(0,1fr)); } }
+@media (min-width: 768px){ .ml-grid{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
+@media (min-width: 1400px){ .ml-grid{ grid-template-columns: repeat(3, minmax(0,1fr)); } }
 
 /* Query-Specific list - single column */
 .ml-list-single {
@@ -136,27 +157,101 @@ new: true
 
 /* categories stacked */
 .ml-stacked { display: grid; gap: 1.25rem; }
-.ml-section{ display:grid; gap:.5rem; }
-.ml-section h3{ margin:.25rem 0; font-size:1.05rem; font-weight:700; opacity:.85; display:flex; gap:.5rem; align-items:center; }
+.ml-section{ display:grid; gap:1rem; margin-bottom: 2rem; }
+.ml-section h3{
+  margin:.5rem 0 1rem 0;
+  font-size:1.25rem;
+  font-weight:700;
+  opacity:.9;
+  display:flex;
+  gap:.5rem;
+  align-items:center;
+  border-bottom: 2px solid var(--border, rgba(0,0,0,.08));
+  padding-bottom: .75rem;
+}
+.ml-section-icon { font-size: 1.3rem; }
+.ml-section-count {
+  margin-left: auto;
+  font-size: .85rem;
+  font-weight: 500;
+  opacity: .6;
+  background: var(--muted, rgba(0,0,0,.04));
+  padding: .25rem .65rem;
+  border-radius: .4rem;
+}
 
 .ml-card-item{
   background: var(--card, var(--background, #fff));
   border: 1px solid var(--border, rgba(0,0,0,.08));
   border-radius: var(--ml-radius);
-  padding: 1rem;
-  transition: transform .18s ease, box-shadow .18s ease, border-color .18s ease;
+  padding: 1.25rem;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
   cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,.04);
+  position: relative;
+  overflow: hidden;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
 }
 .ml-card-item:hover{
-  transform: translateY(-2px);
-  box-shadow: var(--ml-shadow);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 24px rgba(0,0,0,.1), 0 2px 8px rgba(0,0,0,.06);
   border-color: var(--primary, #3b82f6);
 }
-.ml-card-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:.75rem; margin-bottom:.5rem; }
-.ml-card-title{ font-weight: 650; font-size: 1rem; }
-.ml-card-sub{ font-size: .85rem; opacity: .7; }
-.ml-card-sample{ margin-top:.5rem; font-size:.92rem; line-height:1.5; opacity:.9; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
-.ml-card-foot{ display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--border, rgba(0,0,0,.08)); padding-top:.5rem; margin-top:.75rem; font-size:.85rem; opacity:.8; }
+.ml-card-item:active{
+  transform: translateY(-1px);
+}
+.ml-card-head{ 
+  display:flex; 
+  align-items:flex-start; 
+  justify-content:space-between; 
+  gap:.75rem; 
+  margin-bottom:.75rem;
+}
+.ml-card-head > div:first-child { 
+  flex: 1; 
+  min-width: 0;
+}
+.ml-card-left { 
+  display: flex; 
+  gap: .4rem; 
+  flex-wrap: wrap; 
+  align-items: center;
+}
+.ml-card-title{ font-weight: 650; font-size: 1rem; line-height: 1.4; }
+.ml-card-title-main {
+  font-weight: 650;
+  font-size: 1.05rem;
+  line-height: 1.4;
+  margin-bottom: .35rem;
+  color: var(--foreground, #0a0a0a);
+  word-break: break-word;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+.ml-card-sub{ font-size: .85rem; opacity: .7; margin-top: .2rem; }
+.ml-card-sample{
+  margin-top:.5rem;
+  font-size:.9rem;
+  line-height:1.55;
+  opacity:.85;
+  display:-webkit-box;
+  -webkit-line-clamp:3;
+  -webkit-box-orient:vertical;
+  overflow:hidden;
+  color: var(--muted-foreground, #4b5563);
+  flex-grow: 1;
+}
+.ml-card-foot{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-top:1px solid var(--border, rgba(0,0,0,.06));
+  padding-top:.65rem;
+  margin-top:.85rem;
+  font-size:.82rem;
+}
 
 /* toolbar */
 .ml-toolbar{ display:flex; gap:.75rem; align-items:center; justify-content:space-between; flex-wrap:wrap; }
@@ -202,160 +297,207 @@ new: true
 .ml-error-icon{ font-size:1.4rem; }
 
 /* chips */
-.ml-chip{ 
-  display:inline-block; padding:.25rem .55rem; border-radius:999px; font-size:.78rem;
-  background: color-mix(in srgb, var(--primary,#3b82f6) 12%, transparent); color: var(--primary,#3b82f6);
-  max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+.ml-chip{
+  display:inline-block;
+  padding:.18rem .45rem;
+  border-radius:999px;
+  font-size:.62rem;
+  background: color-mix(in srgb, var(--primary,#3b82f6) 12%, transparent);
+  color: var(--primary,#3b82f6);
+  white-space: nowrap;
+  flex-shrink: 0;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  border: 1px solid color-mix(in srgb, var(--primary,#3b82f6) 20%, transparent);
+  line-height: 1.3;
 }
 .ml-chip.success{
-  background: color-mix(in srgb, #16a34a 14%, transparent);
+  background: color-mix(in srgb, #16a34a 12%, transparent);
   color: #16a34a;
+  border-color: color-mix(in srgb, #16a34a 20%, transparent);
 }
 .ml-chip.warning{
-  background: color-mix(in srgb, #f59e0b 14%, transparent);
-  color: #b45309;
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
+  color: #d97706;
+  border-color: color-mix(in srgb, #f59e0b 20%, transparent);
 }
 .ml-chip.helpfulness {
-  background: color-mix(in srgb, #3b82f6 14%, transparent);
+  background: color-mix(in srgb, #3b82f6 12%, transparent);
   color: #1d4ed8;
+  border-color: color-mix(in srgb, #3b82f6 20%, transparent);
 }
 .ml-chip.harmlessness {
-  background: color-mix(in srgb, #ef4444 14%, transparent);
+  background: color-mix(in srgb, #ef4444 12%, transparent);
   color: #dc2626;
+  border-color: color-mix(in srgb, #ef4444 20%, transparent);
 }
 .ml-chip.honesty {
-  background: color-mix(in srgb, #10b981 14%, transparent);
+  background: color-mix(in srgb, #10b981 12%, transparent);
   color: #059669;
+  border-color: color-mix(in srgb, #10b981 20%, transparent);
 }
 .ml-chip.general {
-  background: color-mix(in srgb, #6b7280 14%, transparent);
+  background: color-mix(in srgb, #6b7280 12%, transparent);
   color: #4b5563;
+  border-color: color-mix(in srgb, #6b7280 20%, transparent);
 }
 .ml-chip.task-specific {
-  background: color-mix(in srgb, #8b5cf6 14%, transparent);
+  background: color-mix(in srgb, #8b5cf6 12%, transparent);
   color: #7c3aed;
+  border-color: color-mix(in srgb, #8b5cf6 20%, transparent);
 }
 .ml-chip.domain-specific {
-  background: color-mix(in srgb, #f59e0b 14%, transparent);
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
   color: #d97706;
+  border-color: color-mix(in srgb, #f59e0b 20%, transparent);
 }
 
 /* New tag styles */
 .ml-chip.query-agnostic {
-  background: color-mix(in srgb, #10b981 14%, transparent);
+  background: color-mix(in srgb, #10b981 12%, transparent);
   color: #059669;
+  border-color: color-mix(in srgb, #10b981 20%, transparent);
 }
 .ml-chip.query-specific {
-  background: color-mix(in srgb, #f59e0b 14%, transparent);
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
   color: #d97706;
+  border-color: color-mix(in srgb, #f59e0b 20%, transparent);
 }
 .ml-chip.python {
-  background: color-mix(in srgb, #3776ab 14%, transparent);
+  background: color-mix(in srgb, #3776ab 12%, transparent);
   color: #3776ab;
+  border-color: color-mix(in srgb, #3776ab 20%, transparent);
 }
 .ml-chip.java {
-  background: color-mix(in srgb, #ed8b00 14%, transparent);
+  background: color-mix(in srgb, #ed8b00 12%, transparent);
   color: #ed8b00;
+  border-color: color-mix(in srgb, #ed8b00 20%, transparent);
 }
 .ml-chip.javascript {
-  background: color-mix(in srgb, #f7df1e 14%, transparent);
+  background: color-mix(in srgb, #f7df1e 12%, transparent);
   color: #b8860b;
+  border-color: color-mix(in srgb, #f7df1e 20%, transparent);
 }
 .ml-chip.cpp {
-  background: color-mix(in srgb, #00599c 14%, transparent);
+  background: color-mix(in srgb, #00599c 12%, transparent);
   color: #00599c;
+  border-color: color-mix(in srgb, #00599c 20%, transparent);
 }
 .ml-chip.english {
-  background: color-mix(in srgb, #6b7280 14%, transparent);
+  background: color-mix(in srgb, #6b7280 12%, transparent);
   color: #4b5563;
+  border-color: color-mix(in srgb, #6b7280 20%, transparent);
 }
 .ml-chip.rm_gallery {
-  background: color-mix(in srgb, #8b5cf6 14%, transparent);
+  background: color-mix(in srgb, #8b5cf6 12%, transparent);
   color: #7c3aed;
+  border-color: color-mix(in srgb, #8b5cf6 20%, transparent);
 }
 .ml-chip.community {
-  background: color-mix(in srgb, #16a34a 14%, transparent);
+  background: color-mix(in srgb, #16a34a 12%, transparent);
   color: #16a34a;
+  border-color: color-mix(in srgb, #16a34a 20%, transparent);
 }
 .ml-chip.academic {
-  background: color-mix(in srgb, #dc2626 14%, transparent);
+  background: color-mix(in srgb, #dc2626 12%, transparent);
   color: #dc2626;
+  border-color: color-mix(in srgb, #dc2626 20%, transparent);
 }
 .ml-chip.educational {
-  background: color-mix(in srgb, #0ea5e9 14%, transparent);
+  background: color-mix(in srgb, #0ea5e9 12%, transparent);
   color: #0ea5e9;
+  border-color: color-mix(in srgb, #0ea5e9 20%, transparent);
 }
 .ml-chip.sql {
-  background: color-mix(in srgb, #336791 14%, transparent);
+  background: color-mix(in srgb, #336791 12%, transparent);
   color: #336791;
+  border-color: color-mix(in srgb, #336791 20%, transparent);
 }
 .ml-chip.others {
-  background: color-mix(in srgb, #6b7280 14%, transparent);
+  background: color-mix(in srgb, #6b7280 12%, transparent);
   color: #4b5563;
+  border-color: color-mix(in srgb, #6b7280 20%, transparent);
 }
 .ml-chip.science {
-  background: color-mix(in srgb, #059669 14%, transparent);
+  background: color-mix(in srgb, #059669 12%, transparent);
   color: #059669;
+  border-color: color-mix(in srgb, #059669 20%, transparent);
 }
 .ml-chip.technology {
-  background: color-mix(in srgb, #7c3aed 14%, transparent);
+  background: color-mix(in srgb, #7c3aed 12%, transparent);
   color: #7c3aed;
+  border-color: color-mix(in srgb, #7c3aed 20%, transparent);
 }
 .ml-chip.engineering {
-  background: color-mix(in srgb, #dc2626 14%, transparent);
+  background: color-mix(in srgb, #dc2626 12%, transparent);
   color: #dc2626;
+  border-color: color-mix(in srgb, #dc2626 20%, transparent);
 }
 .ml-chip.ai_ml {
-  background: color-mix(in srgb, #8b5cf6 14%, transparent);
+  background: color-mix(in srgb, #8b5cf6 12%, transparent);
   color: #7c3aed;
+  border-color: color-mix(in srgb, #8b5cf6 20%, transparent);
 }
 .ml-chip.data_science {
-  background: color-mix(in srgb, #0ea5e9 14%, transparent);
+  background: color-mix(in srgb, #0ea5e9 12%, transparent);
   color: #0ea5e9;
+  border-color: color-mix(in srgb, #0ea5e9 20%, transparent);
 }
 .ml-chip.cybersecurity {
-  background: color-mix(in srgb, #dc2626 14%, transparent);
+  background: color-mix(in srgb, #dc2626 12%, transparent);
   color: #dc2626;
+  border-color: color-mix(in srgb, #dc2626 20%, transparent);
 }
 .ml-chip.software {
-  background: color-mix(in srgb, #059669 14%, transparent);
+  background: color-mix(in srgb, #059669 12%, transparent);
   color: #059669;
+  border-color: color-mix(in srgb, #059669 20%, transparent);
 }
 .ml-chip.systems {
-  background: color-mix(in srgb, #f59e0b 14%, transparent);
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
   color: #d97706;
+  border-color: color-mix(in srgb, #f59e0b 20%, transparent);
 }
 .ml-chip.design {
-  background: color-mix(in srgb, #ec4899 14%, transparent);
+  background: color-mix(in srgb, #ec4899 12%, transparent);
   color: #ec4899;
+  border-color: color-mix(in srgb, #ec4899 20%, transparent);
 }
 .ml-chip.database_community {
-  background: color-mix(in srgb, #336791 14%, transparent);
+  background: color-mix(in srgb, #336791 12%, transparent);
   color: #336791;
+  border-color: color-mix(in srgb, #336791 20%, transparent);
 }
 .ml-chip.industry_standard {
-  background: color-mix(in srgb, #374151 14%, transparent);
+  background: color-mix(in srgb, #374151 12%, transparent);
   color: #374151;
+  border-color: color-mix(in srgb, #374151 20%, transparent);
 }
 .ml-chip.research_community {
-  background: color-mix(in srgb, #7c3aed 14%, transparent);
+  background: color-mix(in srgb, #7c3aed 12%, transparent);
   color: #7c3aed;
+  border-color: color-mix(in srgb, #7c3aed 20%, transparent);
 }
 .ml-chip.security_standards {
-  background: color-mix(in srgb, #dc2626 14%, transparent);
+  background: color-mix(in srgb, #dc2626 12%, transparent);
   color: #dc2626;
+  border-color: color-mix(in srgb, #dc2626 20%, transparent);
 }
 .ml-chip.sre_community {
-  background: color-mix(in srgb, #f59e0b 14%, transparent);
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
   color: #d97706;
+  border-color: color-mix(in srgb, #f59e0b 20%, transparent);
 }
 .ml-chip.helpsteer3 {
-  background: color-mix(in srgb, #10b981 14%, transparent);
+  background: color-mix(in srgb, #10b981 12%, transparent);
   color: #059669;
+  border-color: color-mix(in srgb, #10b981 20%, transparent);
 }
 .ml-chip.ultrafeedback {
-  background: color-mix(in srgb, #3b82f6 14%, transparent);
+  background: color-mix(in srgb, #3b82f6 12%, transparent);
   color: #1d4ed8;
+  border-color: color-mix(in srgb, #3b82f6 20%, transparent);
 }
 
 /* Tag container */
@@ -420,6 +562,23 @@ new: true
   opacity: 0.7;
 }
 
+/* Domain-specific chip colors */
+.ml-chip.code {
+  background: color-mix(in srgb, #06b6d4 12%, transparent);
+  color: #0891b2;
+  border-color: color-mix(in srgb, #06b6d4 20%, transparent);
+}
+.ml-chip.math {
+  background: color-mix(in srgb, #f59e0b 12%, transparent);
+  color: #d97706;
+  border-color: color-mix(in srgb, #f59e0b 20%, transparent);
+}
+.ml-chip.format {
+  background: color-mix(in srgb, #ec4899 12%, transparent);
+  color: #db2777;
+  border-color: color-mix(in srgb, #ec4899 20%, transparent);
+}
+
 /* code/note */
 .ml-code{
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
@@ -427,8 +586,8 @@ new: true
   padding:.75rem; border-radius:.6rem; white-space:pre-wrap;
 }
 .ml-note{
-  background: color-mix(in srgb, #8b5cf6 9%, transparent);
-  border:1px solid color-mix(in srgb, #8b5cf6 28%, transparent);
+  background: color-mix(in srgb, #3b82f6 9%, transparent);
+  border:1px solid color-mix(in srgb, #3b82f6 28%, transparent);
   padding:.75rem; border-radius:.6rem;
 }
 .ml-query-box{
@@ -1071,16 +1230,16 @@ new: true
         return `
           <div class="ml-card-item" data-category="${categoryName}" data-domain="${domainName}">
             <div class="ml-card-head">
-              <div>
-                <div class="ml-card-title">${domainName.charAt(0).toUpperCase() + domainName.slice(1)} Domain</div>
-                <div class="ml-card-sub">${subdomainCount} ${subdomainCount > 1 ? 'subdomains' : 'subdomain'}</div>
+              <div class="ml-card-left">
+                <div class="ml-chip ${domainName}">${domainName.toUpperCase()}</div>
               </div>
-              <div class="ml-chip ${domainName}">${domainName.toUpperCase()}</div>
             </div>
+            <div class="ml-card-title-main">${domainName.charAt(0).toUpperCase() + domainName.slice(1)} Domain</div>
+            <div class="ml-card-sub">${subdomainCount} ${subdomainCount > 1 ? 'subdomains' : 'subdomain'}</div>
             <div class="ml-card-sample">Specialized evaluation rubrics for ${domainName} domain tasks and content</div>
             <div class="ml-card-foot">
-              <span>📁 ${subdomainCount} ${subdomainCount > 1 ? 'subdomains' : 'subdomain'}</span>
-              <span>Browse →</span>
+              <span style="opacity: 0.6;">Click to view details</span>
+              <span style="color: var(--primary, #3b82f6);">→</span>
             </div>
           </div>
         `;
@@ -1127,16 +1286,16 @@ new: true
       return `
         <div class="ml-card-item" data-domain="${domainName}">
           <div class="ml-card-head">
-            <div>
-              <div class="ml-card-title">${domainName.charAt(0).toUpperCase() + domainName.slice(1)} Domain</div>
-              <div class="ml-card-sub">${subdomainCount} ${subdomainCount > 1 ? 'subdomains' : 'subdomain'}</div>
+            <div class="ml-card-left">
+              <div class="ml-chip ${domainName}">${domainName.toUpperCase()}</div>
             </div>
-            <div class="ml-chip ${domainName}">${domainName.toUpperCase()}</div>
           </div>
+          <div class="ml-card-title-main">${domainName.charAt(0).toUpperCase() + domainName.slice(1)} Domain</div>
+          <div class="ml-card-sub">${subdomainCount} ${subdomainCount > 1 ? 'subdomains' : 'subdomain'}</div>
           <div class="ml-card-sample">Specialized evaluation rubrics for ${domainName} domain tasks and content</div>
           <div class="ml-card-foot">
-            <span>📁 ${subdomainCount} ${subdomainCount > 1 ? 'subdomains' : 'subdomain'}</span>
-            <span>Browse →</span>
+            <span style="opacity: 0.6;">Click to view details</span>
+            <span style="color: var(--primary, #3b82f6);">→</span>
           </div>
         </div>
       `;
@@ -1183,16 +1342,16 @@ new: true
         return `
           <div class="ml-card-item" data-category="${categoryName}" data-domain="${domainName}" data-subdomain="${subdomainName}">
             <div class="ml-card-head">
-              <div>
-                <div class="ml-card-title">${subdomainName.charAt(0).toUpperCase() + subdomainName.slice(1)}</div>
-                <div class="ml-card-sub">${rubricCount} evaluation rubrics</div>
+              <div class="ml-card-left">
+                <div class="ml-chip ${subdomainName}">${subdomainName.toUpperCase()}</div>
               </div>
-              <div class="ml-chip ${subdomainName}">${subdomainName.toUpperCase()}</div>
             </div>
+            <div class="ml-card-title-main">${subdomainName.charAt(0).toUpperCase() + subdomainName.slice(1)}</div>
+            <div class="ml-card-sub">${rubricCount} evaluation rubrics</div>
             <div class="ml-card-sample">Evaluation rubrics specialized for ${subdomainName} development and assessment</div>
             <div class="ml-card-foot">
-              <span>📋 ${rubricCount} ${rubricCount > 1 ? 'items' : 'item'}</span>
-              <span>Browse →</span>
+              <span style="opacity: 0.6;">Click to view details</span>
+              <span style="color: var(--primary, #3b82f6);">→</span>
             </div>
           </div>
         `;
@@ -1230,21 +1389,17 @@ new: true
       elRubrics.innerHTML = allRubrics.map((rubric, idx)=>`
         <div class="ml-card-item" data-idx="${idx}">
           <div class="ml-card-head">
-            <div>
-              <div class="ml-card-title">${rubric.name}</div>
-              <div class="ml-card-sub">${rubric.domain}${rubric.displaySubdomain ? ` > ${rubric.displaySubdomain}` : ''}</div>
+            <div class="ml-card-left">
+              <div class="ml-chip query-specific">QUERY-SPECIFIC</div>
+              <div class="ml-chip ${getComplexityClass(rubric.complexity)}">${rubric.complexity.toUpperCase()}</div>
             </div>
-            <div class="ml-chip ${getComplexityClass(rubric.complexity)}">${rubric.complexity}</div>
           </div>
+          <div class="ml-card-title-main">${rubric.name}</div>
+          <div class="ml-card-sub">${rubric.domain}${rubric.displaySubdomain ? ` > ${rubric.displaySubdomain}` : ''}</div>
           <div class="ml-card-sample">${clampTxt(rubric.description, 120)}</div>
-          <div class="ml-tags">
-            <div class="ml-chip query-specific">Query-Specific</div>
-            <div class="ml-chip ${rubric.language}">${rubric.language}</div>
-            <div class="ml-chip ${rubric.source}">${rubric.source}</div>
-          </div>
           <div class="ml-card-foot">
-            <span>📏 ${rubric.rubrics ? rubric.rubrics.length : 0} ${rubric.rubrics && rubric.rubrics.length > 1 ? 'rubrics' : 'rubric'}</span>
-            <span>Details →</span>
+            <span style="opacity: 0.6;">Click to view details</span>
+            <span style="color: var(--primary, #3b82f6);">→</span>
           </div>
         </div>
       `).join("");
@@ -1286,21 +1441,17 @@ new: true
     elRubrics.innerHTML = rubricList.map((rubric, idx)=>`
       <div class="ml-card-item" data-idx="${idx}">
         <div class="ml-card-head">
-          <div>
-            <div class="ml-card-title">${rubric.name}</div>
-            <div class="ml-card-sub">${rubric.domain}${rubric.subdomain ? ` > ${rubric.subdomain}` : ''}</div>
+          <div class="ml-card-left">
+            <div class="ml-chip ${rubric.queryRelated ? 'query-specific' : 'query-agnostic'}">${rubric.queryRelated ? 'QUERY-SPECIFIC' : 'QUERY-AGNOSTIC'}</div>
+            <div class="ml-chip ${getComplexityClass(rubric.complexity)}">${rubric.complexity.toUpperCase()}</div>
           </div>
-          <div class="ml-chip ${getComplexityClass(rubric.complexity)}">${rubric.complexity}</div>
         </div>
+        <div class="ml-card-title-main">${rubric.name}</div>
+        <div class="ml-card-sub">${rubric.domain}${rubric.subdomain ? ` > ${rubric.subdomain}` : ''}</div>
         <div class="ml-card-sample">${clampTxt(rubric.description, 120)}</div>
-        <div class="ml-tags">
-          <div class="ml-chip ${rubric.queryRelated ? 'query-specific' : 'query-agnostic'}">${rubric.queryRelated ? 'Query-Specific' : 'Query-Agnostic'}</div>
-          <div class="ml-chip ${rubric.language}">${rubric.language}</div>
-          <div class="ml-chip ${rubric.source}">${rubric.source}</div>
-        </div>
         <div class="ml-card-foot">
-          <span>📏 ${rubric.rubrics ? rubric.rubrics.length : 0} rubrics</span>
-          <span>Details →</span>
+          <span style="opacity: 0.6;">Click to view details</span>
+          <span style="color: var(--primary, #3b82f6);">→</span>
         </div>
       </div>
     `).join("");
@@ -1478,21 +1629,17 @@ result = reward.evaluate(sample)`;
     elRubrics.innerHTML = filteredRubrics.map((rubric, idx)=>`
       <div class="ml-card-item" data-idx="${idx}">
         <div class="ml-card-head">
-          <div>
-            <div class="ml-card-title">${rubric.name}</div>
-            <div class="ml-card-sub">${rubric.domain}${rubric.subdomain ? ` > ${rubric.subdomain}` : ''}</div>
+          <div class="ml-card-left">
+            <div class="ml-chip ${rubric.queryRelated ? 'query-specific' : 'query-agnostic'}">${rubric.queryRelated ? 'QUERY-SPECIFIC' : 'QUERY-AGNOSTIC'}</div>
+            <div class="ml-chip ${getComplexityClass(rubric.complexity)}">${rubric.complexity.toUpperCase()}</div>
           </div>
-          <div class="ml-chip ${getComplexityClass(rubric.complexity)}">${rubric.complexity}</div>
         </div>
+        <div class="ml-card-title-main">${rubric.name}</div>
+        <div class="ml-card-sub">${rubric.domain}${rubric.subdomain ? ` > ${rubric.subdomain}` : ''}</div>
         <div class="ml-card-sample">${clampTxt(rubric.description, 120)}</div>
-        <div class="ml-tags">
-          <div class="ml-chip ${rubric.queryRelated ? 'query-specific' : 'query-agnostic'}">${rubric.queryRelated ? 'Query-Specific' : 'Query-Agnostic'}</div>
-          <div class="ml-chip ${rubric.language}">${rubric.language}</div>
-          <div class="ml-chip ${rubric.source}">${rubric.source}</div>
-        </div>
         <div class="ml-card-foot">
-          <span>📏 ${rubric.rubrics ? rubric.rubrics.length : 0} rubrics</span>
-          <span>Details →</span>
+          <span style="opacity: 0.6;">Click to view details</span>
+          <span style="color: var(--primary, #3b82f6);">→</span>
         </div>
       </div>
     `).join("");
