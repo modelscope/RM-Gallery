@@ -194,7 +194,7 @@ BaseReward
     │   ├── BasePointWisePrincipleReward            # Point-wise Principle-guided evaluation.
     │   └── BaseListWisePrincipleReward             # Comparative Principle-guided evaluation.
 ```
-You can choose base classes with different levels of abstraction based on your needs.   Here are some typical use cases, and For details please check [building custom rewards tutorial](./tutorial/building_rm/custom_reward.ipynb)
+You can choose base classes with different levels of abstraction based on your needs.   Here are some typical use cases, and For details please check [building custom rewards tutorial](./tutorial/building_rm/custom_reward.md)
 
 **1️⃣ Custom Principles with Principle-Critic-Score Paradigm**
 If you follow the Principle-Critic-Score Paradigm and only want to use your own principles
@@ -412,11 +412,11 @@ See Details in [data_refinement](./tutorial/rm_application/data_refinement.ipynb
 |                 | [data loader](./tutorial/data/load.ipynb)                             | How to load and preprocess data for RM-Gallery                                                |
 |                 | [data processor](./tutorial/data/process.ipynb)                       | Data processing and transformation best practices                                             |
 | **Training RM** | [training rm guide](./tutorial/training_rm/training_rm.md)            | Step-by-step guide for training reward models                                                 |
-| **Building RM** | [overview](./tutorial/building_rm/overview.ipynb)                     | Overview of building custom reward models                                                     |
+| **Building RM** | [overview](./tutorial/building_rm/overview.md)                     | Overview of building custom reward models                                                     |
 |                 | [ready-to-use RMs](./tutorial/building_rm/ready2use_rewards.md)        | List and usage of built-in, ready-to-use reward models                                        |
-|                 | [building a custom RM](./tutorial/building_rm/custom_reward.ipynb)     | How to design and implement your own reward model                                             |
-|                 | [auto principle](./tutorial/building_rm/autoprinciple.ipynb)           | Automatically generating evaluation principles for reward models                              |
-|                 | [benchmark practices](./tutorial/building_rm/benchmark_practices.ipynb)| Best practices and benchmarks for evaluating reward models                                    |
+|                 | [building a custom RM](./tutorial/building_rm/custom_reward.md)     | How to design and implement your own reward model                                             |
+|                 | [auto principle](./tutorial/building_rm/autoprinciple.md)           | Automatically generating evaluation principles for reward models                              |
+|                 | [benchmark practices](./tutorial/building_rm/benchmark_practices.md)| Best practices and benchmarks for evaluating reward models                                    |
 | **RM Serving**  | [High-Performance RM Serving](./tutorial/rm_serving/rm_server.md)      | Deploying reward models as scalable, production-ready services                                |
 | **RM Application** | [post training](./tutorial/rm_application/post_training.ipynb)      | Integrating reward models into RLHF/post-training pipelines                                   |
 |                 | [best-of-n](./tutorial/rm_application/best_of_n.ipynb)                 | Selecting the best response from multiple candidates using reward models                      |

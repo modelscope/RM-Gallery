@@ -16,30 +16,41 @@ nav:
   - Library:
       - RM Library: library/rm_library.md
       - Rubric Library: library/rubric_library.md
-  - Training RM:
-      - Data:
-          - Pipeline: tutorial/data/pipeline.ipynb
-          - Annotation: tutorial/data/annotation.ipynb
-          - Load: tutorial/data/load.ipynb
-          - Process: tutorial/data/process.ipynb
-      - Training RM: tutorial/training_rm/training_rm.md
-      - Bradley-Terry Training: tutorial/training_rm/bradley_terry_rm.md
-      - SFT Training: tutorial/training_rm/sft_rm.md
+  - API Reference: api_reference.md
+
   - Building RM:
       - Overview: tutorial/building_rm/overview.ipynb
-      - Auto Rubric: tutorial/building_rm/autoprinciple.ipynb
-      - Customization: tutorial/building_rm/custom_reward.ipynb
-      - Built-in Rewards: tutorial/building_rm/ready2use_rewards.md
+      - Using Built-in RMs: tutorial/building_rm/ready2use_rewards.md
+      - Building Custom RMs: tutorial/building_rm/custom_reward.ipynb
+      - Building RMs with Auto-Rubric: tutorial/building_rm/autoprinciple.ipynb
       - Benchmark: tutorial/building_rm/benchmark_practices.ipynb
+
   - Evaluating RM:
-      - RewardBench: tutorial/evaluation/rewardbench2.md
+      - Overview: tutorial/evaluation/overview.md
+      - RewardBench2: tutorial/evaluation/rewardbench2.md
+      - Conflict Detector: tutorial/evaluation/conflict_detector.md
+      - JudgeBench: tutorial/evaluation/judgebench.md
+      - RM-Bench: tutorial/evaluation/rmbench.md
+      - RMB: tutorial/evaluation/rmb.md
+
   - Using RM:
       - RM Server: tutorial/rm_serving/rm_server.md
       - Boosting Strategy: using_rm/boosting_strategy.md
+      - Data Refinement: tutorial/rm_application/data_refinement.ipynb
       - Post Training with RM: tutorial/rm_application/post_training.ipynb
-      - Refinement: tutorial/rm_application/data_refinement.ipynb
       - Best of N: tutorial/rm_application/best_of_n.ipynb
-  - API Reference: api_reference.md
+
+  - Training RM:
+      - Overview: tutorial/training_rm/overview.md
+      - Training RM with RL: tutorial/training_rm/training_rm.md
+      - Training RM with SFT: tutorial/training_rm/sft_rm.md
+      - Training Bradley-Terry RM: tutorial/training_rm/bradley_terry_rm.md
+
+  - Data:
+      - Overview: tutorial/data/pipeline.ipynb
+      - Annotate Data: tutorial/data/annotation.ipynb
+      - Load Data: tutorial/data/load.ipynb
+      - Process Data: tutorial/data/process.ipynb
 plugins:
   - search
   - mkdocs-jupyter:
