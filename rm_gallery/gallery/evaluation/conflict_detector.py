@@ -8,7 +8,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
 from enum import Enum
 from functools import partial
-from typing import Dict, List, Optional, Type
+from typing import Dict, List, Optional
 
 import fire
 import numpy as np
@@ -404,11 +404,11 @@ class ConflictDetectionReward(BaseLLMReward, BasePairWiseReward):
     comparison_mode: str = Field(
         default="pairwise", description="比较模式: 'pairwise' 或 'pointwise'"
     )
-    pointwise_template: Type[PointwiseTemplate] = Field(
-        default=PointwiseTemplate, description="pointwise评分模板"
+    pointwise_template: PointwiseTemplate = Field(
+        default_factory=PointwiseTemplate, description="pointwise评分模板"
     )
-    pairwise_template: Type[PairComparisonTemplate] = Field(
-        default=PairComparisonTemplate, description="pairwise比较模板"
+    pairwise_template: PairComparisonTemplate = Field(
+        default_factory=PairComparisonTemplate, description="pairwise比较模板"
     )
     conflict_detector: ConflictDetector = Field(
         default_factory=ConflictDetector, description="冲突检测器实例"

@@ -394,7 +394,7 @@ Generate multiple candidate responses for a given prompt and use a reward model 
 sample_best_of_n = rm.best_of_n(samples[0],n=1)
 print(sample_best_of_n.model_dump_json())
 ```
-See Details in [best_of_n](./tutorial/rm_application/best_of_n.ipynb)
+See Details in [Boosting Strategy](./using_rm/boosting_strategy.md)
 <strong>Posting Training</strong>
 Integrate reward models into RLHF (Reinforcement Learning from Human Feedback) or other post-training pipelines to optimize LLMs for human-aligned objectives. See Details in [post_training](./tutorial/rm_application/post_training.ipynb)
 
@@ -419,7 +419,7 @@ See Details in [data_refinement](./tutorial/rm_application/data_refinement.ipynb
 |                 | [benchmark practices](./tutorial/building_rm/benchmark_practices.md)| Best practices and benchmarks for evaluating reward models                                    |
 | **RM Serving**  | [High-Performance RM Serving](./tutorial/rm_serving/rm_server.md)      | Deploying reward models as scalable, production-ready services                                |
 | **RM Application** | [post training](./tutorial/rm_application/post_training.ipynb)      | Integrating reward models into RLHF/post-training pipelines                                   |
-|                 | [best-of-n](./tutorial/rm_application/best_of_n.ipynb)                 | Selecting the best response from multiple candidates using reward models                      |
+|                 | [Boosting Strategy](./using_rm/boosting_strategy.md)                 | Selecting the best response from multiple candidates using reward models                      |
 |                 | [refinement](./tutorial/rm_application/data_refinement.ipynb)               | Iterative data refinement using reward model feedback                                         |
 
 

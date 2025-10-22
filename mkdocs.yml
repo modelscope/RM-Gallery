@@ -22,7 +22,7 @@ nav:
       - Overview: tutorial/building_rm/overview.md
       - Using Built-in RMs: tutorial/building_rm/ready2use_rewards.md
       - Building Custom RMs: tutorial/building_rm/custom_reward.md
-      - Building RMs with Auto-Rubric: tutorial/building_rm/autorubric.md
+      - Rubric as Rewards: tutorial/building_rm/autorubric.md
 
   - Evaluating RM:
       - Overview: tutorial/evaluation/overview.md
@@ -34,16 +34,16 @@ nav:
 
   - Using RM:
       - RM Server: tutorial/rm_serving/rm_server.md
-      - Boosting Strategy: using_rm/boosting_strategy.md
+      # - Boosting Strategy: using_rm/boosting_strategy.md
       - Data Refinement: tutorial/rm_application/data_refinement.md
       - Post Training with RM: tutorial/rm_application/post_training.md
       - Best of N: tutorial/rm_application/best_of_n.md
 
   - Training RM:
       - Overview: tutorial/training_rm/overview.md
-      - Training RM with RL: tutorial/training_rm/training_rm.md
-      - Training RM with SFT: tutorial/training_rm/sft_rm.md
       - Training Bradley-Terry RM: tutorial/training_rm/bradley_terry_rm.md
+      - Training RM with SFT: tutorial/training_rm/sft_rm.md
+      - Training RM with RL: tutorial/training_rm/training_rm.md
 
   - Data:
       - Overview: tutorial/data/pipeline.md
@@ -51,7 +51,13 @@ nav:
       - Load Data: tutorial/data/load.md
       - Process Data: tutorial/data/process.md
 plugins:
-  - search
+  - search:
+      lang:
+        - en
+        - zh
+      separator: '[\s\-\.]+'
+      min_search_length: 2
+      prebuild_index: true
   - mkdocs-jupyter:
       ignore_h1_titles: True
       execute: False
@@ -100,3 +106,4 @@ extra_css:
 
 extra_javascript:
   - javascripts/code-copy.js
+  - javascripts/search-fix.js
