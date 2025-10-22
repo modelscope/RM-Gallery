@@ -77,7 +77,6 @@ new: true
         <div class="ml-chip" id="rubric-modal-category"></div>
         <div class="ml-chip success" id="rubric-modal-domain"></div>
       </div>
-      <button class="ml-close" aria-label="Close">✕</button>
     </div>
 
     <div class="ml-modal-section" id="rubric-modal-query-section" hidden>
@@ -202,21 +201,21 @@ new: true
 .ml-card-item:active{
   transform: translateY(-1px);
 }
-.ml-card-head{ 
-  display:flex; 
-  align-items:flex-start; 
-  justify-content:space-between; 
-  gap:.75rem; 
+.ml-card-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:.75rem;
   margin-bottom:.75rem;
 }
-.ml-card-head > div:first-child { 
-  flex: 1; 
+.ml-card-head > div:first-child {
+  flex: 1;
   min-width: 0;
 }
-.ml-card-left { 
-  display: flex; 
-  gap: .4rem; 
-  flex-wrap: wrap; 
+.ml-card-left {
+  display: flex;
+  gap: .4rem;
+  flex-wrap: wrap;
   align-items: center;
 }
 .ml-card-title{ font-weight: 650; font-size: 1rem; line-height: 1.4; }
@@ -274,10 +273,40 @@ new: true
   border:1px solid var(--border, rgba(0,0,0,.12));
   background: var(--accent, var(--background, #fff));
   color: var(--foreground, #0a0a0a);
-  padding:.55rem .9rem; border-radius:.55rem; cursor:pointer;
+  padding:.55rem 1.2rem;
+  border-radius:.55rem;
+  cursor:pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 500;
+  position: relative;
+  overflow: hidden;
 }
-.ml-btn.secondary{ background: var(--muted, rgba(0,0,0,.03)); }
+.ml-btn.secondary{
+  background: linear-gradient(135deg, var(--primary, #3b82f6) 0%, color-mix(in srgb, var(--primary, #3b82f6) 90%, #6366f1) 100%);
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+.ml-btn.secondary:hover{
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary, #3b82f6) 90%, #000) 0%, color-mix(in srgb, var(--primary, #3b82f6) 80%, #000) 100%);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4), 0 2px 8px rgba(59, 130, 246, 0.2);
+  transform: translateY(-2px) scale(1.02);
+}
+.ml-btn.secondary:active{
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
 .ml-btn:hover{ border-color: var(--primary, #3b82f6); }
+
+/* 支持减少动画偏好设置 */
+@media (prefers-reduced-motion: reduce) {
+  .ml-btn {
+    transition: none;
+  }
+  .ml-btn.secondary:hover {
+    transform: none;
+  }
+}
 
 /* stats/breadcrumb */
 .ml-stats{ margin-top:.5rem; font-size:.9rem; opacity:.8; }
@@ -631,8 +660,16 @@ new: true
 @media (min-width: 640px){ .ml-meta{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
 .ml-meta > div{ display:flex; justify-content:space-between; align-items:center; padding:.5rem .75rem;
   border:1px dashed var(--border, rgba(0,0,0,.12)); border-radius:.5rem; background: var(--background, #fff);
+  gap: .5rem;
 }
-.ml-meta span{ opacity:.7; }
+.ml-meta span{ opacity:.7; flex-shrink: 0; }
+.ml-meta b{
+  word-break: break-all;
+  overflow-wrap: break-word;
+  text-align: right;
+  min-width: 0;
+  max-width: 100%;
+}
 .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
 
 /* modal */
@@ -645,9 +682,7 @@ new: true
   border:1px solid var(--border, rgba(0,0,0,.1)); border-radius: var(--ml-radius);
   padding: 1rem; box-shadow: var(--ml-shadow);
 }
-.ml-modal-header{ display:flex; justify-content:space-between; align-items:center; gap:.75rem; margin-bottom:.5rem; }
-.ml-close{ border:none; background:none; font-size:1.1rem; cursor:pointer; opacity:.6; }
-.ml-close:hover{ opacity:1; }
+.ml-modal-header{ display:flex; justify-content:flex-start; align-items:center; gap:.75rem; margin-bottom:.5rem; }
 .ml-modal-section{ display:grid; gap:.35rem; margin-top:.75rem; }
 .ml-section-title{ font-weight:650; opacity:.85; }
 .ml-modal-footer{ display:flex; justify-content:flex-end; margin-top:1rem; }
@@ -803,7 +838,7 @@ new: true
       ],
       complexity: "Medium"
     },
-    
+
     // Query-Agnostic Code Rubrics
     {
       id: "python_code_quality_rubric",
@@ -877,7 +912,7 @@ new: true
       ],
       complexity: "Medium"
     },
-    
+
     // Query-Agnostic Math Rubrics
     {
       id: "algebra_problem_solving_rubric",
@@ -897,7 +932,7 @@ new: true
       ],
       complexity: "Medium"
     },
-    
+
     // Query-Agnostic Science Rubrics
     {
       id: "physics_explanation_rubric",
@@ -935,7 +970,7 @@ new: true
       ],
       complexity: "High"
     },
-    
+
     // Query-Agnostic Technology Rubrics
     {
       id: "ai_ml_model_evaluation_rubric",
@@ -973,7 +1008,7 @@ new: true
       ],
       complexity: "Very High"
     },
-    
+
     // Query-Agnostic Engineering Rubrics
     {
       id: "software_architecture_rubric",
@@ -1011,7 +1046,7 @@ new: true
       ],
       complexity: "High"
     },
-    
+
     // Query-Specific General Rubrics
     {
       id: "chat_helpfulness_rubric",
@@ -1045,7 +1080,7 @@ new: true
       ],
       complexity: "High"
     },
-    
+
     // Query-Specific Code Rubrics
     {
       id: "python_debugging_assistance_rubric",
@@ -1079,7 +1114,7 @@ new: true
       ],
       complexity: "Medium"
     },
-    
+
     // Query-Specific Technology Rubrics
     {
       id: "ai_model_recommendation_rubric",
@@ -1097,7 +1132,7 @@ new: true
       ],
       complexity: "High"
     },
-    
+
     // Query-Specific Science Rubrics
     {
       id: "physics_problem_solving_rubric",
@@ -1131,7 +1166,7 @@ new: true
       ],
       complexity: "High"
     },
-    
+
     // Query-Specific Engineering Rubrics
     {
       id: "system_design_consultation_rubric",
@@ -1149,7 +1184,7 @@ new: true
       ],
       complexity: "Very High"
     },
-    
+
     // Query-Specific Math Rubrics
     {
       id: "calculus_tutoring_rubric",
@@ -1193,11 +1228,11 @@ new: true
         const categoryKey = rubric.queryRelated ? "Query-Specific Rubrics" : "Query-Agnostic Rubrics";
         const domainKey = rubric.domain;
         const subdomainKey = rubric.subdomain || "general";
-        
+
         if (!acc[categoryKey]) acc[categoryKey] = {};
         if (!acc[categoryKey][domainKey]) acc[categoryKey][domainKey] = {};
         if (!acc[categoryKey][domainKey][subdomainKey]) acc[categoryKey][domainKey][subdomainKey] = [];
-        
+
         acc[categoryKey][domainKey][subdomainKey].push(rubric);
         return acc;
       }, {});
@@ -1211,7 +1246,7 @@ new: true
 
   // —— Render Categories (Top Level)
   function renderCategories(){
-    VIEW = "categories"; 
+    VIEW = "categories";
     CURR_CATEGORY = null; CURR_DOMAIN = null; CURR_SUBDOMAIN = null;
     hide(elRubrics); hide(elEmpty); show(elCategories);
     hide(elCrumb);
@@ -1266,7 +1301,7 @@ new: true
 
   // —— Render Domains (Second Level)
   function renderDomains(categoryName){
-    VIEW = "domains"; 
+    VIEW = "domains";
     CURR_CATEGORY = categoryName; CURR_DOMAIN = null; CURR_SUBDOMAIN = null;
     hide(elRubrics); hide(elEmpty); show(elCategories);
     show(elCrumb);
@@ -1274,7 +1309,7 @@ new: true
     elType.textContent = "domains";
 
     const domains = GROUPED_RUBRICS[categoryName] || {};
-    
+
     const sections = Object.entries(domains).map(([domainName, subdomains])=>{
       const totalRubrics = Object.values(subdomains).reduce((sum, rubrics) => {
         return sum + (Array.isArray(rubrics) ? rubrics.length : 0);
@@ -1318,13 +1353,13 @@ new: true
 
   // —— Render Subdomains (Third Level)
   function renderSubdomains(categoryName, domainName){
-    VIEW = "subdomains"; 
+    VIEW = "subdomains";
     CURR_CATEGORY = categoryName; CURR_DOMAIN = domainName; CURR_SUBDOMAIN = null;
     show(elCrumb);
     elCrumbTitle.textContent = `${categoryName} > ${domainName}`;
 
     const subdomains = GROUPED_RUBRICS[categoryName][domainName] || {};
-    
+
     // If only one subdomain (general), go directly to rubrics
     if (Object.keys(subdomains).length === 1 && subdomains.general) {
       renderRubrics(categoryName, domainName, "general");
@@ -1370,14 +1405,14 @@ new: true
       show(elStats);
       elCount.textContent = Object.keys(subdomains).length;
       elTotal.textContent = Object.keys(subdomains).length;
-    } 
+    }
     // For Query-Specific: show all rubrics in grid layout
     else {
       hide(elCategories); hide(elEmpty); show(elRubrics);
       elType.textContent = "rubrics";
 
       // Flatten all rubrics from all subdomains
-      const allRubrics = Object.entries(subdomains).flatMap(([subdomainName, rubrics]) => 
+      const allRubrics = Object.entries(subdomains).flatMap(([subdomainName, rubrics]) =>
         Array.isArray(rubrics) ? rubrics.map(r => ({...r, displaySubdomain: subdomainName})) : []
       );
 
@@ -1427,8 +1462,8 @@ new: true
     show(elCrumb);
     elType.textContent = "rubrics";
     // Avoid showing duplicate names in breadcrumb (e.g., general > general)
-    const breadcrumb = domainName === subdomainName 
-      ? `${categoryName} > ${domainName}` 
+    const breadcrumb = domainName === subdomainName
+      ? `${categoryName} > ${domainName}`
       : `${categoryName} > ${domainName} > ${subdomainName}`;
     elCrumbTitle.textContent = breadcrumb;
 
@@ -1483,7 +1518,7 @@ new: true
     mCategory.textContent = rubric.queryRelated ? "Query-Specific" : "Query-Agnostic";
     mCategory.className = `ml-chip ${rubric.queryRelated ? 'query-specific' : 'query-agnostic'}`;
     mDomain.textContent = `${rubric.domain}${rubric.subdomain ? ` > ${rubric.subdomain}` : ''}`;
-    
+
     // Show query for Query-Specific rubrics
     if (rubric.queryRelated && rubric.query) {
       mQuery.textContent = rubric.query;
@@ -1491,7 +1526,7 @@ new: true
     } else {
       mQuerySection.hidden = true;
     }
-    
+
     // Hide description and scenario for Query-Specific rubrics
     if (rubric.queryRelated) {
       mDescriptionSection.hidden = true;
@@ -1559,12 +1594,12 @@ result = reward.evaluate(sample)`;
       card.addEventListener("click", ()=>{
         const categoryName = card.getAttribute("data-category");
         const domainName = card.getAttribute("data-domain");
-        
+
         // For Query-Agnostic: check if domain has multiple subdomains
         if (categoryName === "Query-Agnostic Rubrics") {
           const subdomains = GROUPED_RUBRICS[categoryName][domainName] || {};
           const subdomainKeys = Object.keys(subdomains);
-          
+
           // If only general subdomain or single subdomain, go directly to rubrics
           if (subdomainKeys.length === 1) {
             renderRubrics(categoryName, domainName, subdomainKeys[0]);
@@ -1595,11 +1630,8 @@ result = reward.evaluate(sample)`;
   function handleSearch(){
     const q = elSearch.value.trim().toLowerCase();
     if(!q){
-      // Return to current view without search
-      if(VIEW==="categories") renderCategories();
-      else if(VIEW==="domains") renderDomains(CURR_CATEGORY);
-      else if(VIEW==="subdomains") renderSubdomains(CURR_CATEGORY, CURR_DOMAIN);
-      else if(VIEW==="rubrics") renderRubrics(CURR_CATEGORY, CURR_DOMAIN, CURR_SUBDOMAIN);
+      // Clear search: return to categories view
+      renderCategories();
       return;
     }
 
@@ -1614,8 +1646,13 @@ result = reward.evaluate(sample)`;
       (rubric.rubrics && rubric.rubrics.some(p => p.toLowerCase().includes(q)))
     );
 
-    // Show search results as rubrics
-    VIEW = "rubrics";
+    // Show search results as rubrics (keep original VIEW state for restoration)
+    const PREV_VIEW = VIEW;
+    const PREV_CATEGORY = CURR_CATEGORY;
+    const PREV_DOMAIN = CURR_DOMAIN;
+    const PREV_SUBDOMAIN = CURR_SUBDOMAIN;
+
+    VIEW = "search";
     CURR_CATEGORY = null; CURR_DOMAIN = null; CURR_SUBDOMAIN = null;
     hide(elCategories); hide(elEmpty); show(elRubrics);
     show(elCrumb);
@@ -1659,14 +1696,28 @@ result = reward.evaluate(sample)`;
   }
 
   // —— Events
-  elRetry?.addEventListener("click", loadAll);
-  elBack?.addEventListener("click", ()=> renderCategories());
-  elSearch?.addEventListener("input", debounce(handleSearch, 250));
-  elClear?.addEventListener("click", ()=>{
-    elSearch.value = ""; handleSearch();
-  });
+  function initEvents() {
+    elRetry?.addEventListener("click", loadAll);
+    elBack?.addEventListener("click", ()=> renderCategories());
+    elSearch?.addEventListener("input", debounce(handleSearch, 250));
+    elClear?.addEventListener("click", ()=>{
+      elSearch.value = ""; handleSearch();
+    });
+
+    // Close modal when clicking outside
+    dlg?.addEventListener("click", (e)=> {
+      const rect = dlg.querySelector('.ml-modal-card')?.getBoundingClientRect();
+      if (rect && (e.clientX < rect.left || e.clientX > rect.right ||
+                   e.clientY < rect.top || e.clientY > rect.bottom)) {
+        dlg.close();
+      }
+    });
+  }
 
   // —— Init
-  document.addEventListener("DOMContentLoaded", loadAll);
+  document.addEventListener("DOMContentLoaded", ()=> {
+    initEvents();
+    loadAll();
+  });
 })();
 </script>

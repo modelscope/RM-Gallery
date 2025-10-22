@@ -78,7 +78,6 @@ new: true
         <div class="ml-chip" id="rm-modal-category"></div>
         <div class="ml-chip success" id="rm-modal-type"></div>
       </div>
-      <button class="ml-close" aria-label="Close">✕</button>
     </div>
 
     <div class="ml-modal-section">
@@ -256,10 +255,40 @@ new: true
   border:1px solid var(--border, rgba(0,0,0,.12));
   background: var(--accent, var(--background, #fff));
   color: var(--foreground, #0a0a0a);
-  padding:.55rem .9rem; border-radius:.55rem; cursor:pointer;
+  padding:.55rem 1.2rem;
+  border-radius:.55rem;
+  cursor:pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  font-weight: 500;
+  position: relative;
+  overflow: hidden;
 }
-.ml-btn.secondary{ background: var(--muted, rgba(0,0,0,.03)); }
+.ml-btn.secondary{
+  background: linear-gradient(135deg, var(--primary, #3b82f6) 0%, color-mix(in srgb, var(--primary, #3b82f6) 90%, #6366f1) 100%);
+  color: #fff;
+  border: none;
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+}
+.ml-btn.secondary:hover{
+  background: linear-gradient(135deg, color-mix(in srgb, var(--primary, #3b82f6) 90%, #000) 0%, color-mix(in srgb, var(--primary, #3b82f6) 80%, #000) 100%);
+  box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4), 0 2px 8px rgba(59, 130, 246, 0.2);
+  transform: translateY(-2px) scale(1.02);
+}
+.ml-btn.secondary:active{
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+}
 .ml-btn:hover{ border-color: var(--primary, #3b82f6); }
+
+/* 支持减少动画偏好设置 */
+@media (prefers-reduced-motion: reduce) {
+  .ml-btn {
+    transition: none;
+  }
+  .ml-btn.secondary:hover {
+    transform: none;
+  }
+}
 
 /* stats/breadcrumb */
 .ml-stats{ margin-top:.5rem; font-size:.9rem; opacity:.8; }
@@ -381,8 +410,16 @@ new: true
 @media (min-width: 640px){ .ml-meta{ grid-template-columns: repeat(2, minmax(0,1fr)); } }
 .ml-meta > div{ display:flex; justify-content:space-between; align-items:center; padding:.5rem .75rem;
   border:1px dashed var(--border, rgba(0,0,0,.12)); border-radius:.5rem; background: var(--background, #fff);
+  gap: .5rem;
 }
-.ml-meta span{ opacity:.7; }
+.ml-meta span{ opacity:.7; flex-shrink: 0; }
+.ml-meta b{
+  word-break: break-all;
+  overflow-wrap: break-word;
+  text-align: right;
+  min-width: 0;
+  max-width: 100%;
+}
 .mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
 
 /* modal */
@@ -395,9 +432,7 @@ new: true
   border:1px solid var(--border, rgba(0,0,0,.1)); border-radius: var(--ml-radius);
   padding: 1rem; box-shadow: var(--ml-shadow);
 }
-.ml-modal-header{ display:flex; justify-content:space-between; align-items:center; gap:.75rem; margin-bottom:.5rem; }
-.ml-close{ border:none; background:none; font-size:1.1rem; cursor:pointer; opacity:.6; }
-.ml-close:hover{ opacity:1; }
+.ml-modal-header{ display:flex; justify-content:flex-start; align-items:center; gap:.75rem; margin-bottom:.5rem; }
 .ml-modal-section{ display:grid; gap:.35rem; margin-top:.75rem; }
 .ml-section-title{ font-weight:650; opacity:.85; }
 .ml-modal-footer{ display:flex; justify-content:flex-end; margin-top:1rem; }
@@ -1107,14 +1142,28 @@ print(result)`;
   }
 
   // —— Events
-  elRetry?.addEventListener("click", loadAll);
-  elBack?.addEventListener("click", ()=> renderCategories());
-  elSearch?.addEventListener("input", debounce(handleSearch, 250));
-  elClear?.addEventListener("click", ()=>{
-    elSearch.value = ""; handleSearch();
-  });
+  function initEvents() {
+    elRetry?.addEventListener("click", loadAll);
+    elBack?.addEventListener("click", ()=> renderCategories());
+    elSearch?.addEventListener("input", debounce(handleSearch, 250));
+    elClear?.addEventListener("click", ()=>{
+      elSearch.value = ""; handleSearch();
+    });
+
+    // Close modal when clicking outside
+    dlg?.addEventListener("click", (e)=> {
+      const rect = dlg.querySelector('.ml-modal-card')?.getBoundingClientRect();
+      if (rect && (e.clientX < rect.left || e.clientX > rect.right ||
+                   e.clientY < rect.top || e.clientY > rect.bottom)) {
+        dlg.close();
+      }
+    });
+  }
 
   // —— Init
-  document.addEventListener("DOMContentLoaded", loadAll);
+  document.addEventListener("DOMContentLoaded", ()=> {
+    initEvents();
+    loadAll();
+  });
 })();
 </script>
