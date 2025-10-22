@@ -19,11 +19,10 @@ nav:
   - API Reference: api_reference.md
 
   - Building RM:
-      - Overview: tutorial/building_rm/overview.ipynb
+      - Overview: tutorial/building_rm/overview.md
       - Using Built-in RMs: tutorial/building_rm/ready2use_rewards.md
-      - Building Custom RMs: tutorial/building_rm/custom_reward.ipynb
+      - Building Custom RMs: tutorial/building_rm/custom_reward.md
       - Building RMs with Auto-Rubric: tutorial/building_rm/autorubric.md
-      - Benchmark: tutorial/building_rm/benchmark_practices.ipynb
 
   - Evaluating RM:
       - Overview: tutorial/evaluation/overview.md
@@ -36,9 +35,9 @@ nav:
   - Using RM:
       - RM Server: tutorial/rm_serving/rm_server.md
       - Boosting Strategy: using_rm/boosting_strategy.md
-      - Data Refinement: tutorial/rm_application/data_refinement.ipynb
-      - Post Training with RM: tutorial/rm_application/post_training.ipynb
-      - Best of N: tutorial/rm_application/best_of_n.ipynb
+      - Data Refinement: tutorial/rm_application/data_refinement.md
+      - Post Training with RM: tutorial/rm_application/post_training.md
+      - Best of N: tutorial/rm_application/best_of_n.md
 
   - Training RM:
       - Overview: tutorial/training_rm/overview.md
@@ -47,10 +46,10 @@ nav:
       - Training Bradley-Terry RM: tutorial/training_rm/bradley_terry_rm.md
 
   - Data:
-      - Overview: tutorial/data/pipeline.ipynb
-      - Annotate Data: tutorial/data/annotation.ipynb
-      - Load Data: tutorial/data/load.ipynb
-      - Process Data: tutorial/data/process.ipynb
+      - Overview: tutorial/data/pipeline.md
+      - Annotate Data: tutorial/data/annotation.md
+      - Load Data: tutorial/data/load.md
+      - Process Data: tutorial/data/process.md
 plugins:
   - search
   - mkdocs-jupyter:
