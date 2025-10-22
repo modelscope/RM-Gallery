@@ -287,6 +287,23 @@ class JudgeBenchReward(BaseLLMReward, BaseListWiseReward):
         default=ArenaHardTemplate, description="Template class"
     )
 
+    async def _async_parallel(
+        self,
+        func,
+        sample,
+        semaphore,
+        **kwargs,
+    ):
+        """
+        Override to use BaseListWiseReward's implementation instead of BaseLLMReward's.
+
+        This ensures results are stored in sample.input[-1].additional_kwargs
+        which is where compute_accuracy looks for them.
+        """
+        return await BaseListWiseReward._async_parallel(
+            self, func, sample, semaphore, **kwargs
+        )
+
     def __init__(
         self,
         judge_type: str = "arena_hard",
