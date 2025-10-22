@@ -27,7 +27,7 @@ llm = OpenaiLLM(model="qwen3-8b")
 reward = RewardRegistry.get("base_helpfulness_listwise")(
     name="helpfulness",
     llm=llm,
-    principles=["Judge according to your own standard"]
+    rubrics=["Judge according to your own standard"]
 )
 
 # Create sample with multiple generated responses

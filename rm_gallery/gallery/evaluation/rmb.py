@@ -20,11 +20,11 @@ from rm_gallery.core.model.openai_llm import OpenaiLLM
 from rm_gallery.core.reward.base import BaseListWiseReward, BaseLLMReward
 from rm_gallery.core.reward.evaluator import BaseEvaluator
 from rm_gallery.core.reward.schema import RewardDimensionWithRank, RewardResult
-from rm_gallery.core.reward.template import PrincipleListWiseTemplate
+from rm_gallery.core.reward.template import RubricListWiseTemplate
 from rm_gallery.core.utils.file import write_json
 
 
-class RMBTemplate(PrincipleListWiseTemplate):
+class RMBTemplate(RubricListWiseTemplate):
     """Template class for RMB benchmark pairwise comparison prompts.
 
     Generates structured prompts for evaluating AI responses based on multiple criteria.

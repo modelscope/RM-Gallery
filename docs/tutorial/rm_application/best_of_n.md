@@ -7,7 +7,7 @@ Key Concepts:
 
 - **Best-of-N**: Generates multiple responses and selects the top one based on reward scores
 
-- **Reward Model**: Evaluates response quality using principles like helpfulness, harmlessness, etc.
+- **Reward Model**: Evaluates response quality using rubrics like helpfulness, harmlessness, etc.
 
 - **LLM Integration**: Uses LLMs for both response generation and reward scoring
 
@@ -106,7 +106,7 @@ Using the [best_of_n](../rm_gallery/core/reward/base.py#L139-L165) method from t
 reward = RewardRegistry.get("base_helpfulness_listwise")(
     name="helpfulness",
     llm=llm,
-    principles=["Judge according to your own standard"]
+    rubrics=["Judge according to your own standard"]
 )
 # Get the best response
 best_sample = reward.best_of_n(sample=sample, n=1)
