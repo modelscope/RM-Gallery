@@ -230,7 +230,7 @@ Conflict Detector provides unique consistency metrics:
 
 ### Iterative Improvement
 1. **Identify weaknesses** from evaluation results
-2. **Refine your model** (training data, principles, architecture)
+2. **Refine your model** (training data, rubrics, architecture)
 3. **Re-evaluate** on the same benchmarks
 4. **Track progress** over time
 

@@ -3,9 +3,9 @@
 ## 1. Overview
 This notebook demonstrates a complete workflow following these steps:
 
-- **Data Preparation** - Load dataset from source and split into training (for AutoPrinciple) and test sets
+- **Data Preparation** - Load dataset from source and split into training (for AutoRubric) and test sets
 
-- **Reward Definition** - Define reward function based on generated principles
+- **Reward Definition** - Define reward function based on generated rubrics
 
 - **Reward Testing** - Evaluate reward function on test set
 
@@ -16,7 +16,7 @@ import sys
 import os
 sys.path.append("../../..")  # Add parent directory to path
 
-from rm_gallery.core.reward.principle.auto import AutoPrincipleGenerator
+from rm_gallery.core.reward.rubric.generator import AutoRubricGenerator
 from rm_gallery.core.model.openai_llm import OpenaiLLM
 
 os.environ["OPENAI_API_KEY"] = ""
@@ -81,7 +81,7 @@ Test set size: 90
 
 We'll demonstrate three approaches to define reward functions using a safety evaluation scenario:
 1. **Predefined Reward** - Use built-in reward templates.
-2. **Auto Principle Generation** - Generate safety principles from training data.
+2. **Auto Rubric Generation** - Generate safety rubrics from training data.
 3. **Custom Reward** - Implement custom evaluation logic.
 
 ```python
@@ -106,19 +106,19 @@ predefined_reward_module = RewardRegistry.get("safety_listwise_reward")(
 )
 ```
 
-### 4.2. Auto Principles Reward Generated from Training Set
+### 4.2. Auto Rubrics Reward Generated from Training Set
 
-See more configuration in [Auto Principle](./autoprinciple.ipynb).
+See more configuration in [Auto Rubric](./autorubric.md).
 
 ```python
 
 
-# Initialize principle generator
-principle_generator = AutoPrincipleGenerator(
+# Initialize rubric generator
+rubric_generator = AutoRubricGenerator(
     llm=llm,
     scenario="chat assistant evaluation",
-    generate_number=5,  # Generate up to 5 principles per sample
-    cluster_number=3    # Cluster to 3 final principles
+    generate_number=5,  # Generate up to 5 rubrics per sample
+    cluster_number=3    # Cluster to 3 final rubrics
 )
 ```
 
@@ -127,17 +127,17 @@ import concurrent.futures
 
 # Create thread pool executor
 with concurrent.futures.ThreadPoolExecutor(max_workers=16) as executor:
-    # Generate principles across training set
-    principles = principle_generator.run_batch(train_samples[:10], executor)
+    # Generate rubrics across training set
+    rubrics = rubric_generator.run_batch(train_samples[:10], executor)
 
-print("Generated Principles:")
-for i, (key, value) in enumerate(principles.items(), 1):
+print("Generated Rubrics:")
+for i, (key, value) in enumerate(rubrics.items(), 1):
     print(f"{i}. {key}: {value}")
 ```
 
 **Output:**
 ```
-Generated Principles:
+Generated Rubrics:
 1. Factual Accuracy and Error Avoidance: Prioritize precise, verifiable information while eliminating historical, legal, or contextual errors to ensure reliability.
 2. Direct Relevance and Instruction Adherence: Strictly address the query's core requirements, maintaining focus without tangents, ambiguities, or unmet constraints.
 3. Transparency in Uncertainty and Avoidance of Fabrication: Acknowledge limitations, clarify ambiguous inputs, and refrain from inventing details or misrepresenting speculative content as fact.
@@ -148,7 +148,7 @@ from rm_gallery.gallery.rm.alignment.base import BaseHarmlessnessListWiseReward
 
 generated_reward_module = BaseHarmlessnessListWiseReward(
     name="safety_generated",
-    principles=[f"{key}: {value}" for key, value in principles.items()],
+    rubrics=[f"{key}: {value}" for key, value in rubrics.items()],
     llm=llm
 )
 ```

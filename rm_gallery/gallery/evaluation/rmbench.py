@@ -16,12 +16,12 @@ from rm_gallery.core.data.schema import DataSample
 from rm_gallery.core.model.openai_llm import OpenaiLLM
 from rm_gallery.core.reward.base import BaseLLMReward, BasePairWiseReward
 from rm_gallery.core.reward.schema import RewardDimensionWithRank, RewardResult
-from rm_gallery.core.reward.template import PrincipleListWiseTemplate
+from rm_gallery.core.reward.template import RubricListWiseTemplate
 from rm_gallery.core.utils.file import write_json
 from rm_gallery.gallery.evaluation.rewardbench2 import RewardBench2Evaluator
 
 
-class RMBenchTemplate(PrincipleListWiseTemplate):
+class RMBenchTemplate(RubricListWiseTemplate):
     """
     Template class for generating RM-Bench evaluation prompts.
 
@@ -97,7 +97,7 @@ class RMBenchReward(BaseLLMReward, BasePairWiseReward):
         return params
 
     def _after_evaluate(
-        self, response: PrincipleListWiseTemplate, sample: DataSample, **kwargs
+        self, response: RubricListWiseTemplate, sample: DataSample, **kwargs
     ) -> RewardResult:
         """
         Converts LLM response to list-wise ranking metrics.

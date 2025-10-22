@@ -13,7 +13,7 @@ In Reinforcement Learning from Human Feedback (RLHF) and other post training met
 ### Key Features
 
 - **Asynchronous Parallel Computing**: Support parallel processing of multiple prompt groups, significantly improving efficiency
-- **Flexible Reward Composition**: Support combination of multiple reward functions (principled rewards, format rewards, length rewards, etc.)
+- **Flexible Reward Composition**: Support combination of multiple reward functions (rubric-based rewards, format rewards, length rewards, etc.)
 - **Pairwise Comparison**: Support pairwise comparisons to provide more precise preference signals for algorithms like GRPO
 - **Statistical Information Tracking**: Automatically calculate and record reward distribution statistics for training monitoring
 
@@ -351,7 +351,7 @@ def create_rm_gallery_reward_function(use_group_reward=True, return_details=Fals
         Comprehensive reward computation function that combines multiple reward types
 
         Reward combination includes:
-        1. Principled rewards (95% weight): Based on helpfulness, harmlessness, honesty principles
+        1. Rubric-based rewards (95% weight): Based on helpfulness, harmlessness, honesty rubrics
         2. Format rewards (5% weight): Ensure output format correctness
         3. Length rewards: Control appropriate response length
         4. N-gram rewards: Reduce penalties for repetitive content
@@ -364,13 +364,13 @@ def create_rm_gallery_reward_function(use_group_reward=True, return_details=Fals
             if prompt and not isinstance(prompt, list):
                 prompt = [prompt]
 
-        # 1. Principled reward computation (core reward)
+        # 1. Rubric-based reward computation (core reward)
         if use_group_reward:
             # Group reward supporting pairwise comparison
-            scores_principle, details = group_rm_gallery_grader(prompt, responses, extras, **kwargs)
+            scores_rubric, details = group_rm_gallery_grader(prompt, responses, extras, **kwargs)
         else:
             # Individual scoring reward
-            scores_principle, details = rm_gallery_grader(prompt, responses, extras, **kwargs)
+            scores_rubric, details = rm_gallery_grader(prompt, responses, extras, **kwargs)
 
         # 2. Format reward computation
         scores_format = compute_format_reward(responses)
@@ -384,7 +384,7 @@ def create_rm_gallery_reward_function(use_group_reward=True, return_details=Fals
         scores_total_length, total_lengths = compute_total_length_reward(responses)
 
         # Convert to tensor format
-        scores_principle = torch.tensor(scores_principle)
+        scores_rubric = torch.tensor(scores_rubric)
         scores_format = torch.tensor(scores_format)
         scores_ngram = torch.tensor(scores_ngram)
         scores_thought_length = torch.tensor(scores_thought_length)
@@ -392,19 +392,19 @@ def create_rm_gallery_reward_function(use_group_reward=True, return_details=Fals
         thought_lengths = torch.tensor(thought_lengths, dtype=torch.float32)
 
         # Weighted reward combination
-        scores = (0.95 * scores_principle +
+        scores = (0.95 * scores_rubric +
                  0.05 * scores_format +
                  scores_total_length +
                  scores_ngram)
 
         # Handle invalid rewards (e.g., HTTP errors)
         INVALID_REWARD = -999.0
-        scores[scores_principle == INVALID_REWARD] = INVALID_REWARD
+        scores[scores_rubric == INVALID_REWARD] = INVALID_REWARD
         scores = scores.tolist()
 
         # Build reward information dictionary
         reward_info = {
-            "reward_principle": scores_principle.tolist(),
+            "reward_rubric": scores_rubric.tolist(),
             "reward_format": scores_format.tolist(),
             "reward_ngram": scores_ngram.tolist(),
             "thought_lengths": thought_lengths.tolist(),

@@ -90,9 +90,9 @@ new: true
       <div class="ml-code" id="rm-modal-scenario"></div>
     </div>
 
-    <div class="ml-modal-section" id="rm-principles-section">
-      <div class="ml-section-title">Evaluation Principles</div>
-      <div id="rm-modal-principles"></div>
+    <div class="ml-modal-section" id="rm-rubrics-section">
+      <div class="ml-section-title">Evaluation Rubrics</div>
+      <div id="rm-modal-rubrics"></div>
     </div>
 
     <div class="ml-modal-section">
@@ -386,20 +386,20 @@ new: true
   padding:.75rem; border-radius:.6rem;
 }
 
-/* principles list */
-.principle-list {
+/* rubrics list */
+.rubric-list {
   list-style: none;
   padding: 0;
   margin: 0;
 }
-.principle-item {
+.rubric-item {
   background: var(--muted, rgba(0,0,0,.04));
   border: 1px solid var(--border, rgba(0,0,0,.08));
   border-radius: .5rem;
   padding: .75rem;
   margin: .5rem 0;
 }
-.principle-number {
+.rubric-number {
   font-weight: 600;
   color: var(--primary, #3b82f6);
   margin-right: .5rem;
@@ -470,13 +470,13 @@ new: true
   const mType = $("rm-modal-type");
   const mDescription = $("rm-modal-description");
   const mScenario = $("rm-modal-scenario");
-  const mPrinciples = $("rm-modal-principles");
+  const mRubrics = $("rm-modal-rubrics");
   const mUsage = $("rm-modal-usage");
   const mRegistry = $("rm-modal-registry");
   const mClass = $("rm-modal-class");
   const mModule = $("rm-modal-module");
   const mRewardType = $("rm-modal-reward-type");
-  const principlesSection = $("rm-principles-section");
+  const rubricsSection = $("rm-rubrics-section");
 
   // —— Categories Configuration
   const CATEGORY_MAP = {
@@ -512,7 +512,7 @@ new: true
       reward_type: "PointWise",
       description: "Base helpfulness evaluator for assessing how helpful and informative responses are to users with relevant and accurate information.",
       scenario: "General purpose helpfulness assessment for individual responses",
-      principles: ["Provide helpful and informative responses", "Respond with relevant and accurate information", "Address user queries effectively"],
+      rubrics: ["Provide helpful and informative responses", "Respond with relevant and accurate information", "Address user queries effectively"],
       module_path: "rm_gallery.gallery.rm.alignment.base"
     },
     {
@@ -522,7 +522,7 @@ new: true
       reward_type: "ListWise",
       description: "Base helpfulness evaluator for comparing multiple responses based on their helpfulness and informativeness.",
       scenario: "Comparative evaluation of response helpfulness",
-      principles: ["Provide helpful and informative responses", "Respond with relevant and accurate information", "Address user queries effectively"],
+      rubrics: ["Provide helpful and informative responses", "Respond with relevant and accurate information", "Address user queries effectively"],
       module_path: "rm_gallery.gallery.rm.alignment.base"
     },
     {
@@ -532,7 +532,7 @@ new: true
       reward_type: "PointWise",
       description: "Base harmlessness evaluator for detecting harmful behaviors such as spreading misinformation or engaging in harmful activities.",
       scenario: "Safety assessment for individual responses",
-      principles: ["Avoid harmful behaviors", "Prevent spreading misinformation", "Refuse harmful requests appropriately"],
+      rubrics: ["Avoid harmful behaviors", "Prevent spreading misinformation", "Refuse harmful requests appropriately"],
       module_path: "rm_gallery.gallery.rm.alignment.base"
     },
     {
@@ -542,7 +542,7 @@ new: true
       reward_type: "ListWise",
       description: "Base harmlessness evaluator for comparing multiple responses based on safety and harmlessness criteria.",
       scenario: "Comparative safety assessment",
-      principles: ["Avoid harmful behaviors", "Prevent spreading misinformation", "Refuse harmful requests appropriately"],
+      rubrics: ["Avoid harmful behaviors", "Prevent spreading misinformation", "Refuse harmful requests appropriately"],
       module_path: "rm_gallery.gallery.rm.alignment.base"
     },
     {
@@ -552,7 +552,7 @@ new: true
       reward_type: "PointWise",
       description: "Base honesty evaluator for assessing truthfulness and bias-free responses.",
       scenario: "Truthfulness assessment for individual responses",
-      principles: ["Truthfully answer questions", "Avoid bias and prejudice", "Present information honestly"],
+      rubrics: ["Truthfully answer questions", "Avoid bias and prejudice", "Present information honestly"],
       module_path: "rm_gallery.gallery.rm.alignment.base"
     },
     {
@@ -562,7 +562,7 @@ new: true
       reward_type: "ListWise",
       description: "Base honesty evaluator for comparing multiple responses based on truthfulness and honesty.",
       scenario: "Comparative honesty assessment",
-      principles: ["Truthfully answer questions", "Avoid bias and prejudice", "Present information honestly"],
+      rubrics: ["Truthfully answer questions", "Avoid bias and prejudice", "Present information honestly"],
       module_path: "rm_gallery.gallery.rm.alignment.base"
     },
 
@@ -574,7 +574,7 @@ new: true
       reward_type: "PointWise",
       description: "Safety evaluator for assessing compliance with or refusal of prompts related to harmful use cases and general compliance behaviors.",
       scenario: "Safety assessment in response to potentially harmful requests (from RewardBench2)",
-      principles: ["Refuse harmful prompts appropriately", "Comply with safe requests", "Identify potential risks in user requests"],
+      rubrics: ["Refuse harmful prompts appropriately", "Comply with safe requests", "Identify potential risks in user requests"],
       module_path: "rm_gallery.gallery.rm.alignment.harmlessness.safety"
     },
     {
@@ -584,7 +584,7 @@ new: true
       reward_type: "PointWise",
       description: "Detoxify-based toxicity detector for identifying threats, obscenity, insults, and various types of toxic content.",
       scenario: "Content moderation and toxicity detection across various text types",
-      principles: null,
+      rubrics: null,
       module_path: "rm_gallery.gallery.rm.alignment.harmlessness.detoxify"
     },
 
@@ -596,7 +596,7 @@ new: true
       reward_type: "ListWise",
       description: "Evaluates text generation for brainstorming, emphasizing creativity and driving thinking to come up with new ideas or solutions.",
       scenario: "Creative ideation and brainstorming tasks (from RMB Bench)",
-      principles: null,
+      rubrics: null,
       module_path: "rm_gallery.gallery.rm.alignment.helpfulness.brainstorming"
     },
     {
@@ -606,7 +606,7 @@ new: true
       reward_type: "ListWise",
       description: "Chat evaluator that simulates human conversation, emphasizing coherence and natural flow of interaction across various topics.",
       scenario: "Conversational AI evaluation with focus on natural dialogue (from RMB Bench)",
-      principles: [
+      rubrics: [
         "Address Core Argument/Intent Directly: Prioritize engaging with the user's central claim, perspective, or question explicitly.",
         "Provide Actionable, Context-Specific Guidance: Offer concrete, practical steps tailored to the user's unique situation.",
         "Ensure Factual Accuracy and Contextual Nuance: Ground responses in precise details while avoiding oversimplification."
@@ -620,7 +620,7 @@ new: true
       reward_type: "ListWise",
       description: "Evaluates classification tasks that assign predefined categories or labels to text based on its content.",
       scenario: "Text classification and categorization tasks (from RMB Bench)",
-      principles: null,
+      rubrics: null,
       module_path: "rm_gallery.gallery.rm.alignment.helpfulness.classification"
     },
     {
@@ -630,7 +630,7 @@ new: true
       reward_type: "ListWise",
       description: "Evaluates closed QA tasks where answers are found in given context or options, focusing on accuracy within constraints.",
       scenario: "Closed-domain question answering with given context (from RMB Bench)",
-      principles: null,
+      rubrics: null,
       module_path: "rm_gallery.gallery.rm.alignment.helpfulness.closed_qa"
     },
     {
@@ -640,7 +640,7 @@ new: true
       reward_type: "ListWise",
       description: "Evaluates code generation, understanding, and modification tasks within text.",
       scenario: "Programming code generation and comprehension (from RMB Bench)",
-      principles: null,
+      rubrics: null,
       module_path: "rm_gallery.gallery.rm.alignment.helpfulness.code"
     },
     {
@@ -650,7 +650,7 @@ new: true
       reward_type: "ListWise",
       description: "Evaluates creative text generation from articles to stories, emphasizing originality and creativity.",
       scenario: "Creative content generation tasks (from RMB Bench)",
-      principles: ["Demonstrate originality", "Show creativity in content", "Maintain coherent narrative"],
+      rubrics: ["Demonstrate originality", "Show creativity in content", "Maintain coherent narrative"],
       module_path: "rm_gallery.gallery.rm.alignment.helpfulness.generation"
     },
     {
@@ -660,7 +660,7 @@ new: true
       reward_type: "ListWise",
       description: "Evaluates open-domain question answering across wide text sources, requiring processing of large information and complex questions.",
       scenario: "Open-domain question answering without given context (from RMB Bench)",
-      principles: null,
+      rubrics: null,
       module_path: "rm_gallery.gallery.rm.alignment.helpfulness.open_qa"
     },
     {
@@ -670,7 +670,7 @@ new: true
       reward_type: "ListWise",
       description: "Evaluates reasoning tasks involving text analysis to draw inferences, make predictions, or solve problems.",
       scenario: "Logical reasoning and inference tasks (from RMB Bench)",
-      principles: null,
+      rubrics: null,
       module_path: "rm_gallery.gallery.rm.alignment.helpfulness.reasoning"
     },
     {
@@ -680,7 +680,7 @@ new: true
       reward_type: "ListWise",
       description: "Evaluates text rewriting that modifies style while preserving original information and intent.",
       scenario: "Text rewriting and paraphrasing tasks (from RMB Bench)",
-      principles: null,
+      rubrics: null,
       module_path: "rm_gallery.gallery.rm.alignment.helpfulness.rewrite"
     },
     {
@@ -690,7 +690,7 @@ new: true
       reward_type: "ListWise",
       description: "Evaluates role-playing scenarios where AI adopts specific characters or personas in text-based interactions.",
       scenario: "Character role-playing and persona adoption (from RMB Bench)",
-      principles: ["Maintain character consistency", "Engage authentically in role", "Reflect assigned persona accurately"],
+      rubrics: ["Maintain character consistency", "Engage authentically in role", "Reflect assigned persona accurately"],
       module_path: "rm_gallery.gallery.rm.alignment.helpfulness.role_playing"
     },
     {
@@ -700,7 +700,7 @@ new: true
       reward_type: "ListWise",
       description: "Evaluates text summarization that compresses content into short form while retaining main information.",
       scenario: "Text summarization and compression tasks (from RMB Bench)",
-      principles: ["Retain key information", "Maintain coherence", "Achieve appropriate compression"],
+      rubrics: ["Retain key information", "Maintain coherence", "Achieve appropriate compression"],
       module_path: "rm_gallery.gallery.rm.alignment.helpfulness.summarization"
     },
     {
@@ -710,7 +710,7 @@ new: true
       reward_type: "ListWise",
       description: "Evaluates translation quality for converting text from one language to another.",
       scenario: "Language translation tasks (from RMB Bench)",
-      principles: ["Preserve original meaning", "Maintain natural language flow", "Consider cultural context"],
+      rubrics: ["Preserve original meaning", "Maintain natural language flow", "Consider cultural context"],
       module_path: "rm_gallery.gallery.rm.alignment.helpfulness.translation"
     },
     {
@@ -720,7 +720,7 @@ new: true
       reward_type: "PointWise",
       description: "Detects high-quality, on-topic answers to general user queries with strong focus on the question.",
       scenario: "Evaluating response relevance and focus (from RMB Bench)",
-      principles: ["Stay on topic", "Address the question directly", "Avoid tangential information"],
+      rubrics: ["Stay on topic", "Address the question directly", "Avoid tangential information"],
       module_path: "rm_gallery.gallery.rm.alignment.helpfulness.focus"
     },
     {
@@ -730,7 +730,7 @@ new: true
       reward_type: "PointWise",
       description: "Evaluates mathematical problem-solving from middle school to college level, including physics, geometry, calculus, and more.",
       scenario: "Mathematical problem solving across difficulty levels (from RewardBench2)",
-      principles: ["Show clear reasoning", "Apply correct formulas", "Verify calculations"],
+      rubrics: ["Show clear reasoning", "Apply correct formulas", "Verify calculations"],
       module_path: "rm_gallery.gallery.rm.alignment.helpfulness.math"
     },
     {
@@ -740,7 +740,7 @@ new: true
       reward_type: "PointWise",
       description: "Evaluates precise instruction following with specific constraints like 'Answer without the letter u'.",
       scenario: "Precise instruction following with explicit constraints (from RewardBench2)",
-      principles: ["Follow all specified constraints", "Maintain response quality", "Demonstrate attention to detail"],
+      rubrics: ["Follow all specified constraints", "Maintain response quality", "Demonstrate attention to detail"],
       module_path: "rm_gallery.gallery.rm.alignment.helpfulness.precise_if"
     },
 
@@ -752,7 +752,7 @@ new: true
       reward_type: "PointWise",
       description: "Detects hallucinations and basic errors in completions, ensuring factual accuracy.",
       scenario: "Factuality verification and hallucination detection (from RewardBench2)",
-      principles: ["Verify factual claims", "Identify hallucinations", "Ensure accuracy"],
+      rubrics: ["Verify factual claims", "Identify hallucinations", "Ensure accuracy"],
       module_path: "rm_gallery.gallery.rm.alignment.honesty.factuality"
     },
 
@@ -764,7 +764,7 @@ new: true
       reward_type: "PointWise",
       description: "Verifies mathematical expressions using the math_verify library, supporting both LaTeX and plain expressions.",
       scenario: "Mathematical expression verification and validation",
-      principles: null,
+      rubrics: null,
       module_path: "rm_gallery.gallery.rm.math.math"
     },
 
@@ -776,7 +776,7 @@ new: true
       reward_type: "PointWise",
       description: "Checks code syntax using Abstract Syntax Tree (AST) to validate Python code blocks for syntax errors.",
       scenario: "Python code syntax validation",
-      principles: null,
+      rubrics: null,
       module_path: "rm_gallery.gallery.rm.code.code"
     },
     {
@@ -786,7 +786,7 @@ new: true
       reward_type: "PointWise",
       description: "Performs basic code style checking including indentation consistency and naming convention validation.",
       scenario: "Python code style and formatting assessment",
-      principles: null,
+      rubrics: null,
       module_path: "rm_gallery.gallery.rm.code.code"
     },
     {
@@ -796,7 +796,7 @@ new: true
       reward_type: "PointWise",
       description: "Calculates similarity between generated patch and oracle patch using difflib.SequenceMatcher.",
       scenario: "Code patch comparison and similarity measurement",
-      principles: null,
+      rubrics: null,
       module_path: "rm_gallery.gallery.rm.code.code"
     },
     {
@@ -806,7 +806,7 @@ new: true
       reward_type: "PointWise",
       description: "Executes code against test cases and evaluates correctness based on test results.",
       scenario: "Functional correctness testing for generated code",
-      principles: null,
+      rubrics: null,
       module_path: "rm_gallery.gallery.rm.code.code"
     },
 
@@ -818,7 +818,7 @@ new: true
       reward_type: "PointWise",
       description: "Calculates accuracy (exact match rate) between generated content and reference answer.",
       scenario: "Exact match evaluation for classification and QA tasks",
-      principles: null,
+      rubrics: null,
       module_path: "rm_gallery.gallery.rm.general.general"
     },
     {
@@ -828,7 +828,7 @@ new: true
       reward_type: "PointWise",
       description: "Calculates F1 score between generated content and reference answer at word level with configurable tokenizer.",
       scenario: "Token-level evaluation for text generation quality",
-      principles: null,
+      rubrics: null,
       module_path: "rm_gallery.gallery.rm.general.general"
     },
     {
@@ -838,7 +838,7 @@ new: true
       reward_type: "PointWise",
       description: "ROUGE-L similarity evaluation using longest common subsequence for text overlap measurement.",
       scenario: "Summarization and text generation overlap evaluation",
-      principles: null,
+      rubrics: null,
       module_path: "rm_gallery.gallery.rm.general.general"
     },
     {
@@ -848,7 +848,7 @@ new: true
       reward_type: "PointWise",
       description: "Checks numerical calculation accuracy by comparing numbers in generated content versus reference.",
       scenario: "Numerical accuracy verification in mathematical and quantitative tasks",
-      principles: null,
+      rubrics: null,
       module_path: "rm_gallery.gallery.rm.general.general"
     },
 
@@ -860,7 +860,7 @@ new: true
       reward_type: "PointWise",
       description: "Checks format reward for thinking format and answer format with proper tags and structure.",
       scenario: "Structured reasoning output format validation",
-      principles: null,
+      rubrics: null,
       module_path: "rm_gallery.gallery.rm.format.format"
     },
     {
@@ -870,7 +870,7 @@ new: true
       reward_type: "PointWise",
       description: "Checks tool call format including think, answer and tool_call tags with JSON validation.",
       scenario: "Tool-using agent response format validation",
-      principles: null,
+      rubrics: null,
       module_path: "rm_gallery.gallery.rm.format.format"
     },
     {
@@ -880,7 +880,7 @@ new: true
       reward_type: "PointWise",
       description: "Text length-based penalty for content that is too short or too long relative to expectations.",
       scenario: "Response length control and optimization",
-      principles: null,
+      rubrics: null,
       module_path: "rm_gallery.gallery.rm.format.format"
     },
     {
@@ -890,7 +890,7 @@ new: true
       reward_type: "PointWise",
       description: "Calculates N-gram repetition penalty supporting Chinese processing and multiple penalty strategies.",
       scenario: "Repetitive content detection and penalization",
-      principles: null,
+      rubrics: null,
       module_path: "rm_gallery.gallery.rm.format.format"
     },
     {
@@ -900,7 +900,7 @@ new: true
       reward_type: "PointWise",
       description: "Privacy information leakage detection for emails, phone numbers, ID cards, credit cards, and IP addresses.",
       scenario: "Privacy protection and PII detection",
-      principles: null,
+      rubrics: null,
       module_path: "rm_gallery.gallery.rm.format.format"
     }
   ];
@@ -1061,15 +1061,15 @@ new: true
     mDescription.textContent = rm.description;
     mScenario.textContent = rm.scenario;
 
-    // Handle principles
-    if (rm.principles && rm.principles.length > 0) {
-      const principlesList = rm.principles.map((principle, idx) =>
-        `<div class="principle-item"><span class="principle-number">${idx + 1}.</span>${principle}</div>`
+    // Handle rubrics
+    if (rm.rubrics && rm.rubrics.length > 0) {
+      const rubricsList = rm.rubrics.map((rubric, idx) =>
+        `<div class="rubric-item"><span class="rubric-number">${idx + 1}.</span>${rubric}</div>`
       ).join("");
-      mPrinciples.innerHTML = `<div class="principle-list">${principlesList}</div>`;
-      show(principlesSection);
+      mRubrics.innerHTML = `<div class="rubric-list">${rubricsList}</div>`;
+      show(rubricsSection);
     } else {
-      hide(principlesSection);
+      hide(rubricsSection);
     }
 
     // Usage example
