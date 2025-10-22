@@ -247,6 +247,31 @@ main(
 )
 ```
 
+**Using Custom API Endpoints:**
+
+For custom API endpoints (e.g., Alibaba Cloud DashScope, Azure OpenAI), include the `base_url` parameter:
+
+```python
+from rm_gallery.gallery.evaluation.judgebench import main
+
+# Configuration for custom API endpoint
+model_config = {
+    "model": "qwen2.5-32b-instruct",
+    "base_url": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+    "temperature": 0.1,
+    "max_tokens": 2048
+}
+
+main(
+    data_path="data/benchmarks/JudgeBench/data/dataset=judgebench,response_model=gpt-4o-2024-05-13.jsonl",
+    result_path="data/results/judgebench_custom_api.json",
+    judge_type="arena_hard",
+    max_samples=50,
+    model=model_config,
+    max_workers=4
+)
+```
+
 ### Programmatic Usage
 
 For more control over the evaluation process:
