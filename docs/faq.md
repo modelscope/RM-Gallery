@@ -1,3 +1,10 @@
+---
+title: Frequently Asked Questions (FAQ)
+description: Find answers to common questions about RM-Gallery, including installation, building reward models, training, evaluation, and troubleshooting.
+keywords: [FAQ, questions, troubleshooting, help, guide, reward model, RM-Gallery, problems, solutions]
+tags: [faq, help, troubleshooting, guide]
+---
+
 # Frequently Asked Questions (FAQ)
 
 Find answers to common questions about RM-Gallery.

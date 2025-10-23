@@ -1,3 +1,10 @@
+---
+title: End-to-End Tutorial - Build Your First Reward Model
+description: Complete step-by-step tutorial to build a factuality reward model from scratch in 30 minutes. Learn data preparation, model creation, evaluation, and deployment.
+keywords: [tutorial, end-to-end, reward model, factuality, build, create, training, evaluation, complete guide]
+tags: [tutorial, intermediate, hands-on, complete-guide]
+---
+
 # End-to-End Tutorial: Build Your First Reward Model
 
 This tutorial will walk you through the complete process of building a reward model from scratch in under 30 minutes.
