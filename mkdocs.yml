@@ -1,8 +1,10 @@
 site_name: RM-Gallery
 site_url: https://modelscope.github.io/RM-Gallery/
-site_description: "A One-Stop Reward Model Platform"
+site_description: "A One-Stop Reward Model Platform for training, building, and applying reward models. Supports 35+ pre-built models, RLHF training, LLM evaluation, and AI alignment."
+site_author: "The RM-Gallery Team"
 repo_url: https://github.com/modelscope/RM-Gallery
 repo_name: modelscope/RM-Gallery
+copyright: "Copyright &copy; 2025 RM-Gallery Team"
 theme:
   name: shadcn
   show_stargazers: true
@@ -49,9 +51,16 @@ plugins:
       lang:
         - en
         - zh
-      separator: '[\s\-\.]+'
+      separator: '[\s\-\.\(\)\/]+'
       min_search_length: 2
       prebuild_index: true
+      indexing: 'full'
+      # Boost certain pages in search results
+      boost:
+        quickstart.md: 2.0
+        faq.md: 1.5
+        tutorial/end-to-end.md: 1.5
+        index.md: 1.2
   - mkdocs-jupyter:
       ignore_h1_titles: True
       execute: False

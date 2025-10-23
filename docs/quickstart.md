@@ -1,3 +1,10 @@
+---
+title: 5-Minute Quickstart Guide
+description: Get started with RM-Gallery reward models in 5 minutes. Learn installation, evaluation, and basic usage with step-by-step examples.
+keywords: [quickstart, getting started, reward model, RM-Gallery, installation, tutorial, beginner guide]
+tags: [quickstart, beginner, tutorial, installation]
+---
+
 # 5-Minute Quickstart
 
 Get started with RM-Gallery in just 5 minutes! This guide will walk you through the basics of using reward models.

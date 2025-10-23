@@ -1,6 +1,9 @@
 ---
-title: Welcome to RM-Gallery
-summary: A One-Stop Reward Model Platform
+title: RM-Gallery - A One-Stop Reward Model Platform
+summary: Train, build, and apply reward models with ease. Comprehensive platform for LLM evaluation, RLHF training, and AI alignment.
+description: RM-Gallery is a comprehensive platform for training, building, and applying reward models. Supports 35+ pre-built models, custom RM development, RLHF training, and production deployment.
+keywords: [reward model, RM-Gallery, RLHF, LLM evaluation, AI alignment, model training, machine learning, deep learning, NLP]
+tags: [reward-model, ai-alignment, rlhf, llm, evaluation]
 order: 1
 show_datetime: true
 ---
