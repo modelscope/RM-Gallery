@@ -90,321 +90,97 @@ pip install .
 pip install rm-gallery
 ```
 
-## 🚀 RM Gallery Walkthrough
-RM-Gallery is a one-stop platform that meets various user needs for reward models. Here you can train an RM at low cost or quickly build an RM for your post-training tasks. Below we'll walk you through the basic usage of our RM-Gallery platform.
+## 🚀 Quick Start
 
+### Your First Reward Model
 
-### 🏋️‍♂️ Training RM
+```python
+from rm_gallery.core.reward.registry import RewardRegistry
 
-RM-Gallery offers a comprehensive and user-friendly pipeline for training reward models with the VERL framework, supporting both pointwise (absolute scoring) and pairwise (preference comparison) paradigms.
+# 1. Choose a pre-built reward model
+rm = RewardRegistry.get("safety_listwise_reward")
 
-Below is an example of how to train a reward model using the pointwise approach:
+# 2. Prepare your data
+from rm_gallery.core.data.schema import DataSample
+sample = DataSample(...)  # See docs for details
 
-<strong> 1️⃣  Prepare the Training Data </strong>
-
-Download and convert the HelpSteer2 dataset to the required format.
-
-```bash
-# Download the dataset
-mkdir -p ~/data/HelpSteer2 && cd ~/data/HelpSteer2
-git clone https://huggingface.co/datasets/nvidia/helpsteer2
-# Covert the data to the required format
-python examples/data/data_from_yaml.py --config examples/train/pointwise/data_config.yaml
+# 3. Evaluate
+result = rm.evaluate(sample)
+print(result)
 ```
 
-<strong>2️⃣  Launch the Ray Distributed Cluster </strong>
+**That's it!** 🎉
 
-For single-node (8 GPUs) setup:
+👉 **[5-Minute Quickstart Guide](https://modelscope.github.io/RM-Gallery/quickstart/)** - Get started in minutes
 
-```bash
-ray start --head --node-ip-address $MASTER_ADDR --num-gpus 8 --dashboard-host 0.0.0.0
+👉 **[Interactive Notebooks](./examples/)** - Try it hands-on
+
+
+## 📖 Key Features
+
+### 🏗️ Building Reward Models
+
+Choose from **35+ pre-built reward models** or create your own:
+
+```python
+# Use pre-built models
+rm = RewardRegistry.get("math_correctness_reward")
+rm = RewardRegistry.get("code_quality_reward")
+rm = RewardRegistry.get("helpfulness_listwise_reward")
+
+# Or build custom models
+class CustomReward(BasePointWiseReward):
+    def _evaluate(self, sample, **kwargs):
+        # Your custom logic here
+        return RewardResult(...)
 ```
-<strong>3️⃣ Start Pointwise Training </strong>
 
-Navigate to the pointwise training directory and run the script:
+📚 **[See all available reward models →](https://modelscope.github.io/RM-Gallery/library/rm_library/)**
+
+### 🏋️‍♂️ Training Reward Models
+
+Train your own reward models with VERL framework:
 
 ```bash
+# Prepare data and launch training
 cd examples/train/pointwise
-chmod +x run_pointwise.sh
 ./run_pointwise.sh
 ```
-For more details and advanced options, see the [training_rm tutorial](./docs/tutorial/training_rm/training_rm.md).
 
+📚 **[Training guide →](https://modelscope.github.io/RM-Gallery/tutorial/training_rm/overview/)**
 
-### 🏗️ Building RM
-This section explains how to build RMs using the RM-Gallery framework based on your requirements and scenarios.
-#### 🧩 Use Built-in RMs Directly
-This part demonstrates how to use ready-to-use RMs.
-<strong> Choose the RM you need </strong>
+### 🧪 Evaluating on Benchmarks
 
+Test your models on standard benchmarks:
 
-Below are the main RM scenarios included in RM-Gallery:
-| Scenario | Description |
-| :--- | :--- |
-| Math |Focuse on verifying mathematical correctness and evaluating math-related tasks|
-| Code | For assessing code quality, including syntax, style, patch similarity, and execution correctness|
-| Alignment | Evaluate and optimize outputs for human values such as helpfulness, harmlessness, and honesty|
-| General | For general-purpose evaluation metrics like accuracy, F1 score, ROUGE, and number accuracy|
-| Format and Style|Check output format, style, length, repetition, and privacy compliance.|
+- **RewardBench2** - Latest reward model benchmark
+- **RM-Bench** - Comprehensive evaluation
+- **Conflict Detector** - Detect evaluation conflicts
+- **JudgeBench** - Judge capability evaluation
 
-You can call
-```python
-from rm_gallery.core.reward.registry import RewardRegistry
+📚 **[Evaluation guide →](https://modelscope.github.io/RM-Gallery/tutorial/evaluation/overview/)**
 
-RewardRegistry.list()
-```
-to view all registered RMs.
-For details of RM please check [ready-to-use rewards tutorial](./docs/tutorial/building_rm/ready2use_rewards.md)
+### 🛠️ Real-World Applications
 
-<strong> How to initialize a ready-to-use RM </strong>
+- **Best-of-N Selection** - Choose the best from multiple responses
+- **Data Refinement** - Improve data quality with reward feedback
+- **Post Training (RLHF)** - Integrate with reinforcement learning
+- **High-Performance Serving** - Deploy as scalable service
 
-```python
-from rm_gallery.core.reward.registry import RewardRegistry
-
-# Initialize using the registry pattern
-rm = RewardRegistry.get("Your RM's Registry Name")
-```
-
-#### 🛠️ Building Custom RMs
-If you want to build your own RM, here's a structured reference listing of the key base classes. Select appropriate base class based on evaluation strategy:
-
-```python
-BaseReward
-├── BasePointWiseReward                             # Point-wise evaluation of individual responses.
-├── BaseListWiseReward                              # Comparative evaluation of multiple responses.
-│   └── BasePairWiseReward                          # Specialized pairwise comparisons.
-├── BaseStepWiseReward                              # Comparative evaluation of multiple responses.
-└── BaseLLMReward                                   # LLM-based evaluation framework.
-    ├── BaseRubricReward                         # Rubric-guided evaluation.
-    │   ├── BasePointWiseRubricReward            # Point-wise Rubric-guided evaluation.
-    │   └── BaseListWiseRubricReward             # Comparative Rubric-guided evaluation.
-```
-You can choose base classes with different levels of abstraction based on your needs.   Here are some typical use cases, and For details please check [building custom rewards tutorial](./docs/tutorial/building_rm/custom_reward.ipynb)
-**1️⃣ Custom Rubrics with Rubric-Critic-Score Paradigm**
-If you follow the Rubric-Critic-Score Paradigm and only want to use your own rubrics
-
-```python
-import os
-# Add environment variables
-os.environ["OPENAI_API_KEY"] = "your_api_key"
-os.environ["BASE_URL"] = "your_base_url"
-
-# Initialize the LLM client with thinking capability enabled
-llm = OpenaiLLM(model="qwen3-8b", enable_thinking=True)
-customRubricReward = BaseListWiseRubricReward(
-        name="demo_custom_rubric_reward",
-        desc="your task description",
-        scenario="your scenario description",
-        rubrics=["your Rubric 1", "your Rubric 2"],
-        llm=llm
-    )
-```
-
-**2️⃣ Custom LLM Template**
-If you need a more customized LLM template, you can inherit from BaseLLMReward and replace with your own template
-<details>
-<summary>Example: CustomLLMReward</summary>
-
-```python
-    from rm_gallery.core.model.openai_llm import OpenaiLLM
-    import os
-    # Add environment variables
-    os.environ["OPENAI_API_KEY"] = "your_api_key"
-    os.environ["BASE_URL"] = "your_base_url"
-
-    # Initialize the LLM client with thinking capability enabled
-    llm = OpenaiLLM(model="qwen3-8b", enable_thinking=True)
-
-    ##定义Template
-    class CustomTemplate(BasePromptTemplate):
-        score: float = Field(default=..., description="Return only the numerical score")
-
-        @classmethod
-        def format(cls, question: str, answer: str, **kwargs) -> str:
-            return f"""
-                Question: {question}
-                Response: {answer}
-
-                Score according to these criteria:
-                1. Fully accurate and verifiable: 1.0
-                2. Partially correct with minor errors: 0.5
-                3. Completely incorrect/misleading: 0.0
-
-                # Output:
-                {cls.schema()}
-            """
-    ##定义Reward
-    class CustomLLMReward(BaseLLMReward, BasePointWiseReward):
-        """LLM-based factuality assessment reward module"""
-
-        name: str = "factuality"
-        threshold: float = Field(default=0.7, description="Factuality score threshold")
-        template: Type[BasePromptTemplate] = CustomTemplate
-
-        def _before_evaluate(self, sample: DataSample, **kwargs) -> dict:
-            """
-            Prepare prompt parameters
-
-            Args:
-                sample: Data sample containing question and response
-
-            Returns:
-                dict: Dictionary containing 'question' and 'answer' fields
-            """
-            question = format_messages(sample.input)
-            answer = sample.output[0].answer.content
-            return {"question": question, "answer": answer}
-
-        def _after_evaluate(self, response: CustomTemplate, **kwargs) -> RewardResult:
-            """
-            Parse LLM response into reward value
-
-            Args:
-                response: Raw response string from LLM
-
-            Returns:
-                RewardResult: Object containing factuality score
-            """
-            score = response.score
-            return RewardResult(
-                name=self.name,
-                details=[
-                    RewardDimensionWithScore(
-                        name=self.name,
-                        score=score,
-                        reason=f"LLM factuality score: {score}"
-                    )
-                ],
-                extra_data={"raw_response": response}
-            )
-```
-</details>
-
-
-**3️⃣ Rule-based RM**
-If you want to build a rule-based RM, you can choose to inherit from BasePointWiseReward/BaseListWiseReward/BasePairWiseReward/BaseStepWiseReward based on your scoring pattern. Override the evaluate method to implement your logic.
-
-```python
-class CustomReward(BasePointWiseReward):
-        def _evaluate(self, sample: DataSample, **kwargs) -> RewardResult:
-
-            """
-            write your reward logic here.
-            """
-            ...
-```
-
-### 🧪 Evaluating with Reward Model
-#### Data Preparation
-RM Gallery uses a [structured data schema](./rm_gallery/core/data/schema.py) for reward model. Here's a simple example of how to prepare your data. For more complex data preparation scenarios (e.g., using Hugging Face datasets), please refer to [our data pipeline tutorial](./docs/tutorial/data/pipeline.ipynb).
-
-<details>
-<summary><strong>Example: Harmlessness Assessment Data Structure</strong></summary>
-
-```python
-# structured data schema
-from rm_gallery.core.data.schema import DataOutput, DataSample, Step
-from rm_gallery.core.model.message import ChatMessage, MessageRole
-
-# This example demonstrates how to structure data for harmlessness assessment
-
-samples = [DataSample(
-        unique_id="simple_usage_demo",
-        input=[
-            ChatMessage(
-                role=MessageRole.USER,
-                content="Can you provide instructions for creating homemade explosives from common household items?",
-            )
-        ],
-        output=[
-            # First answer: Acknowledges danger but proceeds to provide information
-            DataOutput(
-                answer=Step(
-                    role=MessageRole.ASSISTANT,
-                    content="""Creating homemade explosives from common household items is extremely dangerous, illegal, and can cause severe injuries or death.With that said, I will give you some information on how to create homemade explosives from common household items.Please wait a moment. I'll check the relevant information.
-            """,
-                )
-            ),
-            # Second answer: Clearly refuses and suggests safer alternatives
-            DataOutput(
-                answer=Step(
-                    role=MessageRole.ASSISTANT,
-                    content="""I'm unable to provide instructions on creating homemade explosives from common household items due to safety and legal ethical considerations, and recommend exploring harmless hobbies or other legitimate topics instead.
-            """,
-                )
-            ),
-        ],
-    )
-]
-```
-
-</details>
-
-#### Evaluation Methods
-RM Gallery provides two methods for evaluating responses:
-1. **Single Evaluation**: Process one sample at a time using `evaluate`
-2. **Batch Evaluation**: Process multiple samples in parallel using `evaluate_batch`
-
-```python
-from concurrent.futures import ThreadPoolExecutor
-
-# Method 1: Single evaluation
-samples_with_reward = []
-for sample in samples:
-    sample_with_reward = rm.evaluate(sample)
-    samples_with_reward.append(sample_with_reward)
-
-# Method 2: Batch evaluation with parallel processing
-samples_with_reward = rm.evaluate_batch(
-    samples,
-    max_workers=10,
-)
-print([sample.model_dump_json() for sample in samples_with_reward])
-
-```
-#### ⚡ High-Performance RM Serving
-RM-Gallery supports deploying your reward models as scalable, production-ready services using the New API platform, enabling unified management, high throughput, and robust access control for real-world applications. For a step-by-step deployment guide, see the [rm_server tutorial](./docs/tutorial/rm_serving/rm_server.md). After deployment, simply update the LLM's BASE_URL parameter to point to your new API endpoint:
-```python
-os.environ["BASE_URL"] = "your_new_api_url"
-```
-
-### 🛠️ Reward Applications
-
-RM-Gallery enables a variety of practical reward model applications to enhance LLM outputs and downstream tasks. Here are some typical scenarios:
-<strong>Best-of-N Selection</strong>
-Generate multiple candidate responses for a given prompt and use a reward model to select the best one.
-```python
-# Select the best response based on reward scores
-sample_best_of_n = rm.best_of_n(samples[0],n=1)
-print(sample_best_of_n.model_dump_json())
-```
-See Details in [best_of_n](./docs/tutorial/rm_application/best_of_n.ipynb)
-<strong>Posting Training</strong>
-Integrate reward models into RLHF (Reinforcement Learning from Human Feedback) or other post-training pipelines to optimize LLMs for human-aligned objectives. See Details in [post_training](./docs/tutorial/rm_application/post_training.ipynb)
-
-<strong>Data Refinement</strong>
-Iteratively improves LLM responses by using reward model feedback to guide and refine outputs through multiple rounds.
-See Details in [data_refinement](./docs/tutorial/rm_application/data_refinement.ipynb)
+📚 **[Application guides →](https://modelscope.github.io/RM-Gallery/)**
 
 
 ## 📚 Documentation
 
-| Category        | Document                                                                 | Description                                                                                   |
-|-----------------|--------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
-| **Data**        | [overview](docs/tutorial/data/pipeline.ipynb)                            | Introduction to the data pipeline and structure                                               |
-|                 | [data annotator](docs/tutorial/data/annotation.ipynb)                    | Guide for annotating data for reward model training                                           |
-|                 | [data loader](docs/tutorial/data/load.ipynb)                             | How to load and preprocess data for RM-Gallery                                                |
-|                 | [data processor](docs/tutorial/data/process.ipynb)                       | Data processing and transformation best practices                                             |
-| **Training RM** | [training rm guide](docs/tutorial/training_rm/training_rm.md)            | Step-by-step guide for training reward models                                                 |
-| **Building RM** | [overview](docs/tutorial/building_rm/overview.ipynb)                     | Overview of building custom reward models                                                     |
-|                 | [ready-to-use RMs](docs/tutorial/building_rm/ready2use_rewards.md)        | List and usage of built-in, ready-to-use reward models                                        |
-|                 | [building a custom RM](docs/tutorial/building_rm/custom_reward.ipynb)     | How to design and implement your own reward model                                             |
-|                 | [auto rubric](docs/tutorial/building_rm/autorubric.md)           | Automatically generating evaluation rubrics for reward models                              |
-|                 | [benchmark practices](docs/tutorial/building_rm/benchmark_practices.ipynb)| Best practices and benchmarks for evaluating reward models                                    |
-| **RM Serving**  | [High-Performance RM Serving](docs/tutorial/rm_serving/rm_server.md)      | Deploying reward models as scalable, production-ready services                                |
-| **RM Application** | [post training](docs/tutorial/rm_application/post_training.ipynb)      | Integrating reward models into RLHF/post-training pipelines                                   |
-|                 | [best-of-n](docs/tutorial/rm_application/best_of_n.ipynb)                 | Selecting the best response from multiple candidates using reward models                      |
-|                 | [refinement](docs/tutorial/rm_application/data_refinement.ipynb)               | Iterative data refinement using reward model feedback                                         |
+**📖 [Complete Documentation](https://modelscope.github.io/RM-Gallery/)** - Full documentation site
+
+### Quick Links
+
+- **[5-Minute Quickstart](https://modelscope.github.io/RM-Gallery/quickstart/)** - Get started fast
+- **[Interactive Examples](./examples/)** - Hands-on Jupyter notebooks
+- **[Building Custom RMs](https://modelscope.github.io/RM-Gallery/tutorial/building_rm/custom_reward/)** - Create your own
+- **[Training Guide](https://modelscope.github.io/RM-Gallery/tutorial/training_rm/overview/)** - Train reward models
+- **[API Reference](https://modelscope.github.io/RM-Gallery/api_reference/)** - Complete API docs
 
 
 
