@@ -11,45 +11,39 @@ theme:
     - content.code.copy
     - content.code.annotate
 nav:
-  - Welcome: index.md
-  - Contribution Guide: contribution.md
-  - Library:
-      - RM Library: library/rm_library.md
-      - Rubric Library: library/rubric_library.md
-  - API Reference: api_reference.md
+  - Home: index.md
+  - Quickstart: quickstart.md
+  - FAQ: faq.md
 
-  - Building RM:
-      - Overview: tutorial/building_rm/overview.md
+  - Tutorial:
+      - Tutorial Home: tutorial/README.md
+      - End-to-End Guide: tutorial/end-to-end.md
+      - Building RM: tutorial/building_rm/overview.md
+      - Training RM: tutorial/training_rm/overview.md
+      - Evaluating RM: tutorial/evaluation/overview.md
+      - Data Pipeline: tutorial/data/pipeline.md
+
+  - Examples:
+      - Examples Home: examples/README.md
+      - Quick Start: examples/quickstart.ipynb
+      - Custom Reward Models: examples/custom-rm.ipynb
+      - Evaluation Pipeline: examples/evaluation.ipynb
+
+  - Guides:
       - Using Built-in RMs: tutorial/building_rm/ready2use_rewards.md
       - Building Custom RMs: tutorial/building_rm/custom_reward.md
-      - Rubric as Rewards: tutorial/building_rm/autorubric.md
-
-  - Evaluating RM:
-      - Overview: tutorial/evaluation/overview.md
-      - RewardBench2: tutorial/evaluation/rewardbench2.md
-      - Conflict Detector: tutorial/evaluation/conflict_detector.md
-      - JudgeBench: tutorial/evaluation/judgebench.md
-      - RM-Bench: tutorial/evaluation/rmbench.md
-      - RMB: tutorial/evaluation/rmb.md
-
-  - Using RM:
-      - RM Server: tutorial/rm_serving/rm_server.md
-      # - Boosting Strategy: using_rm/boosting_strategy.md
+      - Auto Rubric Generation: tutorial/building_rm/autorubric.md
+      - High-Performance Serving: tutorial/rm_serving/rm_server.md
       - Data Refinement: tutorial/rm_application/data_refinement.md
-      - Post Training with RM: tutorial/rm_application/post_training.md
-      - Best of N: tutorial/rm_application/best_of_n.md
+      - Post Training: tutorial/rm_application/post_training.md
+      - Best-of-N Selection: tutorial/rm_application/best_of_n.md
 
-  - Training RM:
-      - Overview: tutorial/training_rm/overview.md
-      - Training Bradley-Terry RM: tutorial/training_rm/bradley_terry_rm.md
-      - Training RM with SFT: tutorial/training_rm/sft_rm.md
-      - Training RM with RL: tutorial/training_rm/training_rm.md
+  - Reference:
+      - RM Library: library/rm_library.md
+      - Rubric Library: library/rubric_library.md
+      - API Documentation: api_reference.md
 
-  - Data:
-      - Overview: tutorial/data/pipeline.md
-      - Annotate Data: tutorial/data/annotation.md
-      - Load Data: tutorial/data/load.md
-      - Process Data: tutorial/data/process.md
+  - Contribution: contribution.md
 plugins:
   - search:
       lang:

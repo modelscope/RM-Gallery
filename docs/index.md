@@ -40,6 +40,38 @@ show_datetime: true
 
 ---
 
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin: 2rem 0;">
+  <div style="padding: 1.5rem; border-radius: 12px; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(99, 102, 241, 0.05) 100%); border: 1px solid rgba(59, 130, 246, 0.2);">
+    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🚀</div>
+    <h3 style="margin: 0 0 0.5rem 0;">Quick Start</h3>
+    <p style="margin: 0 0 1rem 0; color: #666;">Get started in 5 minutes</p>
+    <a href="quickstart/" style="text-decoration: none; color: #3b82f6; font-weight: 600;">Start Now →</a>
+  </div>
+
+  <div style="padding: 1.5rem; border-radius: 12px; background: linear-gradient(135deg, rgba(139, 92, 246, 0.1) 0%, rgba(168, 85, 247, 0.05) 100%); border: 1px solid rgba(139, 92, 246, 0.2);">
+    <div style="font-size: 2rem; margin-bottom: 0.5rem;">📚</div>
+    <h3 style="margin: 0 0 0.5rem 0;">Tutorials</h3>
+    <p style="margin: 0 0 1rem 0; color: #666;">Step-by-step guides</p>
+    <a href="tutorial/" style="text-decoration: none; color: #8b5cf6; font-weight: 600;">Learn More →</a>
+  </div>
+
+  <div style="padding: 1.5rem; border-radius: 12px; background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(219, 39, 119, 0.05) 100%); border: 1px solid rgba(236, 72, 153, 0.2);">
+    <div style="font-size: 2rem; margin-bottom: 0.5rem;">💻</div>
+    <h3 style="margin: 0 0 0.5rem 0;">Examples</h3>
+    <p style="margin: 0 0 1rem 0; color: #666;">Interactive notebooks</p>
+    <a href="../examples/" style="text-decoration: none; color: #ec4899; font-weight: 600;">Try It Out →</a>
+  </div>
+
+  <div style="padding: 1.5rem; border-radius: 12px; background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.05) 100%); border: 1px solid rgba(16, 185, 129, 0.2);">
+    <div style="font-size: 2rem; margin-bottom: 0.5rem;">❓</div>
+    <h3 style="margin: 0 0 0.5rem 0;">FAQ</h3>
+    <p style="margin: 0 0 1rem 0; color: #666;">Common questions</p>
+    <a href="faq/" style="text-decoration: none; color: #10b981; font-weight: 600;">Get Answers →</a>
+  </div>
+</div>
+
+---
+
 ## 📢 News
 - **[2025-07-09]** We release RM Gallery v0.1.0 now, which is also available in [PyPI](https://pypi.org/simple/rm-gallery/)!
 
