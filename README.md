@@ -181,6 +181,7 @@ Test your models on standard benchmarks:
 - **[Building Custom RMs](https://modelscope.github.io/RM-Gallery/tutorial/building_rm/custom_reward/)** - Create your own
 - **[Training Guide](https://modelscope.github.io/RM-Gallery/tutorial/training_rm/overview/)** - Train reward models
 - **[API Reference](https://modelscope.github.io/RM-Gallery/api_reference/)** - Complete API docs
+- **[Changelog](./CHANGELOG.md)** - Version history and updates
 
 
 

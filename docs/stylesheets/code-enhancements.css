@@ -12,7 +12,7 @@
 /* Code block background */
 .highlight pre {
   margin: 0;
-  padding: 1.2em 1.5em;
+  padding: 1.5em 1.8em;
   background: linear-gradient(135deg, #1e1e2e 0%, #232333 100%);
   overflow-x: auto;
   border-radius: 8px;
@@ -21,19 +21,21 @@
 /* Code text */
 .highlight code {
   font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace;
-  font-size: 0.9em;
-  line-height: 1.6;
+  font-size: 1em;
+  line-height: 1.8;
   color: #e6e6e6;
+  letter-spacing: 0.3px;
 }
 
 /* Inline code */
 code {
   font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace;
-  font-size: 0.85em;
-  padding: 0.2em 0.4em;
-  background: rgba(110, 118, 129, 0.1);
+  font-size: 0.9em;
+  padding: 0.25em 0.5em;
+  background: rgba(110, 118, 129, 0.15);
   border-radius: 4px;
   color: #e83e8c;
+  font-weight: 500;
 }
 
 /* Copy button styling */
@@ -205,12 +207,23 @@ code {
 /* Responsive adjustments */
 @media (max-width: 768px) {
   .highlight pre {
-    padding: 1em;
-    font-size: 0.85em;
+    padding: 1.2em;
+  }
+
+  .highlight code {
+    font-size: 0.95em;
+    line-height: 1.7;
   }
 
   .md-clipboard {
     top: 0.5em;
     right: 0.5em;
   }
+}
+
+/* Better contrast for comments */
+.highlight .c,
+.highlight .c1,
+.highlight .cm {
+  color: #7f848e !important;
 }
