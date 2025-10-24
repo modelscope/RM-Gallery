@@ -261,7 +261,7 @@ Each benchmark page provides detailed setup instructions, code examples, and res
 
 ## Additional Resources
 
-- **[Building RM Overview](../building_rm/overview.ipynb)** - Learn how to build reward models
+- **[Building RM Overview](../building_rm/overview.md)** - Learn how to build reward models
 - **[RM Library](../../library/rm_library.md)** - Pre-built reward models
-- **[Best Practices](../building_rm/benchmark_practices.ipynb)** - Evaluation best practices
+- **[Best Practices](../building_rm/benchmark_practices.md)** - Evaluation best practices
 

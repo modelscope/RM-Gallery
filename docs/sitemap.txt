@@ -15,12 +15,6 @@
 - Data Pipeline: /tutorial/data/pipeline/
 - End-to-End Guide: /tutorial/end-to-end/
 
-## Examples (Interactive)
-
-- Quickstart Notebook: /examples/quickstart.ipynb
-- Custom RM Notebook: /examples/custom-rm.ipynb
-- Evaluation Pipeline: /examples/evaluation.ipynb
-
 ## Guides
 
 - Using Built-in RMs: /tutorial/building_rm/ready2use_rewards/
@@ -35,7 +29,6 @@
 
 - RM Library: /library/rm_library/
 - Rubric Library: /library/rubric_library/
-- API Documentation: /api_reference/
 
 ## Contribution
 

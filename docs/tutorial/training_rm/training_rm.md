@@ -534,7 +534,7 @@ After training, look for **LoRA** or full weights in `checkpoints/<TIMESTAMP>/ac
 ## 11. Related Resources
 
 ### 11.1. Tutorial Documentation
-- **[Data Processing Tutorial](../data/process.ipynb)** - Comprehensive data handling techniques
+- **[Data Processing Tutorial](../data/process.md)** - Comprehensive data handling techniques
 
 ### 11.2. Framework Documentation
 - **[VERL Framework](https://github.com/volcengine/verl)**: Core training framework

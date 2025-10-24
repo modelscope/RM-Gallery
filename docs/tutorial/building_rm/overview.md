@@ -1,7 +1,7 @@
 # End-to-End Pipeline: From Data to Reward
 
 ## 1. Overview
-This notebook demonstrates a complete workflow following these steps:
+This guide demonstrates a complete workflow following these steps:
 
 - **Data Preparation** - Load dataset from source and split into training (for AutoRubric) and test sets
 
@@ -26,7 +26,7 @@ os.environ["BASE_URL"] = ""
 ## 3. Data Preparation
 
 We'll start by loading our dataset using the flexible data loading module.
-You can read more from [Data Loading](../data/load.ipynb).
+You can read more from [Data Loading](../data/load.md).
 
 ```python
 # Implementation by creating base class
@@ -154,7 +154,7 @@ generated_reward_module = BaseHarmlessnessListWiseReward(
 ```
 
 ### 4.3. Customize Your Reward
-See more details in [Reward Customization](./custom_reward.ipynb).
+See more details in [Reward Customization](./custom_reward.md).
 
 ```python
 from typing import List

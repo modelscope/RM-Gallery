@@ -11,14 +11,16 @@ Get started with RM-Gallery in just 5 minutes! This guide will walk you through 
 
 ## Installation
 
-RM-Gallery requires Python >= 3.10 and < 3.13.
+> RM-Gallery requires **Python >= 3.10 and < 3.13**
 
 === "From PyPI"
+
     ```bash
     pip install rm-gallery
     ```
 
 === "From Source"
+
     ```bash
     git clone https://github.com/modelscope/RM-Gallery.git
     cd RM-Gallery
@@ -133,14 +135,6 @@ Use reward models in real applications:
 - **[Best-of-N Selection](tutorial/rm_application/best_of_n.md)** - Select the best response
 - **[Data Refinement](tutorial/rm_application/data_refinement.md)** - Improve data quality with RM
 - **[Post Training](tutorial/rm_application/post_training.md)** - Integrate with RLHF
-
-## Interactive Examples
-
-Want to try it hands-on? Check out our Jupyter Notebook examples:
-
-- **[Quickstart Notebook](../examples/quickstart.ipynb)** - Interactive version of this guide
-- **[Custom RM Tutorial](../examples/custom-rm.ipynb)** - Build your own reward model
-- **[Evaluation Pipeline](../examples/evaluation.ipynb)** - Complete evaluation workflow
 
 ## Common Scenarios
 
