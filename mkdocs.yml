@@ -15,36 +15,43 @@ theme:
 nav:
   - Home: index.md
   - Quickstart: quickstart.md
-  - FAQ: faq.md
-
-  - Tutorial:
-      - Tutorial Home: tutorial/README.md
+  - Tutorials:
+      - Overview: tutorial/README.md
       - End-to-End Guide: tutorial/end-to-end.md
-      - Building RM: tutorial/building_rm/overview.md
-      - Training RM: tutorial/training_rm/overview.md
-      - Evaluating RM: tutorial/evaluation/overview.md
+  - Building RM:
+      - Overview: tutorial/building_rm/overview.md
+      - Use Built-in RMs: tutorial/building_rm/ready2use_rewards.md
+      - Build Custom RMs: tutorial/building_rm/custom_reward.md
+      - Generate Auto Rubrics: tutorial/building_rm/autorubric.md
+      - Benchmark Best Practices: tutorial/building_rm/benchmark_practices.md
+  - Training RM:
+      - Overview: tutorial/training_rm/overview.md
+      - Train with Bradley-Terry: tutorial/training_rm/bradley_terry_rm.md
+      - Supervised Fine-tuning: tutorial/training_rm/sft_rm.md
+      - Train Pairwise RM: tutorial/training_rm/training_rm.md
+  - Evaluating RM:
+      - Overview: tutorial/evaluation/overview.md
+      - JudgeBench Evaluation: tutorial/evaluation/judgebench.md
+      - RewardBench2 Evaluation: tutorial/evaluation/rewardbench2.md
+      - RM-Bench Evaluation: tutorial/evaluation/rmb.md
+      - RMBench Evaluation: tutorial/evaluation/rmbench.md
+      - Conflict Detection: tutorial/evaluation/conflict_detector.md
+  - Data Processing:
       - Data Pipeline: tutorial/data/pipeline.md
-
-  - Examples:
-      - Examples Home: examples/README.md
-      - Quick Start: examples/quickstart.ipynb
-      - Custom Reward Models: examples/custom-rm.ipynb
-      - Evaluation Pipeline: examples/evaluation.ipynb
-
-  - Guides:
-      - Using Built-in RMs: tutorial/building_rm/ready2use_rewards.md
-      - Building Custom RMs: tutorial/building_rm/custom_reward.md
-      - Auto Rubric Generation: tutorial/building_rm/autorubric.md
+      - Load Data: tutorial/data/load.md
+      - Process Data: tutorial/data/process.md
+      - Data Annotation: tutorial/data/annotation.md
+  - RM Applications:
       - High-Performance Serving: tutorial/rm_serving/rm_server.md
       - Data Refinement: tutorial/rm_application/data_refinement.md
-      - Post Training: tutorial/rm_application/post_training.md
       - Best-of-N Selection: tutorial/rm_application/best_of_n.md
-
+      - Post Training with RM: tutorial/rm_application/post_training.md
   - Reference:
       - RM Library: library/rm_library.md
       - Rubric Library: library/rubric_library.md
       - API Documentation: api_reference.md
-
+      - Changelog: ../CHANGELOG.md
+  - FAQ: faq.md
   - Contribution: contribution.md
 plugins:
   - search:
@@ -55,19 +62,7 @@ plugins:
       min_search_length: 2
       prebuild_index: true
       indexing: 'full'
-      # Boost certain pages in search results
-      boost:
-        quickstart.md: 2.0
-        faq.md: 1.5
-        tutorial/end-to-end.md: 1.5
-        index.md: 1.2
-  - mkdocs-jupyter:
-      ignore_h1_titles: True
-      execute: False
-      include_source: True
-      theme: light
-      show_input: True
-      allow_errors: False
+  - mkdocs-jupyter
   - mkdocstrings:
       handlers:
         python:
@@ -104,9 +99,12 @@ markdown_extensions:
 
 extra_css:
   - https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap
+  - stylesheets/readability-enhancements.css
   - stylesheets/code-enhancements.css
   - stylesheets/table-enhancements.css
+  - stylesheets/jupyter-simple.css
 
 extra_javascript:
   - javascripts/code-copy.js
   - javascripts/search-fix.js
+  - javascripts/code-zoom.js
