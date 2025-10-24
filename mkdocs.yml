@@ -9,6 +9,7 @@ theme:
   name: shadcn
   show_stargazers: true
   git_enabled: false
+  nav_sort: false
   features:
     - content.code.copy
     - content.code.annotate
@@ -20,32 +21,36 @@ nav:
       - End-to-End Guide: tutorial/end-to-end.md
   - Building RM:
       - Overview: tutorial/building_rm/overview.md
-      - Use Built-in RMs: tutorial/building_rm/ready2use_rewards.md
-      - Build Custom RMs: tutorial/building_rm/custom_reward.md
-      - Generate Auto Rubrics: tutorial/building_rm/autorubric.md
-      - Benchmark Best Practices: tutorial/building_rm/benchmark_practices.md
-  - Training RM:
-      - Overview: tutorial/training_rm/overview.md
-      - Train with Bradley-Terry: tutorial/training_rm/bradley_terry_rm.md
-      - Supervised Fine-tuning: tutorial/training_rm/sft_rm.md
-      - Train Pairwise RM: tutorial/training_rm/training_rm.md
+      - Using Built-in RMs: tutorial/building_rm/ready2use_rewards.md
+      - Building Custom RMs: tutorial/building_rm/custom_reward.md
+      - Rubric as Rewards: tutorial/building_rm/autorubric.md
+
   - Evaluating RM:
       - Overview: tutorial/evaluation/overview.md
-      - JudgeBench Evaluation: tutorial/evaluation/judgebench.md
-      - RewardBench2 Evaluation: tutorial/evaluation/rewardbench2.md
-      - RM-Bench Evaluation: tutorial/evaluation/rmb.md
-      - RMBench Evaluation: tutorial/evaluation/rmbench.md
-      - Conflict Detection: tutorial/evaluation/conflict_detector.md
-  - Data Processing:
-      - Data Pipeline: tutorial/data/pipeline.md
+      - RMB: tutorial/evaluation/rmb.md
+      - RM-Bench: tutorial/evaluation/rmbench.md
+      - JudgeBench: tutorial/evaluation/judgebench.md
+      - RewardBench2: tutorial/evaluation/rewardbench2.md
+      - Conflict Detector: tutorial/evaluation/conflict_detector.md
+
+  - Using RM:
+      - RM Server: tutorial/rm_serving/rm_server.md
+      # - Boosting Strategy: using_rm/boosting_strategy.md
+      - Data Refinement: tutorial/rm_application/data_refinement.md
+      - Post Training with RM: tutorial/rm_application/post_training.md
+      - Best of N: tutorial/rm_application/best_of_n.md
+
+  - Training RM:
+      - Overview: tutorial/training_rm/overview.md
+      - Training Bradley-Terry RM: tutorial/training_rm/bradley_terry_rm.md
+      - Training RM with SFT: tutorial/training_rm/sft_rm.md
+      - Training RM with RL: tutorial/training_rm/training_rm.md
+
+  - Data:
+      - Overview: tutorial/data/pipeline.md
+      - Annotate Data: tutorial/data/annotation.md
       - Load Data: tutorial/data/load.md
       - Process Data: tutorial/data/process.md
-      - Data Annotation: tutorial/data/annotation.md
-  - RM Applications:
-      - High-Performance Serving: tutorial/rm_serving/rm_server.md
-      - Data Refinement: tutorial/rm_application/data_refinement.md
-      - Best-of-N Selection: tutorial/rm_application/best_of_n.md
-      - Post Training with RM: tutorial/rm_application/post_training.md
   - Reference:
       - RM Library: library/rm_library.md
       - Rubric Library: library/rubric_library.md
