@@ -82,7 +82,7 @@ print(f"Best response: {best_sample.output[0].answer.content}")
 ## Related Topics
 
 For more applications of reward models, see:
-- [Post Training with RM](../tutorial/rm_application/post_training.ipynb)
-- [Data Refinement](../tutorial/rm_application/data_refinement.ipynb)
+- [Post Training with RM](../tutorial/rm_application/post_training.md)
+- [Data Refinement](../tutorial/rm_application/data_refinement.md)
 
 -->

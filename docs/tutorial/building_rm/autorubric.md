@@ -289,7 +289,7 @@ Input preference data should be in JSONL format with the following structure:
 
 ### Data Loading & Conversion
 
-For loading and converting data from various sources (HuggingFace datasets, local files, etc.), we provide a unified data loading framework. See the **[Data Loading Tutorial](../data/load.ipynb)** for comprehensive examples.
+For loading and converting data from various sources (HuggingFace datasets, local files, etc.), we provide a unified data loading framework. See the **[Data Loading Tutorial](../data/load.md)** for comprehensive examples.
 
 **Quick Example - Load HelpSteer3 Preference Dataset:**
 

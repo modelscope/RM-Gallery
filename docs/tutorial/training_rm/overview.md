@@ -45,7 +45,7 @@ The data pipeline provides flexible loading and processing capabilities:
 - **Batch processing**: Efficient handling of large datasets
 - **Quality validation**: Built-in data quality checks
 
-[→ Learn about Data Pipeline](../data/pipeline.ipynb)
+[→ Learn about Data Pipeline](../data/pipeline.md)
 
 ---
 
@@ -56,7 +56,7 @@ Interactive annotation tools for creating high-quality training data:
 - **Quality control**: Inter-annotator agreement tracking
 - **Export formats**: Compatible with all training approaches
 
-[→ Learn about Data Annotation](../data/annotation.ipynb)
+[→ Learn about Data Annotation](../data/annotation.md)
 
 ---
 
@@ -67,7 +67,7 @@ Flexible data loading strategies for various sources:
 - **Custom sources**: Extensible loader architecture
 - **Streaming support**: Memory-efficient large dataset handling
 
-[→ Learn about Data Loading](../data/load.ipynb)
+[→ Learn about Data Loading](../data/load.md)
 
 ---
 
@@ -78,7 +78,7 @@ Transform and prepare data for training:
 - **Augmentation**: Expand training data diversity
 - **Train/validation splits**: Automated splitting with stratification
 
-[→ Learn about Data Processing](../data/process.ipynb)
+[→ Learn about Data Processing](../data/process.md)
 
 ---
 
@@ -397,7 +397,7 @@ results = evaluate_reward_model(
 Ready to start training? Follow this learning path:
 
 ### For Beginners
-1. **Start with data**: [Data Loading](../data/load.ipynb)
+1. **Start with data**: [Data Loading](../data/load.md)
 2. **Try Bradley-Terry**: [Pairwise Training](bradley_terry_rm.md)
 3. **Evaluate results**: [Evaluation Overview](../evaluation/overview.md)
 
@@ -409,13 +409,13 @@ Ready to start training? Follow this learning path:
 ### For Researchers
 1. **Compare approaches**: Test all three training methods
 2. **Benchmark extensively**: Use all evaluation tools
-3. **Iterate and improve**: [Data Refinement](../rm_application/data_refinement.ipynb)
+3. **Iterate and improve**: [Data Refinement](../rm_application/data_refinement.md)
 
 ## 12. Additional Resources
 
 ### Documentation
-- **[Data Pipeline](../data/pipeline.ipynb)** - Complete data preparation workflow
-- **[Building RM](../building_rm/overview.ipynb)** - Non-training reward model construction
+- **[Data Pipeline](../data/pipeline.md)** - Complete data preparation workflow
+- **[Building RM](../building_rm/overview.md)** - Non-training reward model construction
 - **[Evaluating RM](../evaluation/overview.md)** - Comprehensive evaluation guide
 
 ### Example Code
@@ -432,7 +432,7 @@ Ready to start training? Follow this learning path:
 
 **Ready to train your reward model? Choose your path:**
 
-- **[Data Pipeline](../data/pipeline.ipynb)** - Start with data preparation
+- **[Data Pipeline](../data/pipeline.md)** - Start with data preparation
 - **[Complete Training Guide](training_rm.md)** - Comprehensive VERL training
 - **[Bradley-Terry Training](bradley_terry_rm.md)** - Most common RLHF approach
 - **[SFT Training](sft_rm.md)** - Specialized evaluation models

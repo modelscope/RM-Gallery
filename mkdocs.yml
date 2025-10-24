@@ -19,6 +19,11 @@ nav:
   - Tutorials:
       - Overview: tutorial/README.md
       - End-to-End Guide: tutorial/end-to-end.md
+
+  - Reference:
+      - RM Library: library/rm_library.md
+      - Rubric Library: library/rubric_library.md
+
   - Building RM:
       - Overview: tutorial/building_rm/overview.md
       - Using Built-in RMs: tutorial/building_rm/ready2use_rewards.md
@@ -51,11 +56,6 @@ nav:
       - Annotate Data: tutorial/data/annotation.md
       - Load Data: tutorial/data/load.md
       - Process Data: tutorial/data/process.md
-  - Reference:
-      - RM Library: library/rm_library.md
-      - Rubric Library: library/rubric_library.md
-      - API Documentation: api_reference.md
-      - Changelog: ../CHANGELOG.md
   - FAQ: faq.md
   - Contribution: contribution.md
 plugins:
@@ -87,9 +87,6 @@ markdown_extensions:
   - pymdownx.blocks.details
   - pymdownx.tabbed:
       alternate_style: true
-  - pymdownx.blocks.tab:
-      combine_header_slug: true
-      separator: ___
   - pymdownx.progressbar
   - pymdownx.snippets
   - pymdownx.arithmatex:

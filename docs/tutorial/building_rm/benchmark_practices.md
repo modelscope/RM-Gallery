@@ -1,7 +1,7 @@
 # Benchmark
 
 ## 1. Overview
-In this notebook, we will show the gallery's pipeline on built-in reward benchmark: [RewardBench2](https://huggingface.co/spaces/allenai/reward-bench) and [RMB Bench](https://github.com/Zhou-Zoey/RMB-Reward-Model-Benchmark).
+In this guide, we will show the gallery's pipeline on built-in reward benchmark: [RewardBench2](https://huggingface.co/spaces/allenai/reward-bench) and [RMB Bench](https://github.com/Zhou-Zoey/RMB-Reward-Model-Benchmark).
 
 ## 2. Setup
 

@@ -567,9 +567,8 @@ cd RM-Gallery/examples/end_to_end/
 ## Additional Resources
 
 - 📚 [Full Documentation](../index.md)
-- 💻 [Interactive Notebooks](../../examples/)
 - 🤝 [Community Forum](https://github.com/modelscope/RM-Gallery/discussions)
-- 📝 [API Reference](../api_reference.md)
+- ❓ [FAQ](../faq.md)
 
 Happy building! 🚀
 

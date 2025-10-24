@@ -1,6 +1,6 @@
 # Custom Reward Module Development Guide
 
-This notebook demonstrates how to create custom reward modules by extending the base classes in RM-Gallery.
+This guide demonstrates how to create custom reward modules by extending the base classes in RM-Gallery.
 
 ## 1. Overview
 Here's a structured reference listing of the key base classes, select appropriate base class based on evaluation strategy:

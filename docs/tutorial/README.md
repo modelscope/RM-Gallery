@@ -8,58 +8,25 @@ Welcome to the RM-Gallery tutorial series! This directory contains comprehensive
 
 **Goal**: Get started with reward models in 30 minutes
 
-1. **[Quickstart Guide](../quickstart.md)** (5 min)
-   - Install RM-Gallery
-   - Use your first reward model
-   - Evaluate AI responses
-
-2. **[Building RM Overview](building_rm/overview.md)** (10 min)
-   - Understand reward model types
-   - Learn the architecture
-   - See examples
-
-3. **[Using Built-in RMs](building_rm/ready2use_rewards.md)** (15 min)
-   - Explore 35+ pre-built models
-   - Choose the right model
-   - Run evaluations
+1. **[Quickstart Guide](../quickstart.md)** - Install, use, and evaluate your first RM (5 min)
+2. **[Building RM Overview](building_rm/overview.md)** - Understand RM types and architecture (10 min)
+3. **[Using Built-in RMs](building_rm/ready2use_rewards.md)** - Explore 35+ pre-built models (15 min)
 
 ### 🚀 Intermediate Path
 
 **Goal**: Build and customize reward models
 
-1. **[Building Custom RMs](building_rm/custom_reward.md)** (30 min)
-   - Create rule-based rewards
-   - Build LLM-based rewards
-   - Use the Rubric-Critic-Score paradigm
-
-2. **[Data Pipeline](data/pipeline.md)** (20 min)
-   - Load data from various sources
-   - Process and transform data
-   - Export to different formats
-
-3. **[End-to-End Tutorial](end-to-end.md)** (30 min)
-   - Build a complete reward model from scratch
-   - Test and validate
-   - Deploy and use
+1. **[Building Custom RMs](building_rm/custom_reward.md)** - Create rule-based and LLM-based rewards (30 min)
+2. **[Data Pipeline](data/pipeline.md)** - Load, process, and transform data (20 min)
+3. **[End-to-End Tutorial](end-to-end.md)** - Complete workflow from data to deployment (30 min)
 
 ### 🎓 Advanced Path
 
 **Goal**: Train, evaluate, and deploy at scale
 
-1. **[Training RM Overview](training_rm/overview.md)** (15 min)
-   - Understand training paradigms
-   - Set up training environment
-   - Choose training strategy
-
-2. **[Training with VERL](training_rm/training_rm.md)** (60 min)
-   - Prepare training data
-   - Configure training
-   - Launch distributed training
-
-3. **[High-Performance Serving](rm_serving/rm_server.md)** (45 min)
-   - Deploy RM as a service
-   - Set up load balancing
-   - Monitor performance
+1. **[Training RM Overview](training_rm/overview.md)** - Understand training paradigms and setup (15 min)
+2. **[Training with VERL](training_rm/training_rm.md)** - Complete RL-based training workflow (60 min)
+3. **[High-Performance Serving](rm_serving/rm_server.md)** - Deploy RM as production service (45 min)
 
 ## 📚 Tutorial Catalog
 
@@ -86,10 +53,11 @@ Welcome to the RM-Gallery tutorial series! This directory contains comprehensive
 | Tutorial | Level | Time | Description |
 |----------|-------|------|-------------|
 | [Evaluation Overview](evaluation/overview.md) | Beginner | 10 min | Introduction to evaluation |
+| [RMB](evaluation/rmb.md) | Intermediate | 30 min | Reward Model Benchmark |
+| [RM-Bench](evaluation/rmbench.md) | Intermediate | 30 min | Subtlety and style evaluation |
+| [JudgeBench](evaluation/judgebench.md) | Intermediate | 30 min | Judge capability testing |
 | [RewardBench2](evaluation/rewardbench2.md) | Intermediate | 30 min | Latest benchmark |
 | [Conflict Detector](evaluation/conflict_detector.md) | Advanced | 45 min | Detect evaluation conflicts |
-| [JudgeBench](evaluation/judgebench.md) | Intermediate | 30 min | Judge capability testing |
-| [RM-Bench](evaluation/rmbench.md) | Intermediate | 30 min | Comprehensive evaluation |
 
 ### Data Processing
 
@@ -127,7 +95,7 @@ Welcome to the RM-Gallery tutorial series! This directory contains comprehensive
 
 **Test on benchmarks**
 → Read [Evaluation Overview](evaluation/overview.md)
-→ Try specific benchmarks (RewardBench2, RM-Bench, etc.)
+→ Try specific benchmarks: [RMB](evaluation/rmb.md), [RM-Bench](evaluation/rmbench.md), [RewardBench2](evaluation/rewardbench2.md)
 
 **Deploy to production**
 → Follow [RM Server Guide](rm_serving/rm_server.md)
@@ -164,11 +132,9 @@ Welcome to the RM-Gallery tutorial series! This directory contains comprehensive
 
 - [Quickstart Guide](../quickstart.md) - Get started in 5 minutes
 - [FAQ](../faq.md) - Common questions answered
-- [API Reference](../api_reference.md) - Complete API docs
 
 ### Interactive
 
-- [Jupyter Notebooks](../../examples/) - Hands-on tutorials
 - [End-to-End Tutorial](end-to-end.md) - Complete project
 
 ### Reference
@@ -176,21 +142,6 @@ Welcome to the RM-Gallery tutorial series! This directory contains comprehensive
 - [RM Library](../library/rm_library.md) - All available models
 - [Rubric Library](../library/rubric_library.md) - Evaluation rubrics
 - [Contribution Guide](../contribution.md) - How to contribute
-
-## 📊 Tutorial Difficulty Legend
-
-- 🌱 **Beginner**: No prior experience needed
-- 🚀 **Intermediate**: Basic understanding required
-- 🎓 **Advanced**: In-depth knowledge helpful
-
-## ⏱️ Time Estimates
-
-Time estimates are for:
-- **Reading**: Understanding the concepts
-- **Coding**: Running and modifying examples
-- **Practice**: Experimenting with your own data
-
-Actual time may vary based on your experience level.
 
 ## 🆘 Getting Help
 
@@ -203,25 +154,7 @@ Actual time may vary based on your experience level.
 
 **Found an error?**
 
-Please report it by:
-1. Opening a GitHub Issue
-2. Including the tutorial name
-3. Describing the problem
-4. Suggesting a fix (optional)
-
-## 🎓 Additional Resources
-
-### External Learning
-
-- **OpenAI Evals**: Similar evaluation framework
-- **RLHF Papers**: Academic background
-- **LLM Alignment**: Broader context
-
-### Community
-
-- **GitHub**: Source code and issues
-- **Discussions**: Q&A and ideas
-- **Examples**: Community contributions
+Please [open a GitHub Issue](https://github.com/modelscope/RM-Gallery/issues) with the tutorial name and problem description.
 
 ## 🚀 Next Steps
 
