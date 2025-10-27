@@ -14,7 +14,7 @@ new: true
   </p>
   <ul style="margin-left: 1.5rem; line-height: 1.8;">
     <li><strong>Query-Agnostic Rubrics:</strong> Domain-specific evaluation criteria for general, code, math, science, technology, and engineering fields</li>
-    <li><strong>Query-Specific Rubrics:</strong> Targeted assessment frameworks tailored to specific user queries and scenarios</li>
+    <li><strong>Query-Specific Rubrics:</strong> Targeted assessment frameworks tailored to specific user queries and scenarios. Query-specific rubrics are provided in this dataset: <a href="https://huggingface.co/datasets/agentscope-ai/Auto-Rubric" target="_blank">https://huggingface.co/datasets/agentscope-ai/Auto-Rubric</a>, which includes detailed evaluation criteria tailored to individual queries.</li>
     <li><strong>Multi-Domain Coverage:</strong> From Python code quality to physics problem-solving, cybersecurity to system design</li>
     <li><strong>Complexity Levels:</strong> Rubrics ranging from medium to very high complexity for various assessment needs</li>
     <li><strong>Source Diversity:</strong> Community standards, academic frameworks, and industry best practices</li>
