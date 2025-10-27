@@ -105,8 +105,10 @@ extra_css:
   - stylesheets/code-enhancements.css
   - stylesheets/table-enhancements.css
   - stylesheets/jupyter-simple.css
+  - stylesheets/nav-scroll-fix.css
 
 extra_javascript:
   - javascripts/code-copy.js
   - javascripts/search-fix.js
   - javascripts/code-zoom.js
+  - javascripts/nav-scroll-fix.js
