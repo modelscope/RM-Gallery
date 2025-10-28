@@ -9,26 +9,24 @@ GENERATE_NUMBER=1
 MAX_EPOCHS=10
 MAX_WORKERS=256
 MAX_RETRIES=5
-ENABLE_THINKING="true"
-DOMAINS="multilingual"
+DOMAINS="general"  # Set to empty string "" to process all domains, or "multilingual" for specific domain
 BATCH_SIZE=500
 
 # Checkpoint and resume settings (uncomment to enable)
-# RESUME="--resume"
-# DISABLE_CHECKPOINT="--disable-checkpoint"
+RESUME=""  # Set to "--resume" to enable
+DISABLE_CHECKPOINT=""  # Set to "--disable-checkpoint" to disable
 
-python run_rubric_generator.py \
-    --data-path "$DATA_PATH" \
-    --output-dir "$OUTPUT_DIR" \
-    --model "$MODEL" \
+python generator.py \
+    --data-path $DATA_PATH \
+    --output-dir $OUTPUT_DIR \
+    --model $MODEL \
     --generate-number $GENERATE_NUMBER \
     --max-epochs $MAX_EPOCHS \
     --max-workers $MAX_WORKERS \
     --max-retries $MAX_RETRIES \
-    --enable-thinking $ENABLE_THINKING \
     --max-samples $MAX_SAMPLES \
-    --domains "$DOMAINS" \
     --batch-size $BATCH_SIZE \
+    ${DOMAINS:+--domains $DOMAINS} \
     $RESUME \
     $DISABLE_CHECKPOINT
 
