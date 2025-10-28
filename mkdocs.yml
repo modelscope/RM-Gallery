@@ -67,7 +67,6 @@ plugins:
       min_search_length: 2
       prebuild_index: true
       indexing: 'full'
-  - mkdocs-jupyter
   - mkdocstrings:
       handlers:
         python:
