@@ -16,4 +16,4 @@ docs/log
 .python-version
 tests/plt_*
 /site
-poetry.lock
+poetry.lock.env

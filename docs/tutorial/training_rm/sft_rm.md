@@ -2,7 +2,6 @@
 
 This directory contains training scripts for fine-tuning a Reasoning Reward Model based on the VERL framework. The model is designed to evaluate and score responses based on their reasoning quality, supporting both single-node and multi-node distributed training.
 
-[sft_rm.sh](../../../examples/train/sft/sft_rm.sh)
 
 ## Training Approaches Overview
 
