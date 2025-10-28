@@ -1,0 +1,56 @@
+# RM-Gallery Documentation Sitemap
+
+## Quick Access
+
+- Home: /
+- Quickstart: /quickstart/
+- FAQ: /faq/
+- Tutorial Home: /tutorial/
+
+## Core Tutorials
+
+- Building RM: /tutorial/building_rm/overview/
+- Training RM: /tutorial/training_rm/overview/
+- Evaluating RM: /tutorial/evaluation/overview/
+- Data Pipeline: /tutorial/data/pipeline/
+- End-to-End Guide: /tutorial/end-to-end/
+
+## Guides
+
+- Using Built-in RMs: /tutorial/building_rm/ready2use_rewards/
+- Building Custom RMs: /tutorial/building_rm/custom_reward/
+- Auto Rubric Generation: /tutorial/building_rm/autorubric/
+- High-Performance Serving: /tutorial/rm_serving/rm_server/
+- Data Refinement: /tutorial/rm_application/data_refinement/
+- Post Training: /tutorial/rm_application/post_training/
+- Best-of-N Selection: /tutorial/rm_application/best_of_n/
+
+## Reference
+
+- RM Library: /library/rm_library/
+- Rubric Library: /library/rubric_library/
+
+## Contribution
+
+- Contribution Guide: /contribution/
+
+## Popular Topics
+
+### Getting Started
+- Installation, setup, first reward model, quickstart, beginner guide
+
+### Building Reward Models
+- Custom reward, rule-based, LLM-based, rubric, pointwise, pairwise, listwise
+
+### Training
+- VERL, RL training, Bradley-Terry, pairwise, pointwise, distributed training
+
+### Evaluation
+- RewardBench2, Conflict Detector, JudgeBench, RM-Bench, RMB, benchmarks
+
+### Applications
+- RLHF, post-training, best-of-N, data refinement, production deployment
+
+### Troubleshooting
+- FAQ, common issues, installation problems, API errors, performance optimization
+
