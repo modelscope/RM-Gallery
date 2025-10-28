@@ -1,0 +1,27 @@
+/* Navigation Scroll Fix Styles */
+/* Prevents visual flashing when restoring scroll position */
+
+/* Smooth scroll behavior for sidebar */
+[data-slot="sidebar-content"],
+[data-sidebar="content"],
+.md-sidebar__scrollwrap {
+    scroll-behavior: auto !important; /* Disable smooth scroll for instant position restore */
+}
+
+/* Hide scrollbar jump during page transition */
+[data-slot="sidebar-content"].restoring-scroll,
+[data-sidebar="content"].restoring-scroll {
+    overflow: hidden;
+}
+
+/* Ensure sidebar doesn't jump during navigation */
+[data-slot="sidebar-wrapper"] [data-slot="sidebar"] {
+    position: sticky;
+    top: calc(var(--header-height) + 1px);
+}
+
+/* Prevent layout shift during scroll restoration */
+[data-slot="sidebar-content"] {
+    will-change: scroll-position;
+}
+

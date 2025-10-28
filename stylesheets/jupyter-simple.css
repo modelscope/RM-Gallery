@@ -1,0 +1,32 @@
+/* Simple Jupyter Notebook Styling - Only Font Size Adjustments */
+
+/* Code blocks in notebooks - restore normal font size */
+.jp-Cell .highlight pre,
+div.highlight pre,
+.input_area pre,
+.jp-InputArea pre {
+    font-size: 0.9em !important;
+    line-height: 1.6 !important;
+}
+
+/* Code in markdown cells */
+.jp-MarkdownCell code,
+.text_cell_render code {
+    font-size: 0.9em !important;
+}
+
+/* Ensure monospace font is used */
+.jp-Cell .highlight pre,
+div.highlight pre,
+.input_area pre {
+    font-family: 'JetBrains Mono', 'Monaco', 'Courier New', monospace !important;
+}
+
+/* Hide prompts for cleaner display (optional) */
+.jp-InputPrompt,
+.jp-OutputPrompt,
+div.prompt,
+.prompt {
+    display: none !important;
+}
+

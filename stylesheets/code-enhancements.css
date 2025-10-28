@@ -1,0 +1,229 @@
+/* Enhanced Code Block Styles for mkdocs-shadcn */
+
+/* Code block container */
+.highlight {
+  position: relative;
+  margin: 1.5em 0;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Code block background */
+.highlight pre {
+  margin: 0;
+  padding: 1.5em 1.8em;
+  background: linear-gradient(135deg, #1e1e2e 0%, #232333 100%);
+  overflow-x: auto;
+  border-radius: 8px;
+}
+
+/* Code text */
+.highlight code {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace;
+  font-size: 1em;
+  line-height: 1.8;
+  color: #e6e6e6;
+  letter-spacing: 0.3px;
+}
+
+/* Inline code */
+code {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Monaco', 'Consolas', monospace;
+  font-size: 0.9em;
+  padding: 0.25em 0.5em;
+  background: rgba(110, 118, 129, 0.15);
+  border-radius: 4px;
+  color: #e83e8c;
+  font-weight: 500;
+}
+
+/* Copy button styling */
+.copy-button {
+  position: absolute;
+  top: 0.8em;
+  right: 0.8em;
+  width: 2.2em;
+  height: 2.2em;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #e6e6e6;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  z-index: 10;
+}
+
+.highlight:hover .copy-button {
+  opacity: 1;
+}
+
+.copy-button:hover {
+  background: rgba(59, 130, 246, 0.3);
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: scale(1.05);
+}
+
+.copy-button:active {
+  transform: scale(0.95);
+}
+
+.copy-button.copied {
+  background: rgba(34, 197, 94, 0.3);
+  border-color: rgba(34, 197, 94, 0.5);
+}
+
+.copy-button svg {
+  width: 16px;
+  height: 16px;
+  display: inline;
+}
+
+.md-clipboard {
+  position: absolute;
+  top: 0.8em;
+  right: 0.8em;
+  width: 2.2em;
+  height: 2.2em;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #e6e6e6;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  opacity: 0;
+}
+
+.highlight:hover .md-clipboard {
+  opacity: 1;
+}
+
+.md-clipboard:hover {
+  background: rgba(59, 130, 246, 0.3);
+  border-color: rgba(59, 130, 246, 0.5);
+  transform: scale(1.05);
+}
+
+.md-clipboard:active {
+  transform: scale(0.95);
+}
+
+/* Line numbers */
+.highlight .linenos {
+  user-select: none;
+  padding-right: 1em;
+  color: #6c757d;
+  border-right: 1px solid rgba(255, 255, 255, 0.1);
+  margin-right: 1em;
+}
+
+/* Highlighted lines */
+.highlight .hll {
+  background-color: rgba(82, 139, 255, 0.2);
+  display: block;
+  margin: 0 -1.5em;
+  padding: 0 1.5em;
+}
+
+/* Syntax highlighting colors - One Dark Pro theme */
+.highlight .k  { color: #c678dd; } /* Keyword */
+.highlight .kn { color: #c678dd; } /* Keyword.Namespace */
+.highlight .kp { color: #c678dd; } /* Keyword.Pseudo */
+.highlight .kr { color: #c678dd; } /* Keyword.Reserved */
+.highlight .kt { color: #e5c07b; } /* Keyword.Type */
+
+.highlight .n  { color: #e06c75; } /* Name */
+.highlight .na { color: #d19a66; } /* Name.Attribute */
+.highlight .nb { color: #61afef; } /* Name.Builtin */
+.highlight .nc { color: #e5c07b; } /* Name.Class */
+.highlight .nf { color: #61afef; } /* Name.Function */
+.highlight .nn { color: #e5c07b; } /* Name.Namespace */
+.highlight .nv { color: #e06c75; } /* Name.Variable */
+
+.highlight .s  { color: #98c379; } /* String */
+.highlight .s1 { color: #98c379; } /* String.Single */
+.highlight .s2 { color: #98c379; } /* String.Double */
+.highlight .sb { color: #98c379; } /* String.Backtick */
+.highlight .sc { color: #98c379; } /* String.Char */
+.highlight .sd { color: #7f848e; } /* String.Doc */
+.highlight .se { color: #d19a66; } /* String.Escape */
+.highlight .sh { color: #98c379; } /* String.Heredoc */
+.highlight .si { color: #d19a66; } /* String.Interpol */
+.highlight .sr { color: #98c379; } /* String.Regex */
+
+.highlight .m  { color: #d19a66; } /* Number */
+.highlight .mi { color: #d19a66; } /* Number.Integer */
+.highlight .mf { color: #d19a66; } /* Number.Float */
+.highlight .mh { color: #d19a66; } /* Number.Hex */
+.highlight .mo { color: #d19a66; } /* Number.Oct */
+
+.highlight .o  { color: #56b6c2; } /* Operator */
+.highlight .ow { color: #c678dd; } /* Operator.Word */
+
+.highlight .c  { color: #5c6370; font-style: italic; } /* Comment */
+.highlight .c1 { color: #5c6370; font-style: italic; } /* Comment.Single */
+.highlight .cm { color: #5c6370; font-style: italic; } /* Comment.Multiline */
+.highlight .cp { color: #5c6370; } /* Comment.Preproc */
+
+.highlight .gd { color: #e06c75; } /* Generic.Deleted */
+.highlight .ge { font-style: italic; } /* Generic.Emph */
+.highlight .gi { color: #98c379; } /* Generic.Inserted */
+.highlight .gs { font-weight: bold; } /* Generic.Strong */
+
+/* Code block title */
+.highlight .filename {
+  display: block;
+  padding: 0.5em 1.5em;
+  background: rgba(0, 0, 0, 0.2);
+  color: #e6e6e6;
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.85em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Scrollbar styling for code blocks */
+.highlight pre::-webkit-scrollbar {
+  height: 8px;
+}
+
+.highlight pre::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+}
+
+.highlight pre::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+}
+
+.highlight pre::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .highlight pre {
+    padding: 1.2em;
+  }
+
+  .highlight code {
+    font-size: 0.95em;
+    line-height: 1.7;
+  }
+
+  .md-clipboard {
+    top: 0.5em;
+    right: 0.5em;
+  }
+}
+
+/* Better contrast for comments */
+.highlight .c,
+.highlight .c1,
+.highlight .cm {
+  color: #7f848e !important;
+}

@@ -1,0 +1,173 @@
+/* Enhanced Table Styles for mkdocs-shadcn */
+
+/* Table container */
+.md-typeset table:not([class]) {
+  display: block;
+  overflow-x: auto;
+  margin: 1.5em 0;
+  border-collapse: collapse;
+  width: 100%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+}
+
+/* Table wrapper for responsive */
+.md-typeset__table {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Table itself */
+table {
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9em;
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Table header */
+thead {
+  background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+}
+
+thead th {
+  padding: 1em 1.2em;
+  text-align: left;
+  font-weight: 600;
+  color: #1f2937;
+  border-bottom: 2px solid #dee2e6;
+  white-space: normal;
+  word-wrap: break-word;
+  min-width: 100px;
+}
+
+/* Table body */
+tbody tr {
+  border-bottom: 1px solid #e9ecef;
+  transition: background-color 0.2s ease;
+}
+
+tbody tr:hover {
+  background-color: #f8f9fa;
+}
+
+tbody tr:last-child {
+  border-bottom: none;
+}
+
+tbody td {
+  padding: 0.9em 1.2em;
+  color: #495057;
+  white-space: normal;
+  word-wrap: break-word;
+  word-break: break-word;
+  vertical-align: top;
+  line-height: 1.6;
+}
+
+/* Allow text wrapping in cells */
+td, th {
+  white-space: normal !important;
+  word-wrap: break-word !important;
+  word-break: break-word !important;
+  overflow-wrap: break-word !important;
+  hyphens: auto;
+}
+
+/* Code in tables */
+table code {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* Links in tables */
+table a {
+  color: #3b82f6;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+table a:hover {
+  color: #2563eb;
+  text-decoration: underline;
+}
+
+/* Striped rows (optional) */
+tbody tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+tbody tr:nth-child(even):hover {
+  background-color: #e9ecef;
+}
+
+/* Responsive table on mobile */
+@media (max-width: 768px) {
+  table {
+    font-size: 0.85em;
+  }
+
+  thead th,
+  tbody td {
+    padding: 0.7em 0.8em;
+    min-width: 80px;
+  }
+
+  /* Allow horizontal scroll on small screens */
+  .md-typeset__scrollwrap {
+    overflow-x: auto;
+  }
+}
+
+/* Table with borders */
+.md-typeset table:not([class]) th,
+.md-typeset table:not([class]) td {
+  border: 1px solid #dee2e6;
+}
+
+/* Compact table variant */
+table.compact td,
+table.compact th {
+  padding: 0.5em 0.8em;
+}
+
+/* Centered content in specific columns */
+table td:first-child,
+table th:first-child {
+  font-weight: 500;
+}
+
+/* Status badges in tables */
+table .badge {
+  display: inline-block;
+  padding: 0.25em 0.6em;
+  font-size: 0.85em;
+  font-weight: 500;
+  line-height: 1;
+  color: white;
+  text-align: center;
+  white-space: nowrap;
+  vertical-align: baseline;
+  border-radius: 4px;
+}
+
+table .badge.success {
+  background-color: #28a745;
+}
+
+table .badge.warning {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+table .badge.error {
+  background-color: #dc3545;
+}
+
+table .badge.info {
+  background-color: #17a2b8;
+}
+

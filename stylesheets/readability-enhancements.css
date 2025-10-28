@@ -1,0 +1,299 @@
+/* Readability Enhancements for RM-Gallery Documentation */
+
+/* Improve overall text readability */
+.md-typeset {
+    font-size: 16px;
+    line-height: 1.7;
+    color: #24292e;
+}
+
+/* Better heading contrast and spacing */
+.md-typeset h1 {
+    font-size: 2.2em;
+    font-weight: 700;
+    margin-top: 1.5em;
+    margin-bottom: 0.8em;
+    line-height: 1.3;
+}
+
+.md-typeset h2 {
+    font-size: 1.8em;
+    font-weight: 600;
+    margin-top: 1.8em;
+    margin-bottom: 0.7em;
+    line-height: 1.35;
+    border-bottom: 2px solid #e1e4e8;
+    padding-bottom: 0.3em;
+}
+
+.md-typeset h3 {
+    font-size: 1.4em;
+    font-weight: 600;
+    margin-top: 1.5em;
+    margin-bottom: 0.6em;
+}
+
+.md-typeset h4 {
+    font-size: 1.2em;
+    font-weight: 600;
+    margin-top: 1.2em;
+    margin-bottom: 0.5em;
+}
+
+/* Improve paragraph spacing */
+.md-typeset p {
+    margin-bottom: 1.2em;
+    line-height: 1.8;
+}
+
+/* Better list readability */
+.md-typeset ul,
+.md-typeset ol {
+    margin: 1em 0;
+    padding-left: 2em;
+}
+
+.md-typeset li {
+    margin: 0.5em 0;
+    line-height: 1.7;
+}
+
+/* Improve admonition (callout) readability */
+.md-typeset .admonition {
+    margin: 1.5em 0;
+    padding: 1em 1.2em;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.md-typeset .admonition-title {
+    font-weight: 600;
+    font-size: 1.05em;
+    margin-bottom: 0.7em;
+}
+
+/* Better blockquote styling */
+.md-typeset blockquote {
+    border-left: 4px solid #3b82f6;
+    margin: 1.5em 0;
+    padding: 1em 1.5em;
+    background: rgba(59, 130, 246, 0.05);
+    border-radius: 0 8px 8px 0;
+    font-size: 1.05em;
+}
+
+/* Improve link visibility */
+.md-typeset a {
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.md-typeset a:hover {
+    color: #2563eb;
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+}
+
+/* Code block title/filename */
+.md-typeset .highlight .filename {
+    display: block;
+    padding: 0.6em 1.2em;
+    background: rgba(0, 0, 0, 0.3);
+    color: #e6e6e6;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9em;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Better horizontal rule */
+.md-typeset hr {
+    border: none;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #e1e4e8, transparent);
+    margin: 2em 0;
+}
+
+/* Improve image captions and figures */
+.md-typeset figure {
+    margin: 2em 0;
+    text-align: center;
+}
+
+.md-typeset figcaption {
+    margin-top: 1em;
+    font-size: 0.9em;
+    color: #6a737d;
+    font-style: italic;
+}
+
+.md-typeset img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Better keyboard key styling */
+.md-typeset kbd {
+    display: inline-block;
+    padding: 0.2em 0.5em;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85em;
+    color: #24292e;
+    background-color: #f6f8fa;
+    border: 1px solid #d1d5da;
+    border-radius: 4px;
+    box-shadow: 0 1px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* Improve definition lists */
+.md-typeset dt {
+    font-weight: 600;
+    margin-top: 1em;
+}
+
+.md-typeset dd {
+    margin-left: 2em;
+    margin-bottom: 1em;
+    line-height: 1.7;
+}
+
+/* Better footnote styling */
+.md-typeset .footnote {
+    font-size: 0.9em;
+    line-height: 1.6;
+}
+
+/* Improve task list styling */
+.md-typeset .task-list-item {
+    list-style-type: none;
+}
+
+.md-typeset .task-list-control {
+    margin-right: 0.5em;
+}
+
+/* Better details/summary (collapsible sections) */
+.md-typeset details {
+    margin: 1.5em 0;
+    padding: 1em;
+    border: 1px solid #e1e4e8;
+    border-radius: 8px;
+    background: #f8f9fa;
+}
+
+.md-typeset summary {
+    cursor: pointer;
+    font-weight: 600;
+    padding: 0.5em;
+    margin: -1em;
+    margin-bottom: 0.5em;
+    border-radius: 8px 8px 0 0;
+    background: #fff;
+    transition: background 0.2s ease;
+}
+
+.md-typeset summary:hover {
+    background: #f6f8fa;
+}
+
+.md-typeset details[open] summary {
+    margin-bottom: 1em;
+    border-bottom: 1px solid #e1e4e8;
+}
+
+/* Responsive adjustments for mobile */
+@media (max-width: 768px) {
+    .md-typeset {
+        font-size: 15px;
+    }
+
+    .md-typeset h1 {
+        font-size: 1.8em;
+    }
+
+    .md-typeset h2 {
+        font-size: 1.5em;
+    }
+
+    .md-typeset h3 {
+        font-size: 1.3em;
+    }
+
+    .md-typeset h4 {
+        font-size: 1.1em;
+    }
+
+    .md-typeset ul,
+    .md-typeset ol {
+        padding-left: 1.5em;
+    }
+}
+
+/* Dark mode improvements */
+[data-md-color-scheme="slate"] .md-typeset {
+    color: #c9d1d9;
+}
+
+[data-md-color-scheme="slate"] .md-typeset h2 {
+    border-bottom-color: #30363d;
+}
+
+[data-md-color-scheme="slate"] .md-typeset blockquote {
+    background: rgba(59, 130, 246, 0.1);
+}
+
+[data-md-color-scheme="slate"] .md-typeset kbd {
+    color: #c9d1d9;
+    background-color: #161b22;
+    border-color: #30363d;
+}
+
+[data-md-color-scheme="slate"] .md-typeset details {
+    border-color: #30363d;
+    background: #161b22;
+}
+
+[data-md-color-scheme="slate"] .md-typeset summary {
+    background: #0d1117;
+}
+
+[data-md-color-scheme="slate"] .md-typeset summary:hover {
+    background: #161b22;
+}
+
+[data-md-color-scheme="slate"] .md-typeset details[open] summary {
+    border-bottom-color: #30363d;
+}
+
+/* Improve focus states for accessibility */
+.md-typeset a:focus,
+.md-typeset button:focus,
+.md-typeset summary:focus {
+    outline: 2px solid #3b82f6;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+/* Better print styles */
+@media print {
+    .md-typeset {
+        font-size: 12pt;
+    }
+
+    .md-typeset code,
+    .md-typeset pre {
+        border: 1px solid #ccc;
+        page-break-inside: avoid;
+    }
+
+    .md-typeset img {
+        max-width: 100%;
+        page-break-inside: avoid;
+    }
+}
+
