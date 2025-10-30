@@ -1,9 +1,10 @@
 import json
 from typing import Any, Dict, List, Optional, Type
 
-from outlines.generate.choice import choice as outlines_choice
-from outlines.generate.json import json as outlines_json
-from outlines.models.transformers import transformers
+# Lazy import outlines to avoid import errors when not needed
+# from outlines.generate.choice import choice as outlines_choice
+# from outlines.generate.json import json as outlines_json
+# from outlines.models.transformers import transformers
 from pydantic import BaseModel
 from transformers import AutoTokenizer
 from transformers.generation.streamers import TextIteratorStreamer
@@ -106,6 +107,15 @@ class HuggingFaceLLM(BaseLLM):
     ):
         super().__init__(model=model)
 
+        # Lazy import outlines
+        try:
+            from outlines.models.transformers import transformers
+        except ImportError:
+            raise ImportError(
+                "outlines package is required for HuggingfaceLLM. "
+                "Install it with: pip install outlines"
+            )
+
         self.operator = transformers(model, device=device, **kwargs)
         self.tokenizer = AutoTokenizer.from_pretrained(
             model, trust_remote_code=trust_remote_code
@@ -202,6 +212,15 @@ class HuggingFaceLLM(BaseLLM):
         if isinstance(schema, dict):
             schema = json.dumps(schema, indent=4)
 
+        # Lazy import outlines
+        try:
+            from outlines.generate.json import json as outlines_json
+        except ImportError:
+            raise ImportError(
+                "outlines package is required for structured_output. "
+                "Install it with: pip install outlines"
+            )
+
         # JSON schema or Pydantic model
         generator = outlines_json(self.operator, schema)
 
@@ -275,6 +294,15 @@ class HuggingFaceLLM(BaseLLM):
         messages = _convert_messages_format(messages)
 
         prompt = self._convert_to_prompt(messages)
+
+        # Lazy import outlines
+        try:
+            from outlines.generate.choice import choice as outlines_choice
+        except ImportError:
+            raise ImportError(
+                "outlines package is required for choice. "
+                "Install it with: pip install outlines"
+            )
 
         generator = outlines_choice(self.operator, choices)
         choice = generator(prompt)
