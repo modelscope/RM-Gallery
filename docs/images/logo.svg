@@ -1,25 +1,23 @@
-<svg width="780" height="120" viewBox="0 0 780 120" xmlns="http://www.w3.org/2000/svg">
+<svg width="600" height="120" viewBox="0 0 600 120" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="rmGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#22d3ee;stop-opacity:1" />
-      <stop offset="30%" style="stop-color:#3b82f6;stop-opacity:1" />
-      <stop offset="70%" style="stop-color:#6366f1;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#8b5cf6;stop-opacity:1" />
+    <linearGradient id="rmGradient" x1="0%" y1="0%" x2="100%" y2="0%" gradientUnits="objectBoundingBox" gradientTransform="rotate(135 .5 .5)">
+      <stop offset="0%" stop-color="#22d3ee" />
+      <stop offset="30%" stop-color="#3b82f6" />
+      <stop offset="70%" stop-color="#6366f1" />
+      <stop offset="100%" stop-color="#8b5cf6" />
     </linearGradient>
-    <linearGradient id="galleryGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" style="stop-color:#6366f1;stop-opacity:1" />
-      <stop offset="30%" style="stop-color:#8b5cf6;stop-opacity:1" />
-      <stop offset="70%" style="stop-color:#a855f7;stop-opacity:1" />
-      <stop offset="100%" style="stop-color:#ec4899;stop-opacity:1" />
+    <linearGradient id="galleryGradient" x1="0%" y1="0%" x2="100%" y2="0%" gradientUnits="objectBoundingBox" gradientTransform="rotate(135 .5 .5)">
+      <stop offset="0%" stop-color="#6366f1" />
+      <stop offset="30%" stop-color="#8b5cf6" />
+      <stop offset="70%" stop-color="#a855f7" />
+      <stop offset="100%" stop-color="#ec4899" />
     </linearGradient>
   </defs>
 
-  <!-- RM Text -->
-  <text x="0" y="90" font-family="Inter, SF Pro Display, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif"
-        font-size="80" font-weight="700" letter-spacing="-2" fill="url(#rmGradient)">RM</text>
-
-  <!-- Gallery Text -->
-  <text x="180" y="90" font-family="Inter, SF Pro Display, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, sans-serif"
-        font-size="80" font-weight="700" letter-spacing="-2" fill="url(#galleryGradient)">Gallery</text>
+  <text x="50%" y="50%" text-anchor="middle" dominant-baseline="central"
+        font-family="Inter, 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif"
+        font-size="72" font-weight="700" letter-spacing="-0.03em">
+    <tspan fill="url(#rmGradient)">RM</tspan><tspan dx="0.12em" fill="url(#galleryGradient)">Gallery</tspan>
+  </text>
 </svg>
 
