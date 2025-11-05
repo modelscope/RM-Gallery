@@ -1,43 +1,113 @@
 site_name: RM-Gallery
+site_url: https://modelscope.github.io/RM-Gallery/
+site_description: "A One-Stop Reward Model Platform for training, building, and applying reward models. Supports 35+ pre-built models, RLHF training, LLM evaluation, and AI alignment."
+site_author: "The RM-Gallery Team"
+repo_url: https://github.com/modelscope/RM-Gallery
+repo_name: modelscope/RM-Gallery
+copyright: "Copyright &copy; 2025 RM-Gallery Team"
 theme:
-  name: material
+  name: shadcn
+  show_stargazers: true
+  git_enabled: false
+  nav_sort: false
   features:
-    - navigation.tabs
-    - navigation.sections
-    - navigation.expand
-  palette:
-    primary: light blue
+    - content.code.copy
+    - content.code.annotate
 nav:
-  - Overview: index.md
+  - Home: index.md
+  - Quickstart: quickstart.md
   - Tutorials:
-    - Data:
-      - Annotation: tutorial/data/annotation.ipynb
-      - Load: tutorial/data/load.ipynb
-      - Pipeline: tutorial/data/pipeline.ipynb
-      - Process: tutorial/data/process.ipynb
-    - Train RM: tutorial/training_rm/training_rm.md
-    - Build RM:
-      - Overview: docs/tutorial/building_rm/overview.ipynb
-      - Customization: tutorial/building_rm/custom_reward.ipynb
-      - Auto Principle: tutorial/building_rm/autoprinciple.ipynb
-      - Built-in Rewards: tutorial/building_rm/built_in_rewards.md
-      - Benchmark: tutorial/building_rm/benchmark_practices.ipynb
-    - RM Server: tutorial/rm_servering/rm_server.md
-    - Application:
-      - Best of N: tutorial/deploying_rm/best_of_n.ipynb
-      - Post Training with RM: tutorial/deploying_rm/post_traning.ipynb
-      - Refinement: tutorial/deploying_rm/data_refinement.ipynb
+      - Overview: tutorial/README.md
+      - End-to-End Guide: tutorial/end-to-end.md
+
+  - Reference:
+      - RM Library: library/rm_library.md
+      - Rubric Library: library/rubric_library.md
+
+  - Building RM:
+      - Overview: tutorial/building_rm/overview.md
+      - Using Built-in RMs: tutorial/building_rm/ready2use_rewards.md
+      - Building Custom RMs: tutorial/building_rm/custom_reward.md
+      - Rubric as Rewards: tutorial/building_rm/autorubric.md
+
+  - Evaluating RM:
+      - Overview: tutorial/evaluation/overview.md
+      - RMB: tutorial/evaluation/rmb.md
+      - RM-Bench: tutorial/evaluation/rmbench.md
+      - JudgeBench: tutorial/evaluation/judgebench.md
+      - RewardBench2: tutorial/evaluation/rewardbench2.md
+      - Conflict Detector: tutorial/evaluation/conflict_detector.md
+
+  - Using RM:
+      - RM Server: tutorial/rm_serving/rm_server.md
+      # - Boosting Strategy: using_rm/boosting_strategy.md
+      - Data Refinement: tutorial/rm_application/data_refinement.md
+      - Post Training with RM: tutorial/rm_application/post_training.md
+      - Best of N: tutorial/rm_application/best_of_n.md
+
+  - Training RM:
+      - Overview: tutorial/training_rm/overview.md
+      - Training Bradley-Terry RM: tutorial/training_rm/bradley_terry_rm.md
+      - Training RM with SFT: tutorial/training_rm/sft_rm.md
+      - Training RM with RL: tutorial/training_rm/training_rm.md
+
+  - Data:
+      - Overview: tutorial/data/pipeline.md
+      - Annotate Data: tutorial/data/annotation.md
+      - Load Data: tutorial/data/load.md
+      - Process Data: tutorial/data/process.md
+  - FAQ: faq.md
   - Contribution: contribution.md
 plugins:
-  - search
-  - mkdocs-autoapi:
-      autoapi_dir: rm_gallery
-      # autoapi_add_nav_entry: true
-  - mkdocs-jupyter:
-      ignore_h1_titles: True
+  - search:
+      lang:
+        - en
+        - zh
+      separator: '[\s\-\.\(\)\/]+'
+      min_search_length: 2
+      prebuild_index: true
+      indexing: 'full'
   - mkdocstrings:
       handlers:
         python:
-          paths: [rm_gallery]
-          rendering:
-            show_root_toc_entry: true
+          paths: [.]
+          options:
+            docstring_style: google
+            show_source: true
+            show_root_heading: true
+            show_root_full_path: false
+            members_order: source
+            show_submodules: true
+markdown_extensions:
+  - admonition
+  - footnotes
+  - tables
+  - extra
+  - pymdownx.blocks.details
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.progressbar
+  - pymdownx.snippets
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - shadcn.extensions.iconify
+
+extra_css:
+  - https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap
+  - stylesheets/readability-enhancements.css
+  - stylesheets/code-enhancements.css
+  - stylesheets/table-enhancements.css
+  - stylesheets/jupyter-simple.css
+  - stylesheets/nav-scroll-fix.css
+
+extra_javascript:
+  - javascripts/code-copy.js
+  - javascripts/search-fix.js
+  - javascripts/code-zoom.js
+  - javascripts/nav-scroll-fix.js
