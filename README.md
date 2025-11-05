@@ -1,12 +1,28 @@
-# RM-Gallery
+<div align="center">
 
-A unified platform for building, evaluating, and applying reward models.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://readme-typing-svg.demolab.com?font=Inter&weight=700&size=72&duration=1&pause=1000000&color=22D3EE&background=FFFFFF00&center=true&vCenter=true&repeat=false&width=280&height=100&lines=RM">
+  <img alt="RM" src="https://readme-typing-svg.demolab.com?font=Inter&weight=700&size=72&duration=1&pause=1000000&color=22D3EE&background=FFFFFF00&center=true&vCenter=true&repeat=false&width=280&height=100&lines=RM">
+</picture><picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://readme-typing-svg.demolab.com?font=Inter&weight=700&size=72&duration=1&pause=1000000&color=8B5CF6&background=FFFFFF00&center=true&vCenter=true&repeat=false&width=500&height=100&lines=Gallery">
+  <img alt="Gallery" src="https://readme-typing-svg.demolab.com?font=Inter&weight=700&size=72&duration=1&pause=1000000&color=8B5CF6&background=FFFFFF00&center=true&vCenter=true&repeat=false&width=500&height=100&lines=Gallery">
+</picture>
+
+<h3>A unified platform for building, evaluating, and applying reward models.</h3>
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue)](https://pypi.org/project/rm-gallery/)
 [![PyPI](https://img.shields.io/badge/pypi-v0.1.0-blue?logo=pypi)](https://pypi.org/project/rm-gallery/)
 [![Documentation](https://img.shields.io/badge/docs-online-blue?logo=markdown)](https://modelscope.github.io/RM-Gallery/)
 
 [Documentation](https://modelscope.github.io/RM-Gallery/) | [Examples](./examples/) | [中文](./README_zh.md)
+
+</div>
+
+## News
+
+- **2025-10-20** - [Auto-Rubric: Learning to Extract Generalizable Criteria for Reward Modeling](https://arxiv.org/abs/2510.17314)
+- **2025-10-17** - [Taming the Judge: Deconflicting AI Feedback for Stable Reinforcement Learning](https://arxiv.org/abs/2510.15514)
+- **2025-07-09** - Released RM-Gallery v0.1.0 on [PyPI](https://pypi.org/project/rm-gallery/)
 
 ## Installation
 
@@ -94,12 +110,6 @@ Evaluate models on standard benchmarks:
 - [Building Custom RMs](https://modelscope.github.io/RM-Gallery/tutorial/building_rm/custom_reward/)
 - [Training Guide](https://modelscope.github.io/RM-Gallery/tutorial/training_rm/overview/)
 - [API Reference](https://modelscope.github.io/RM-Gallery/api_reference/)
-
-## News
-
-- **2025-10-20** - [Auto-Rubric: Learning to Extract Generalizable Criteria for Reward Modeling](https://arxiv.org/abs/2510.17314)
-- **2025-10-17** - [Taming the Judge: Deconflicting AI Feedback for Stable Reinforcement Learning](https://arxiv.org/abs/2510.15514)
-- **2025-07-09** - Released RM-Gallery v0.1.0 on [PyPI](https://pypi.org/project/rm-gallery/)
 
 ## Contributing
 
