@@ -8,6 +8,7 @@ __pycache__
 *.json
 *.parquet
 /log
+*.log
 /dist
 uv*
 _del
@@ -15,4 +16,4 @@ docs/log
 .python-version
 tests/plt_*
 /site
-poetry.lock
+poetry.lock.env

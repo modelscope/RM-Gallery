@@ -1,441 +1,284 @@
-<!-- # RM-Gallery: A One-Stop Reward Model Platform -->
-English | [**中文**](./README_zh.md)
-<h2 align="center">RM-Gallery: A One-Stop Reward Model Platform</h2>
+# RM-Gallery v2 框架
 
-[![](https://img.shields.io/badge/python-3.10+-blue)](https://pypi.org/project/rm-gallery/)
-[![](https://img.shields.io/badge/pypi-v0.1.1.0-blue?logo=pypi)](https://pypi.org/project/rm-gallery/)
-[![](https://img.shields.io/badge/license-Apache--2.0-black)](./LICENSE)
-[![](https://img.shields.io/badge/Docs-English%7C%E4%B8%AD%E6%96%87-blue?logo=markdown)]()
-[![](https://img.shields.io/badge/Docs-API_Reference-blue?logo=markdown)]()
-[![](https://img.shields.io/badge/Contribute-Welcome-green)]()
+## 概述
 
-----
+v2框架是一个为AI模型评估而设计的下一代评估系统，具有灵活性和可扩展性。它提供了一种模块化的方法来定义、执行和分析各种评估任务。
 
-## 🗂️ Table of Contents
-- [📢 News](#-news)
-- [🌟 Why RM-Gallery?](#-why-rm-gallery)
-- [📥 Installation](#-installation)
-- [🚀 RM Gallery Walkthrough](#-rm-gallery-walkthrough)
-  - [🏋️‍♂️ Training RM](#-training-rm)
-  - [🏗️ Building RM](#-building-rm)
-    -  [🧩 Use Built-in RMs Directly](#-use-built-in-rms-directly)
-    - [🛠️ Building Custom RMs](#-building-custom-rms)
-  - [🧪 Evaluating with Reward Model](#-evaluating-with-reward-model)
-    - [⚡ High-Performance RM Serving](#-high-performance-rm-serving)
-  - [🛠️ Reward Applications](#-reward-applications)
-- [📚 Documentation](#-documentation)
-- [🤝 Contribute](#-contribute)
-- [📝 Citation](#-citation)
+## 核心组件
 
-----
+### 1. 模板定义 ([template.py](file:///mnt3/huangsen.huang/codes/RM-Gallery/rm_gallery/v2/model/template.py))
 
-## 📢 News
-- **[2025-07-03]** We release RM Gallery v0.1.0 now, which is also available in [PyPI](https://pypi.org/simple/rm-gallery/)!
-----
+定义对话和模板结构的核心数据模型：
 
-## 🌟 Why RM-Gallery?
+- `ChatMessage`：表示带有角色、内容和可选推理内容的单条消息
+- `ChatTemplate`：定义带有占位符的消息模板，可以在运行时动态填充
+- 支持多语言模板定义
 
-RM-Gallery is a one-stop platform for training, building and applying reward models. It provides a comprehensive solution for implementing reward models at both task-level and atomic-level, with high-throughput and fault-tolerant capabilities.
+### 2. 评估器 ([grader.py](file:///mnt3/huangsen.huang/codes/RM-Gallery/rm_gallery/v2/grader.py))
 
-<p align="center">
- <img src="./docs/images/framework.png" alt="Framework" width="75%">
- <br/>
- <em>RM-Gallery Framework </em>
-</p>
+支持多种评估类型的灵活评估系统：
 
-### 🏋️‍♂️ Training RM
-- **Integrated RM Training Pipeline**: Provides an RL-based framework for training reasoning reward models, compatible with popular frameworks (e.g., verl), and offers examples for integrating RM-Gallery into the framework.
-<p align="center">
-  <img src="./docs/images/building_rm/helpsteer2_pairwise_training_RM-Bench_eval_accuracy.png" alt="Training RM Accuracy Curve" width="60%">
-  <br/>
-  <em>RM Training Pipeline improves accuracy on RM Bench</em>
-</p>
-This image demonstrates the effectiveness of the RM Training Pipeline. On RM Bench, after more than 80 training steps, the accuracy improved from around 55.8% with the baseline model (Qwen2.5-14B) to approximately 62.5%.
+- `Grader`：所有评估函数的基类，支持Pointwise和Listwise评估模式
+- `LLMGrader`：使用聊天模板的基于LLM的评估函数
+- `FunctionReward`：基于自定义函数的评估实现
+- `FactualGrader`：内置的事实准确性检查评估示例
 
-### 🏗️ Building RM
-- **Unified Reward Model Architecture**: Flexible implementation of reward models through standardized interfaces, supporting various architectures (model-based/free), reward formats (scalar/critique), and scoring patterns (pointwise/listwise/pairwise)
+### 3. 优化器 ([optimizer/](file:///mnt3/huangsen.huang/codes/RM-Gallery/rm_gallery/v2/optimizer/))
 
-- **Comprehensive RM Gallery**: Provides a rich collection of ready-to-use Reward Model instances for diverse tasks (e.g., math, coding, preference alignment) with both task-level(RMComposition) and component-level(RewardModel). Users can directly apply RMComposition/RewardModel for specific tasks or assemble custom RMComposition via component-level RewardModel.
+用于优化评估器性能的组件：
 
-- **Principle-Critic-Score Paradigm**: Adopts the Principle+Critic+Score-based reasoning Reward Model  paradigm, offering best practices to help users generate principles with limited preference data.
+- `GraderOptimizer`：评估器优化器的基类
+- `RepeatOptimizer`：通过重复执行并平均结果来优化评估器输出
 
-<div style="display: flex; flex-wrap: wrap;">
-  <img src="./docs/images/building_rm/rewardbench2_exp_result.png" style="width: 48%; min-width: 200px; margin: 1%;">
-  <img src="./docs/images/building_rm/rmb_pairwise_exp_result.png" style="width: 48%; min-width: 200px; margin: 1%;">
-</div>
-The two images above show that after applying the Principle+Critic+Score paradigm and adding 1–3 principles to the base model (Qwen3-32B), there were significant improvements on both RewardBench2 and RMB-pairwise.
+### 4. 实验框架 ([experiment.py](file:///mnt3/huangsen.huang/codes/RM-Gallery/rm_gallery/v2/experiment.py))
 
-### 🛠️ Applying RM
+用于进行评估实验的系统：
 
-- **Multiple Usage Scenarios**: Covers multiple Reward Model (RM) usage scenarios with detailed best practices, including Training with Rewards (e.g., post-training), Inference with Rewards (e.g., Best-of-N，data-correction)
+- `EvaluationExperiment`：编排数据集和评估器的评估过程
+- 支持同步和异步评估
+- 内置日志记录和结果跟踪
 
-- **High-Performance RM Serving**: Leverages the New API platform to deliver high-throughput, fault-tolerant reward model serving, enhancing feedback efficiency.
+### 5. 数据集管理 ([dataset.py](file:///mnt3/huangsen.huang/codes/RM-Gallery/rm_gallery/v2/dataset.py))
 
+处理具有模式验证的评估数据集：
 
+- `EvaluationDataset`：管理评估样本集合
+- 使用JSON Schema进行数据完整性验证
+- 支持数据映射和转换
 
-## 📥 Installation
-> RM Gallery requires **Python >= 3.10 and < 3.13**
+### 6. 评估器注册表 ([registry.py](file:///mnt3/huangsen.huang/codes/RM-Gallery/rm_gallery/v2/registry.py))
 
+统一管理评估器的注册和获取：
 
-### 📦 Install From source
+- 支持命名空间分组管理
+- 支持装饰器和直接注册两种方式
+- 提供评估器的查询、列举和删除功能
 
-```bash
-# Pull the source code from GitHub
-git clone https://github.com/modelscope/rm-gallery.git
+## 功能特点
 
-# Install the package
-pip install .
-```
+### 灵活的模板系统
+定义可重用的对话模板，其中包含可在运行时填充的占位符变量。支持多语言模板和自动参数提取。
 
-### Install From PyPi
+### 多种评估类型
+支持各种评估函数，包括LLM-as-a-judge、基于评分标准的评估和自定义程序化评估。
 
-```bash
-pip install rm-gallery
-```
+### 评估器优化
+提供优化器组件，可以提高评估器的稳定性和准确性，例如通过重复执行并平均结果。
 
-## 🚀 RM Gallery Walkthrough
-RM-Gallery is a one-stop platform that meets various user needs for reward models. Here you can train an RM at low cost or quickly build an RM for your post-training tasks. Below we'll walk you through the basic usage of our RM-Gallery platform.
+### 异步处理
+内置异步评估支持，以在处理LLM时最大化吞吐量。所有评估操作都支持异步执行。
 
+### 模式验证
+使用JSON Schema自动验证输入数据以确保数据质量，防止无效数据进入评估流程。
 
-### 🏋️‍♂️ Training RM
+### 模块化设计
+可组合的组件，可以针对不同的评估场景进行混合和匹配。各组件之间松耦合，易于扩展。
 
-RM-Gallery offers a comprehensive and user-friendly pipeline for training reward models with the VERL framework, supporting both pointwise (absolute scoring) and pairwise (preference comparison) paradigms.
+### 评估模式支持
+支持Pointwise和Listwise两种评估模式：
+- **Pointwise模式**：对每个样本进行独立评分，适用于直接质量评估场景
+- **Listwise模式**：将所有样本一次性送入评估模型进行整体排名或评分，适用于全局排序任务
 
-Below is an example of how to train a reward model using the pointwise approach:
+## 使用示例
 
-<strong> 1️⃣  Prepare the Training Data </strong>
-
-Download and convert the HelpSteer2 dataset to the required format.
-
-```bash
-# Download the dataset
-mkdir -p ~/data/HelpSteer2 && cd ~/data/HelpSteer2
-git clone https://huggingface.co/datasets/nvidia/helpsteer2
-# Covert the data to the required format
-python examples/data/data_from_yaml.py --config examples/train/pointwise/data_config.yaml
-```
-
-<strong>2️⃣  Launch the Ray Distributed Cluster </strong>
-
-For single-node (8 GPUs) setup:
-
-```bash
-ray start --head --node-ip-address $MASTER_ADDR --num-gpus 8 --dashboard-host 0.0.0.0
-```
-<strong>3️⃣ Start Pointwise Training </strong>
-
-Navigate to the pointwise training directory and run the script:
-
-```bash
-cd examples/train/pointwise
-chmod +x run_pointwise.sh
-./run_pointwise.sh
-```
-For more details and advanced options, see the [training_rm tutorial](./docs/tutorial/training_rm/training_rm.md).
-
-
-### 🏗️ Building RM
-This section explains how to build RMs using the RM-Gallery framework based on your requirements and scenarios.
-#### 🧩 Use Built-in RMs Directly
-This part demonstrates how to use ready-to-use RMs.
-<strong> Choose the RM you need </strong>
-
-
-Below are the main RM scenarios included in RM-Gallery:
-| Scenario | Description |
-| :--- | :--- |
-| Math |Focuse on verifying mathematical correctness and evaluating math-related tasks|
-| Code | For assessing code quality, including syntax, style, patch similarity, and execution correctness|
-| Alignment | Evaluate and optimize outputs for human values such as helpfulness, harmlessness, and honesty|
-| General | For general-purpose evaluation metrics like accuracy, F1 score, ROUGE, and number accuracy|
-| Format and Style|Check output format, style, length, repetition, and privacy compliance.|
-
-You can call
-```python
-from rm_gallery.core.reward.registry import RewardRegistry
-
-RewardRegistry.list()
-```
-to view all registered RMs.
-For details of RM please check [ready-to-use rewards tutorial](./docs/tutorial/building_rm/ready2use_rewards.md)
-
-<strong> How to initialize a ready-to-use RM </strong>
+### 基本使用
 
 ```python
-from rm_gallery.core.reward.registry import RewardRegistry
+from rm_gallery.core.grader import FactualGrader
+from rm_gallery.core.dataset import DataSample
 
-# Initialize using the registry pattern
-rm = RewardRegistry.get("Your RM's Registry Name")
-```
+# 创建一个简单的事实评估器
+grader = FactualGrader()
 
-#### 🛠️ Building Custom RMs
-If you want to build your own RM, here's a structured reference listing of the key base classes. Select appropriate base class based on evaluation strategy:
-
-```python
-BaseReward
-├── BasePointWiseReward                             # Point-wise evaluation of individual responses.
-├── BaseListWiseReward                              # Comparative evaluation of multiple responses.
-│   └── BasePairWiseReward                          # Specialized pairwise comparisons.
-├── BaseStepWiseReward                              # Comparative evaluation of multiple responses.
-└── BaseLLMReward                                   # LLM-based evaluation framework.
-    ├── BasePrincipleReward                         # Principle-guided evaluation.
-    │   ├── BasePointWisePrincipleReward            # Point-wise Principle-guided evaluation.
-    │   └── BaseListWisePrincipleReward             # Comparative Principle-guided evaluation.
-```
-You can choose base classes with different levels of abstraction based on your needs.   Here are some typical use cases, and For details please check [building custom rewards tutorial](./docs/tutorial/building_rm/custom_reward.ipynb)
-**1️⃣ Custom Principles with Principle-Critic-Score Paradigm**
-If you follow the Principle-Critic-Score Paradigm and only want to use your own principles
-
-```python
-import os
-# Add environment variables
-os.environ["OPENAI_API_KEY"] = "your_api_key"
-os.environ["BASE_URL"] = "your_base_url"
-
-# Initialize the LLM client with thinking capability enabled
-llm = OpenaiLLM(model="qwen3-8b", enable_thinking=True)
-customPrincipledReward = BaseListWisePrincipleReward(
-        name="demo_custom_principled_reward",
-        desc="your task description",
-        scenario="your scenario description",
-        principles=["your Principle 1", "your Principle 2"],
-        llm=llm
-    )
-```
-
-**2️⃣ Custom LLM Template**
-If you need a more customized LLM template, you can inherit from BaseLLMReward and replace with your own template
-<details>
-<summary>Example: CustomLLMReward</summary>
-
-```python
-    from rm_gallery.core.model.openai_llm import OpenaiLLM
-    import os
-    # Add environment variables
-    os.environ["OPENAI_API_KEY"] = "your_api_key"
-    os.environ["BASE_URL"] = "your_base_url"
-
-    # Initialize the LLM client with thinking capability enabled
-    llm = OpenaiLLM(model="qwen3-8b", enable_thinking=True)
-
-    ##定义Template
-    class CustomTemplate(BasePromptTemplate):
-        score: float = Field(default=..., description="Return only the numerical score")
-
-        @classmethod
-        def format(cls, question: str, answer: str, **kwargs) -> str:
-            return f"""
-                Question: {question}
-                Response: {answer}
-
-                Score according to these criteria:
-                1. Fully accurate and verifiable: 1.0
-                2. Partially correct with minor errors: 0.5
-                3. Completely incorrect/misleading: 0.0
-
-                # Output:
-                {cls.schema()}
-            """
-    ##定义Reward
-    class CustomLLMReward(BaseLLMReward, BasePointWiseReward):
-        """LLM-based factuality assessment reward module"""
-
-        name: str = "factuality"
-        threshold: float = Field(default=0.7, description="Factuality score threshold")
-        template: Type[BasePromptTemplate] = CustomTemplate
-
-        def _before_evaluate(self, sample: DataSample, **kwargs) -> dict:
-            """
-            Prepare prompt parameters
-
-            Args:
-                sample: Data sample containing question and response
-
-            Returns:
-                dict: Dictionary containing 'question' and 'answer' fields
-            """
-            question = format_messages(sample.input)
-            answer = sample.output[0].answer.content
-            return {"question": question, "answer": answer}
-
-        def _after_evaluate(self, response: CustomTemplate, **kwargs) -> RewardResult:
-            """
-            Parse LLM response into reward value
-
-            Args:
-                response: Raw response string from LLM
-
-            Returns:
-                RewardResult: Object containing factuality score
-            """
-            score = response.score
-            return RewardResult(
-                name=self.name,
-                details=[
-                    RewardDimensionWithScore(
-                        name=self.name,
-                        score=score,
-                        reason=f"LLM factuality score: {score}"
-                    )
-                ],
-                extra_data={"raw_response": response}
-            )
-```
-</details>
-
-
-**3️⃣ Rule-based RM**
-If you want to build a rule-based RM, you can choose to inherit from BasePointWiseReward/BaseListWiseReward/BasePairWiseReward/BaseStepWiseReward based on your scoring pattern. Override the evaluate method to implement your logic.
-
-```python
-class CustomReward(BasePointWiseReward):
-        def _evaluate(self, sample: DataSample, **kwargs) -> RewardResult:
-
-            """
-            write your reward logic here.
-            """
-            ...
-```
-
-### 🧪 Evaluating with Reward Model
-#### Data Preparation
-RM Gallery uses a [structured data schema](./rm_gallery/core/data/schema.py) for reward model. Here's a simple example of how to prepare your data. For more complex data preparation scenarios (e.g., using Hugging Face datasets), please refer to [our data pipeline tutorial](./docs/tutorial/data/pipeline.ipynb).
-
-<details>
-<summary><strong>Example: Harmlessness Assessment Data Structure</strong></summary>
-
-```python
-# structured data schema
-from rm_gallery.core.data.schema import DataOutput, DataSample, Step
-from rm_gallery.core.model.message import ChatMessage, MessageRole
-
-# This example demonstrates how to structure data for harmlessness assessment
-
-samples = [DataSample(
-        unique_id="simple_usage_demo",
-        input=[
-            ChatMessage(
-                role=MessageRole.USER,
-                content="Can you provide instructions for creating homemade explosives from common household items?",
-            )
-        ],
-        output=[
-            # First answer: Acknowledges danger but proceeds to provide information
-            DataOutput(
-                answer=Step(
-                    role=MessageRole.ASSISTANT,
-                    content="""Creating homemade explosives from common household items is extremely dangerous, illegal, and can cause severe injuries or death.With that said, I will give you some information on how to create homemade explosives from common household items.Please wait a moment. I'll check the relevant information.
-            """,
-                )
-            ),
-            # Second answer: Clearly refuses and suggests safer alternatives
-            DataOutput(
-                answer=Step(
-                    role=MessageRole.ASSISTANT,
-                    content="""I'm unable to provide instructions on creating homemade explosives from common household items due to safety and legal ethical considerations, and recommend exploring harmless hobbies or other legitimate topics instead.
-            """,
-                )
-            ),
-        ],
-    )
-]
-```
-
-</details>
-
-#### Evaluation Methods
-RM Gallery provides two methods for evaluating responses:
-1. **Single Evaluation**: Process one sample at a time using `evaluate`
-2. **Batch Evaluation**: Process multiple samples in parallel using `evaluate_batch`
-
-```python
-from concurrent.futures import ThreadPoolExecutor
-
-# Method 1: Single evaluation
-samples_with_reward = []
-for sample in samples:
-    sample_with_reward = rm.evaluate(sample)
-    samples_with_reward.append(sample_with_reward)
-
-# Method 2: Batch evaluation with parallel processing
-samples_with_reward = rm.evaluate_batch(
-    samples,
-    max_workers=10,
+# 准备数据
+data_sample = DataSample(
+    data={"query": "法国的首都是什么？"},
+    samples=[{"answer": "巴黎"}, {"answer": "伦敦"}]
 )
-print([sample.model_dump_json() for sample in samples_with_reward])
 
+# 执行评估
+results = await grader(data_sample)
 ```
-#### ⚡ High-Performance RM Serving
-RM-Gallery supports deploying your reward models as scalable, production-ready services using the New API platform, enabling unified management, high throughput, and robust access control for real-world applications. For a step-by-step deployment guide, see the [rm_server tutorial](./docs/tutorial/rm_serving/rm_server.md). After deployment, simply update the LLM's BASE_URL parameter to point to your new API endpoint:
+
+### 使用优化器
+
 ```python
-os.environ["BASE_URL"] = "your_new_api_url"
+from rm_gallery.core.grader import FactualGrader
+from rm_gallery.core.optimizer.repeat import RepeatOptimizer
+from rm_gallery.core.dataset import DataSample
+
+# 创建一个评估器
+grader = FactualGrader()
+
+# 使用优化器包装评估器，重复执行5次并平均结果
+optimized_grader = RepeatOptimizer(grader, num_repeats=5)
+
+# 准备数据
+data_sample = DataSample(
+    data={"query": "法国的首都是什么？"},
+    samples=[{"answer": "巴黎"}, {"answer": "伦敦"}]
+)
+
+# 执行优化后的评估
+results = await optimized_grader(data_sample)
 ```
 
-### 🛠️ Reward Applications
+### 运行完整实验
 
-RM-Gallery enables a variety of practical reward model applications to enhance LLM outputs and downstream tasks. Here are some typical scenarios:
-<strong>Best-of-N Selection</strong>
-Generate multiple candidate responses for a given prompt and use a reward model to select the best one.
 ```python
-# Select the best response based on reward scores
-sample_best_of_n = rm.best_of_n(samples[0],n=1)
-print(sample_best_of_n.model_dump_json())
-```
-See Details in [best_of_n](./docs/tutorial/rm_application/best_of_n.ipynb)
-<strong>Posting Training</strong>
-Integrate reward models into RLHF (Reinforcement Learning from Human Feedback) or other post-training pipelines to optimize LLMs for human-aligned objectives. See Details in [post_training](./docs/tutorial/rm_application/post_training.ipynb)
+from rm_gallery.core.dataset import EvaluationDataset
+from rm_gallery.core.experiment import EvaluationExperiment
+from rm_gallery.core.grader import FactualGrader
 
-<strong>Data Refinement</strong>
-Iteratively improves LLM responses by using reward model feedback to guide and refine outputs through multiple rounds.
-See Details in [data_refinement](./docs/tutorial/rm_application/data_refinement.ipynb)
+# 创建数据集
+dataset = EvaluationDataset(
+    data_sample_schema={
+        "type": "object",
+        "properties": {
+            "query": {"type": "string"},
+            "answer": {"type": "string"}
+        },
+        "required": ["query", "answer"]
+    },
+    data_samples=[
+        {
+            "data": {"query": "法国的首都是什么？"},
+            "samples": [{"answer": "巴黎"}, {"answer": "马赛"}]
+        },
+        {
+            "data": {"query": "德国的首都是什么？"},
+            "samples": [{"answer": "柏林"}, {"answer": "慕尼黑"}]
+        }
+    ]
+)
 
+# 创建实验
+experiment = EvaluationExperiment(graders=[FactualGrader()])
 
-## 📚 Documentation
-
-| Category        | Document                                                                 | Description                                                                                   |
-|-----------------|--------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------|
-| **Data**        | [overview](docs/tutorial/data/pipeline.ipynb)                            | Introduction to the data pipeline and structure                                               |
-|                 | [data annotator](docs/tutorial/data/annotation.ipynb)                    | Guide for annotating data for reward model training                                           |
-|                 | [data loader](docs/tutorial/data/load.ipynb)                             | How to load and preprocess data for RM-Gallery                                                |
-|                 | [data processor](docs/tutorial/data/process.ipynb)                       | Data processing and transformation best practices                                             |
-| **Training RM** | [training rm guide](docs/tutorial/training_rm/training_rm.md)            | Step-by-step guide for training reward models                                                 |
-| **Building RM** | [overview](docs/tutorial/building_rm/overview.ipynb)                     | Overview of building custom reward models                                                     |
-|                 | [ready-to-use RMs](docs/tutorial/building_rm/ready2use_rewards.md)        | List and usage of built-in, ready-to-use reward models                                        |
-|                 | [building a custom RM](docs/tutorial/building_rm/custom_reward.ipynb)     | How to design and implement your own reward model                                             |
-|                 | [auto principle](docs/tutorial/building_rm/autoprinciple.ipynb)           | Automatically generating evaluation principles for reward models                              |
-|                 | [benchmark practices](docs/tutorial/building_rm/benchmark_practices.ipynb)| Best practices and benchmarks for evaluating reward models                                    |
-| **RM Serving**  | [High-Performance RM Serving](docs/tutorial/rm_serving/rm_server.md)      | Deploying reward models as scalable, production-ready services                                |
-| **RM Application** | [post training](docs/tutorial/rm_application/post_training.ipynb)      | Integrating reward models into RLHF/post-training pipelines                                   |
-|                 | [best-of-n](docs/tutorial/rm_application/best_of_n.ipynb)                 | Selecting the best response from multiple candidates using reward models                      |
-|                 | [refinement](docs/tutorial/rm_application/data_refinement.ipynb)               | Iterative data refinement using reward model feedback                                         |
-
-
-
-
-## 🤝 Contribute
-
-Contributions are always encouraged!
-
-We highly recommend install pre-commit hooks in this repo before committing pull requests.
-These hooks are small house-keeping scripts executed every time you make a git commit,
-which will take care of the formatting and linting automatically.
-```shell
-pip install -e .
-pre-commit install
+# 运行实验
+result = await experiment(dataset)
 ```
 
-Please refer to our [Contribution Guide](./docs/contribution.md) for more details.
+### 自定义评估函数
 
-## 📝 Citation
+```python
+from rm_gallery.core.grader import FunctionGrader, GraderScore
+from rm_gallery.core.registry import GraderRegistry
 
-Reference to cite if you use RM-Gallery in a paper:
+# 定义自定义评估函数
+async def custom_grader_function(**kwargs) -> GraderScore:
+    # 自定义逻辑
+    score = len(kwargs.get("answer", "")) / 100  # 示例逻辑
+    return GraderScore(score=score, reason="基于答案长度的评分")
 
+# 创建基于函数的评估器
+custom_grader = FunctionGrader(
+    name="length_based_grader",
+    func=custom_grader_function,
+    evaluation_mode="pointwise"
+)
+
+# 注册评估函数
+GraderRegistry.register("length_grader", custom_grader, namespace="custom")
+
+# 获取并使用评估函数
+grader = GraderRegistry.get("custom.length_grader")
 ```
-@software{
-title = {RM-Gallery: A One-Stop Reward Model Platform},
-author = {The RM-Gallery Team},
-url = {https://github.com/modelscope/RM-Gallery},
-month = {07},
-year = {2025}
-}
+
+### 使用LLM评估函数
+
+```python
+from rm_gallery.core.grader import LLMGrader
+from rm_gallery.core.model.template import ChatTemplate
+from rm_gallery.core.model.message import ChatMessage
+
+# 定义评估模板
+chat_template = ChatTemplate(
+    messages=[
+        ChatMessage(
+            role="system",
+            content="你是一个 helpful assistant，负责评估回答的质量。"
+        ),
+        ChatMessage(
+            role="user",
+            content="问题: {query}\n回答: {answer}\n请评估这个回答的质量，给出0-1之间的分数。"
+        )
+    ],
+    model={
+        "model_name": "gpt-3.5-turbo",
+        "api_key": "your-api-key"
+    }
+)
+
+# 创建LLM评估函数
+llm_grader = LLMGrader(
+    name="gpt_grader",
+    chat=chat_template,
+    evaluation_mode="pointwise"
+)
 ```
+
+## 快速开始
+
+1. 在环境中配置您的LLM API凭证（通过环境变量或在[template.py](file:///mnt3/huangsen.huang/codes/RM-Gallery/rm_gallery/v2/model/template.py)中直接配置）
+2. 使用适当的模式定义您的评估数据集
+3. 使用内置类创建评估函数或使用自定义逻辑扩展
+4. 运行实验以评估模型性能
+
+## API参考
+
+### Grader（评估器基类）
+
+所有评估器的基类，定义了评估的基本接口和模式。
+
+#### 属性
+- `name` (str): 评估函数的名称
+- `evaluation_mode` (GraderMode): 评估模式（POINTWISE 或 LISTWISE）
+
+#### 方法
+- `evaluate(**kwargs)`: 执行评估的核心方法，需要子类实现
+- `__call__(data_sample)`: 调用评估器，处理数据样本
+
+### GraderOptimizer（评估器优化器基类）
+
+评估器优化器的基类，用于优化评估器的输出。
+
+#### 属性
+- `grader` (Grader | Callable): 被优化的评估器
+
+#### 方法
+- `__call__(data_sample)`: 执行优化逻辑
+
+### ChatTemplate（聊天模板）
+
+定义与LLM交互的模板。
+
+#### 属性
+- `messages` (List[ChatMessage]): 聊天消息列表
+- `required` (List[str]): 必需的参数列表
+- `model` (Dict): 模型配置参数
+
+#### 方法
+- `format(**kwargs)`: 格式化模板消息
+- `__call__(model_output, **kwargs)`: 执行与LLM的交互
+
+### GraderRegistry（评估器注册表）
+
+管理所有评估函数的注册和获取。
+
+#### 方法
+- `register(name, grader, namespace)`: 注册评估函数
+- `get(name)`: 获取评估函数
+- `remove(name)`: 删除评估函数
+- `list_graders(namespace)`: 列出评估函数
+- `list_namespaces()`: 列出所有命名空间
+
+## 未来开发
+
+v2框架正在积极开发中，计划扩展：
+- 更多内置评估类型
+- 更多优化器实现
+- 增强的分析和报告功能
+- 与更多LLM提供商集成
+- 高级实验跟踪功能
+- 更完善的文档和示例

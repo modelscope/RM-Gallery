@@ -1,306 +1,515 @@
-from typing import Any, Dict, List, Optional
+import os
+from datetime import datetime
+from typing import Any, AsyncGenerator, Dict, List, Literal, OrderedDict, Type
 
 from loguru import logger
-from openai import OpenAI
-from pydantic import Field, model_validator
+from openai import AsyncOpenAI, AsyncStream
+from openai.types.chat import ChatCompletion
+from pydantic import BaseModel
 
-from rm_gallery.core.model.base import (
-    BaseLLM,
-    _convert_chat_message_to_openai_message,
-    _convert_openai_response_to_response,
-    _convert_stream_chunk_to_response,
-    get_from_dict_or_env,
+from rm_gallery.core.model.base import ChatModelBase
+from rm_gallery.core.model.block import (
+    AudioBlock,
+    Base64Source,
+    TextBlock,
+    ThinkingBlock,
+    ToolUseBlock,
 )
-from rm_gallery.core.model.message import (
-    ChatMessage,
-    ChatResponse,
-    GeneratorChatResponse,
-)
-from rm_gallery.core.utils.text import detect_consecutive_repetition
+from rm_gallery.core.model.response import ChatResponse
+from rm_gallery.core.model.usage import ChatUsage
+from rm_gallery.core.model.utils import _json_loads_with_repair
 
 
-class OpenaiLLM(BaseLLM):
+def _format_audio_data_for_qwen_omni(messages: list[dict]) -> None:
+    """Qwen-omni uses OpenAI-compatible API but requires different audio
+    data format than OpenAI with "data:;base64," prefix.
+    Refer to `Qwen-omni documentation
+    <https://bailian.console.aliyun.com/?tab=doc#/doc/?type=model&url=2867839>`_
+    for more details.
+
+    Args:
+        messages (`list[dict]`):
+            The list of message dictionaries from OpenAI formatter.
     """
-    OpenAI Language Model interface for chat completions with streaming and history support.
-
-    Attributes:
-        client (Any): OpenAI API client instance
-        model (str): Model name/version to use
-        base_url (str | None): Custom API endpoint URL
-        openai_api_key (str | None): Authentication token
-        max_retries (int): Maximum retry attempts for failed requests
-        stream (bool): Whether to stream responses incrementally
-        max_tokens (int): Maximum output tokens per response
-    """
-
-    client: Any
-    model: str = Field(default="gpt-4o")
-    base_url: str | None = Field(default=None)
-    openai_api_key: str | None = Field(default=None)
-    max_retries: int = Field(default=10)
-    stream: bool = Field(default=False)
-    max_tokens: int = Field(default=8192)
-    thinking_budget: int = Field(default=8192)
-    stop_if_detect_repetition: bool = Field(default=False)
-
-    @model_validator(mode="before")
-    @classmethod
-    def validate_client(cls, data: Dict):
-        """
-        Initialize and validate OpenAI client configuration.
-
-        Ensures API key is available, then creates a configured OpenAI client instance.
-        Handles environment variable fallback for configuration parameters.
-
-        Args:
-            data (Dict): Configuration dictionary containing potential client parameters
-
-        Returns:
-            Dict: Updated configuration with initialized client and validated parameters
-
-        Raises:
-            ValueError: If API key is missing or client initialization fails
-        """
-        # Check for OPENAI_API_KEY
-        openai_api_key = get_from_dict_or_env(
-            data=data, key="openai_api_key", default=None
-        )
-        if not openai_api_key:
-            raise ValueError(
-                "OPENAI_API_KEY environment variable is not set. Please set it before using the client."
-            )
-        data["openai_api_key"] = openai_api_key
-        data["base_url"] = get_from_dict_or_env(data, key="base_url", default=None)
-
-        try:
-            data["client"] = OpenAI(
-                api_key=data["openai_api_key"],
-                base_url=data["base_url"],
-                max_retries=data.get("max_retries", 10),
-                timeout=60.0,
-            )
-            return data
-        except Exception as e:
-            raise ValueError(f"Failed to initialize OpenAI client: {str(e)}")
-
-    @property
-    def chat_kwargs(self) -> Dict[str, Any]:
-        """
-        Generate filtered keyword arguments for chat completion API calls.
-
-        Includes model parameters with special handling for tool calls.
-        Filters out None values and zero/false values except for boolean flags.
-
-        Returns:
-            Dict[str, Any]: Cleaned dictionary of chat completion parameters
-        """
-        call_params = {
-            "model": self.model,
-            # "top_p": self.top_p,
-            "temperature": self.temperature,
-            "max_tokens": self.max_tokens,
-            "stream": self.stream,
-        }
-
-        # Remove None values
-        call_params = {
-            k: v
-            for k, v in call_params.items()
-            if v is not None and (isinstance(v, bool) or v != 0)
-        }
-
-        if "qwen3" in self.model:
-            call_params["extra_body"] = {
-                "enable_thinking": self.enable_thinking,
-                "thinking_budget": self.thinking_budget,
-            }
-
-        if self.tools:
-            call_params.update({"tools": self.tools, "tool_choice": self.tool_choice})
-
-        return call_params
-
-    def chat(
-        self, messages: List[ChatMessage] | str, **kwargs
-    ) -> ChatResponse | GeneratorChatResponse:
-        """
-        Process chat messages and generate responses from OpenAI API.
-
-        Handles both single message and streaming response modes based on configuration.
-        Converts messages to OpenAI format before making API call.
-
-        Args:
-            messages (List[ChatMessage] | str): Input messages in application format
-            **kwargs: Additional parameters to override default chat settings
-
-        Returns:
-            ChatResponse | GeneratorChatResponse: Either complete response or streaming generator
-
-        Raises:
-            Exception: Wraps and re-raises API call failures
-        """
-        messages = self._convert_messages(messages)
-
-        call_params = self.chat_kwargs.copy()
-        call_params.update(kwargs)
-
-        try:
-            response = self.client.chat.completions.create(
-                messages=_convert_chat_message_to_openai_message(messages),
-                **call_params,
-            )
-
-            if self.stream:
-                return self._handle_stream_response(response)
-            return _convert_openai_response_to_response(response)
-
-        except Exception as e:
-            raise Exception(f"API call failed: {str(e)}")
-
-    def _handle_stream_response(self, response: Any) -> GeneratorChatResponse:
-        """
-        Process streaming response chunks into application format.
-
-        Combines incremental response chunks while maintaining complete message context.
-        Yields updated responses as new content becomes available.
-
-        Args:
-            response (Any): Raw streaming response from OpenAI API
-
-        Yields:
-            GeneratorChatResponse: Incremental updates to the complete response
-        """
-        _response = None
-        for chunk in response:
-            chunk_response = _convert_stream_chunk_to_response(chunk)
-            if chunk_response is None:
-                continue
-
-            if _response is None:
-                _response = chunk_response
-            else:
-                _response.message = _response.message + chunk_response.message
-                _response.delta = chunk_response.message
-
-            yield _response
-
-    def simple_chat(
-        self,
-        query: str,
-        history: Optional[List[str]] = None,
-        sys_prompt: str = "You are a helpful assistant.",
-        **kwargs,
-    ) -> Any:
-        """
-        Simplified chat interface with built-in history management.
-
-        Handles conversation history formatting and system prompt integration.
-        Switches between reasoning and standard modes based on configuration.
-
-        Args:
-            query (str): Current user input text
-            history (Optional[List[str]]): Previous conversation history
-            sys_prompt (str): System-level instructions for the model
-            **kwargs: Additional parameters for chat configuration
-
-        Returns:
-            Any: Model response content, typically a string
-        """
-        if self.enable_thinking:
-            return self.simple_chat_reasoning(
-                query=query, history=history, sys_prompt=sys_prompt, **kwargs
-            )
-
-        messages = [{"role": "system", "content": sys_prompt}]
-
-        if history is None:
-            history_ = []
-        else:
-            history_ = history.copy()
-        history_ += [query]
-
-        for i, h in enumerate(history_):
-            role = "user" if i % 2 == 0 else "assistant"
-            messages += [{"role": role, "content": h}]
-
-        call_params = self.chat_kwargs.copy()
-        call_params.update(kwargs)
-        response = self.client.chat.completions.create(messages=messages, **call_params)
-        return _convert_openai_response_to_response(response).message.content
-
-    def simple_chat_reasoning(
-        self,
-        query: str,
-        history: Optional[List[str]] = None,
-        sys_prompt: str = "",
-        **kwargs,
-    ) -> Any:
-        """
-        Enhanced chat interface with reasoning content processing.
-
-        Handles special reasoning content markers and separates thinking from output.
-        Implements token limit safety with early return for long responses.
-
-        Args:
-            query (str): User input text
-            history (Optional[List[str]]): Conversation history
-            sys_prompt (str): System instructions
-            **kwargs: Chat configuration parameters
-
-        Returns:
-            Any: Combined response content with reasoning markers
-        """
-        messages = [{"role": "system", "content": sys_prompt}]
-
-        if history is None:
-            history_ = []
-        else:
-            history_ = history.copy()
-        history_ += [query]
-
-        for i, h in enumerate(history_):
-            role = "user" if i % 2 == 0 else "assistant"
-            messages += [{"role": role, "content": h}]
-
-        call_params = self.chat_kwargs.copy()
-        call_params["stream"] = True
-        call_params.update(kwargs)
-
-        try:
-            completion = self.client.chat.completions.create(
-                messages=messages, **call_params
-            )
-        except Exception as e:
-            logger.error(f"Error in chat completion: {e}")
-            completion = self.client.chat.completions.create(
-                messages=messages, **call_params
-            )
-
-        ans = ""
-        enter_think = False
-        leave_think = False
-        for chunk in completion:
-            if chunk.choices:
-                delta = chunk.choices[0].delta
+    for msg in messages:
+        if isinstance(msg.get("content"), list):
+            for block in msg["content"]:
                 if (
-                    hasattr(delta, "reasoning_content")
-                    and delta.reasoning_content is not None
+                    isinstance(block, dict)
+                    and "input_audio" in block
+                    and isinstance(block["input_audio"].get("data"), str)
                 ):
-                    if not enter_think:
-                        enter_think = True
-                        ans += "<think>"
-                    ans += delta.reasoning_content
-                elif delta.content:
-                    if enter_think and not leave_think:
-                        leave_think = True
-                        ans += "</think>"
-                    ans += delta.content
-            if self.stop_if_detect_repetition:
-                repetition_text = detect_consecutive_repetition(ans)
-                if repetition_text:
-                    logger.info(f"repetition_text={repetition_text},stop")
-                    return ans
-            if len(ans) > 32768:
-                return ans
+                    if not block["input_audio"]["data"].startswith("http"):
+                        block["input_audio"]["data"] = (
+                            "data:;base64," + block["input_audio"]["data"]
+                        )
 
-        return ans
+
+class OpenAIChatModel(ChatModelBase):
+    """The OpenAI chat model class, following AgentScope implementation."""
+
+    def __init__(
+        self,
+        model_name: str,
+        api_key: str | None = None,
+        base_url: str | None = None,
+        stream: bool = False,
+        reasoning_effort: Literal["low", "medium", "high"] | None = None,
+        organization: str | None = None,
+        client_args: Dict[str, Any] | None = None,
+        generate_kwargs: Dict[str, Any] | None = None,
+    ) -> None:
+        """Initialize the openai client.
+
+        Args:
+            model_name: The name of the model to use in OpenAI API.
+            api_key: The API key for OpenAI API. If not specified, it will
+                be read from the environment variable `OPENAI_API_KEY`.
+            base_url: The base URL for OpenAI API. If not specified, it will
+                be read from the environment variable `OPENAI_BASE_URL`.
+            stream: Whether to use streaming output or not.
+            reasoning_effort: Reasoning effort, supported for o3, o4, etc.
+            organization: The organization ID for OpenAI API. If not specified, it will
+                be read from the environment variable `OPENAI_ORGANIZATION`.
+            client_args: The extra keyword arguments to initialize the OpenAI client.
+            generate_kwargs: The extra keyword arguments used in OpenAI API generation,
+                e.g. `temperature`, `seed`.
+        """
+        self.model_name = model_name
+        self.stream = stream
+        self.reasoning_effort = reasoning_effort
+        self.generate_kwargs = generate_kwargs or {}
+
+        # Initialize client
+        client_args = client_args or {}
+        if api_key:
+            client_args["api_key"] = api_key
+        else:
+            client_args["api_key"] = os.getenv("OPENAI_API_KEY")
+
+        if base_url:
+            client_args["base_url"] = base_url
+        else:
+            client_args["base_url"] = os.getenv("OPENAI_BASE_URL", None)
+
+        if organization:
+            client_args["organization"] = organization
+
+        self.client = AsyncOpenAI(**client_args)
+
+    async def __call__(
+        self,
+        messages: list[dict],
+        tools: list[dict] | None = None,
+        tool_choice: Literal["auto", "none", "any", "required"] | str | None = None,
+        structured_model: Type[BaseModel] | None = None,
+        **kwargs: Any,
+    ) -> ChatResponse | AsyncGenerator[ChatResponse, None]:
+        """Get the response from OpenAI chat completions API by the given
+        arguments.
+
+        Args:
+            messages (`list[dict]`):
+                A list of dictionaries, where `role` and `content` fields are
+                required, and `name` field is optional.
+            tools (`list[dict]`, default `None`):
+                The tools JSON schemas that the model can use.
+            tool_choice (`Literal["auto", "none", "any", "required"] | str \
+            | None`, default `None`):
+                Controls which (if any) tool is called by the model.
+                 Can be "auto", "none", "any", "required", or specific tool
+                 name. For more details, please refer to
+                 https://platform.openai.com/docs/api-reference/responses/create#responses_create-tool_choice
+            structured_model (`Type[BaseModel] | None`, default `None`):
+                A Pydantic BaseModel class that defines the expected structure
+                for the model's output. When provided, the model will be forced
+                to return data that conforms to this schema by automatically
+                converting the BaseModel to a tool function and setting
+                `tool_choice` to enforce its usage. This enables structured
+                output generation.
+
+                .. note:: When `structured_model` is specified,
+                    both `tools` and `tool_choice` parameters are ignored,
+                    and the model will only perform structured output
+                    generation without calling any other tools.
+
+                For more details, please refer to the `official document
+                <https://platform.openai.com/docs/guides/structured-outputs>`_
+
+            **kwargs (`Any`):
+                The keyword arguments for OpenAI chat completions API,
+                e.g. `temperature`, `max_tokens`, `top_p`, etc. Please
+                refer to the OpenAI API documentation for more details.
+
+        Returns:
+            `ChatResponse | AsyncGenerator[ChatResponse, None]`:
+                The response from the OpenAI chat completions API.
+        """
+
+        # checking messages
+        if not isinstance(messages, list):
+            raise ValueError(
+                "OpenAI `messages` field expected type `list`, "
+                f"got `{type(messages)}` instead.",
+            )
+        if not all("role" in msg and "content" in msg for msg in messages):
+            raise ValueError(
+                "Each message in the 'messages' list must contain a 'role' "
+                "and 'content' key for OpenAI API.",
+            )
+
+        # Qwen-omni requires different base64 audio format from openai
+        if "omni" in self.model_name.lower():
+            _format_audio_data_for_qwen_omni(messages)
+
+        kwargs = {
+            "model": self.model_name,
+            "messages": messages,
+            "stream": self.stream,
+            **self.generate_kwargs,
+            **kwargs,
+        }
+        if self.reasoning_effort and "reasoning_effort" not in kwargs:
+            kwargs["reasoning_effort"] = self.reasoning_effort
+
+        if tools:
+            kwargs["tools"] = self._format_tools_json_schemas(tools)
+
+        if tool_choice:
+            self._validate_tool_choice(tool_choice, tools)
+            kwargs["tool_choice"] = self._format_tool_choice(tool_choice)
+
+        if self.stream:
+            kwargs["stream_options"] = {"include_usage": True}
+
+        start_datetime = datetime.now()
+
+        if structured_model:
+            if tools or tool_choice:
+                logger.warning(
+                    "structured_model is provided. Both 'tools' and "
+                    "'tool_choice' parameters will be overridden and "
+                    "ignored. The model will only perform structured output "
+                    "generation without calling any other tools.",
+                )
+            kwargs.pop("stream", None)
+            kwargs.pop("tools", None)
+            kwargs.pop("tool_choice", None)
+            kwargs["response_format"] = structured_model
+            if not self.stream:
+                response = await self.client.chat.completions.parse(**kwargs)
+            else:
+                response = self.client.chat.completions.stream(**kwargs)
+                return self._parse_openai_stream_response(
+                    start_datetime,
+                    response,
+                    structured_model,
+                )
+        else:
+            response = await self.client.chat.completions.create(**kwargs)
+
+        if self.stream:
+            return self._parse_openai_stream_response(
+                start_datetime,
+                response,
+                structured_model,
+            )
+
+        # Non-streaming response
+        parsed_response = self._parse_openai_completion_response(
+            start_datetime,
+            response,
+            structured_model,
+        )
+
+        return parsed_response
+
+    async def _parse_openai_stream_response(
+        self,
+        start_datetime: datetime,
+        response: AsyncStream,
+        structured_model: Type[BaseModel] | None = None,
+    ) -> AsyncGenerator[ChatResponse, None]:
+        """Given an OpenAI streaming completion response, extract the content
+         blocks and usages from it and yield ChatResponse objects.
+
+        Args:
+            start_datetime (`datetime`):
+                The start datetime of the response generation.
+            response (`AsyncStream`):
+                OpenAI AsyncStream object to parse.
+            structured_model (`Type[BaseModel] | None`, default `None`):
+                A Pydantic BaseModel class that defines the expected structure
+                for the model's output.
+
+        Returns:
+            `AsyncGenerator[ChatResponse, None]`:
+                An async generator that yields ChatResponse objects containing
+                the content blocks and usage information for each chunk in
+                the streaming response.
+
+        .. note::
+            If `structured_model` is not `None`, the expected structured output
+            will be stored in the metadata of the `ChatResponse`.
+        """
+        usage, res = None, None
+        text = ""
+        thinking = ""
+        audio = ""
+        tool_calls = OrderedDict()
+        metadata: dict | None = None
+        contents: List[TextBlock | ToolUseBlock | ThinkingBlock | AudioBlock] = []
+
+        async with response as stream:
+            async for item in stream:
+                if structured_model:
+                    if item.type != "chunk":
+                        continue
+                    chunk = item.chunk
+                else:
+                    chunk = item
+
+                if chunk.usage:
+                    usage = ChatUsage(
+                        input_tokens=chunk.usage.prompt_tokens,
+                        output_tokens=chunk.usage.completion_tokens,
+                        time=(datetime.now() - start_datetime).total_seconds(),
+                    )
+
+                if not chunk.choices:
+                    if usage and contents:
+                        res = ChatResponse(
+                            content=contents,
+                            usage=usage,
+                            metadata=metadata,
+                        )
+                        yield res
+                    continue
+
+                choice = chunk.choices[0]
+
+                thinking += getattr(choice.delta, "reasoning_content", None) or ""
+                text += choice.delta.content or ""
+
+                if hasattr(choice.delta, "audio") and "data" in choice.delta.audio:
+                    audio += choice.delta.audio["data"]
+                if (
+                    hasattr(choice.delta, "audio")
+                    and "transcript" in choice.delta.audio
+                ):
+                    text += choice.delta.audio["transcript"]
+
+                for tool_call in choice.delta.tool_calls or []:
+                    if tool_call.index in tool_calls:
+                        if tool_call.function.arguments is not None:
+                            tool_calls[tool_call.index][
+                                "input"
+                            ] += tool_call.function.arguments
+
+                    else:
+                        tool_calls[tool_call.index] = {
+                            "type": "tool_use",
+                            "id": tool_call.id,
+                            "name": tool_call.function.name,
+                            "input": tool_call.function.arguments or "",
+                        }
+
+                contents = []
+
+                if thinking:
+                    contents.append(
+                        ThinkingBlock(
+                            type="thinking",
+                            thinking=thinking,
+                        ),
+                    )
+
+                if audio:
+                    media_type = self.generate_kwargs.get("audio", {}).get(
+                        "format",
+                        "wav",
+                    )
+                    contents.append(
+                        AudioBlock(
+                            type="audio",
+                            source=Base64Source(
+                                data=audio,
+                                media_type=f"audio/{media_type}",
+                                type="base64",
+                            ),
+                        ),
+                    )
+
+                if text:
+                    contents.append(
+                        TextBlock(
+                            type="text",
+                            text=text,
+                        ),
+                    )
+
+                    if structured_model:
+                        metadata = _json_loads_with_repair(text)
+
+                for tool_call in tool_calls.values():
+                    contents.append(
+                        ToolUseBlock(
+                            type=tool_call["type"],
+                            id=tool_call["id"],
+                            name=tool_call["name"],
+                            input=_json_loads_with_repair(
+                                tool_call["input"] or "{}",
+                            ),
+                        ),
+                    )
+
+                if not contents:
+                    continue
+
+                res = ChatResponse(
+                    content=contents,
+                    usage=usage,
+                    metadata=metadata,
+                )
+                yield res
+
+    def _parse_openai_completion_response(
+        self,
+        start_datetime: datetime,
+        response: ChatCompletion,
+        structured_model: Type[BaseModel] | None = None,
+    ) -> ChatResponse:
+        """Given an OpenAI chat completion response object, extract the content
+            blocks and usages from it.
+
+        Args:
+            start_datetime (`datetime`):
+                The start datetime of the response generation.
+            response (`ChatCompletion`):
+                OpenAI ChatCompletion object to parse.
+            structured_model (`Type[BaseModel] | None`, default `None`):
+                A Pydantic BaseModel class that defines the expected structure
+                for the model's output.
+
+        Returns:
+            ChatResponse (`ChatResponse`):
+                A ChatResponse object containing the content blocks and usage.
+
+        .. note::
+            If `structured_model` is not `None`, the expected structured output
+            will be stored in the metadata of the `ChatResponse`.
+        """
+        content_blocks: List[TextBlock | ToolUseBlock | ThinkingBlock | AudioBlock] = []
+        metadata: dict | None = None
+
+        if response.choices:
+            choice = response.choices[0]
+            if (
+                hasattr(choice.message, "reasoning_content")
+                and choice.message.reasoning_content is not None
+            ):
+                content_blocks.append(
+                    ThinkingBlock(
+                        type="thinking",
+                        thinking=response.choices[0].message.reasoning_content,
+                    ),
+                )
+
+            if choice.message.content:
+                content_blocks.append(
+                    TextBlock(
+                        type="text",
+                        text=response.choices[0].message.content,
+                    ),
+                )
+            if choice.message.audio:
+                media_type = self.generate_kwargs.get("audio", {}).get(
+                    "format",
+                    "mp3",
+                )
+                content_blocks.append(
+                    AudioBlock(
+                        type="audio",
+                        source=Base64Source(
+                            data=choice.message.audio.data,
+                            media_type=f"audio/{media_type}",
+                            type="base64",
+                        ),
+                    ),
+                )
+
+                if choice.message.audio.transcript:
+                    content_blocks.append(
+                        TextBlock(
+                            type="text",
+                            text=choice.message.audio.transcript,
+                        ),
+                    )
+
+            for tool_call in choice.message.tool_calls or []:
+                content_blocks.append(
+                    ToolUseBlock(
+                        type="tool_use",
+                        id=tool_call.id,
+                        name=tool_call.function.name,
+                        input=_json_loads_with_repair(
+                            tool_call.function.arguments,
+                        ),
+                    ),
+                )
+
+            if structured_model:
+                metadata = choice.message.parsed.model_dump()
+
+        usage = None
+        if response.usage:
+            usage = ChatUsage(
+                input_tokens=response.usage.prompt_tokens,
+                output_tokens=response.usage.completion_tokens,
+                time=(datetime.now() - start_datetime).total_seconds(),
+            )
+
+        parsed_response = ChatResponse(
+            content=content_blocks,
+            usage=usage,
+            metadata=metadata,
+        )
+
+        return parsed_response
+
+    def _format_tools_json_schemas(
+        self,
+        schemas: list[dict[str, Any]],
+    ) -> list[dict[str, Any]]:
+        """Format the tools JSON schemas to the OpenAI format."""
+        return schemas
+
+    def _format_tool_choice(
+        self,
+        tool_choice: Literal["auto", "none", "any", "required"] | str | None,
+    ) -> str | dict | None:
+        """Format tool_choice parameter for API compatibility.
+
+        Args:
+            tool_choice (`Literal["auto", "none", "any", "required"] | str \
+            | None`, default `None`):
+                Controls which (if any) tool is called by the model.
+                 Can be "auto", "none", "any", "required", or specific tool
+                 name. For more details, please refer to
+                 https://platform.openai.com/docs/api-reference/responses/create#responses_create-tool_choice
+        Returns:
+            `dict | None`:
+                The formatted tool choice configuration dict, or None if
+                    tool_choice is None.
+        """
+        if tool_choice is None:
+            return None
+        mode_mapping = {
+            "auto": "auto",
+            "none": "none",
+            "any": "required",
+            "required": "required",
+        }
+        if tool_choice in mode_mapping:
+            return mode_mapping[tool_choice]
+        return {"type": "function", "function": {"name": tool_choice}}
