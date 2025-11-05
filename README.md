@@ -1,6 +1,8 @@
 <div align="center">
 
-<img src="./docs/images/logo.svg" alt="RM-Gallery Logo" width="600">
+<p align="center">
+  <img src="./docs/images/logo.svg" alt="RM-Gallery Logo" width="500">
+</p>
 
 <h3>A unified platform for building, evaluating, and applying reward models.</h3>
 

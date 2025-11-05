@@ -14,10 +14,8 @@ show_datetime: true
 
 <div style="text-align: center; margin: 3rem 0 2rem 0;">
   <div style="display: inline-block; position: relative;">
-    <div style="font-size: 4.5rem; font-weight: 700; letter-spacing: -0.03em; line-height: 0.9; margin-bottom: 1rem; font-family: 'Inter', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-      <span style="background: linear-gradient(135deg, #22d3ee 0%, #3b82f6 30%, #6366f1 70%, #8b5cf6 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-shadow: 0 0 25px rgba(59, 130, 246, 0.3);">RM</span><span style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 30%, #a855f7 70%, #ec4899 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; text-shadow: 0 0 25px rgba(139, 92, 246, 0.3);">Gallery</span>
-    </div>
-    <div style="position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px; background: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.1) 0%, transparent 70%); border-radius: 20px; z-index: -1;"></div>
+    <img src="./images/logo.svg" alt="RM-Gallery Logo" style="display: block; width: 520px; max-width: 80vw; z-index: 1; position: relative;">
+    <div style="position: absolute; top: -10px; left: -10px; right: -10px; bottom: -10px; background: radial-gradient(ellipse at center, rgba(59, 130, 246, 0.12) 0%, transparent 70%); border-radius: 20px; z-index: 0;"></div>
   </div>
 </div>
 
