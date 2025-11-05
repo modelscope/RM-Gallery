@@ -1,12 +1,6 @@
 <div align="center">
 
-<picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://readme-typing-svg.demolab.com?font=Inter&weight=700&size=72&duration=1&pause=1000000&color=22D3EE&background=FFFFFF00&center=true&vCenter=true&repeat=false&width=280&height=100&lines=RM">
-  <img alt="RM" src="https://readme-typing-svg.demolab.com?font=Inter&weight=700&size=72&duration=1&pause=1000000&color=22D3EE&background=FFFFFF00&center=true&vCenter=true&repeat=false&width=280&height=100&lines=RM">
-</picture><picture>
-  <source media="(prefers-color-scheme: dark)" srcset="https://readme-typing-svg.demolab.com?font=Inter&weight=700&size=72&duration=1&pause=1000000&color=8B5CF6&background=FFFFFF00&center=true&vCenter=true&repeat=false&width=500&height=100&lines=Gallery">
-  <img alt="Gallery" src="https://readme-typing-svg.demolab.com?font=Inter&weight=700&size=72&duration=1&pause=1000000&color=8B5CF6&background=FFFFFF00&center=true&vCenter=true&repeat=false&width=500&height=100&lines=Gallery">
-</picture>
+<img src="./docs/images/logo.svg" alt="RM-Gallery Logo" width="600">
 
 <h3>A unified platform for building, evaluating, and applying reward models.</h3>
 
