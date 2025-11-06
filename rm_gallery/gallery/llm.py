@@ -1,15 +1,16 @@
 # Grader 开发示例
 import asyncio
-from typing import List
 
 from loguru import logger
 
 from rm_gallery.core.data import DataSample
 from rm_gallery.core.grader import GraderMode, LLMGrader, evaluate
+from rm_gallery.core.model.message import ChatMessage
+from rm_gallery.core.model.template import ChatTemplate
 
-DEFAULT_TEMPLATE = {
-    "messages": [
-        dict(
+DEFAULT_CHAT_TEMPLATE = ChatTemplate(
+    template=[
+        ChatMessage(
             role="system",
             content=(
                 "You are a helpful assistant that evaluates the quality of a "
@@ -19,39 +20,24 @@ DEFAULT_TEMPLATE = {
                 "the response. The score should be a number between 0 and 1"
             ),
         ),
-        dict(
+        ChatMessage(
             role="user",
             content=(
                 "Please evaluate the quality of the response provided by the "
                 "assistant.\nThe user question is: {query}\nThe assistant "
                 "response is: {answer}\n\nPlease output as the following json "
-                "object:\n{{\n    score: <score>,\n    reason: <reason>\n}}"
+                'object:\n{\n    "score": <score>,\n    "reason": <reason>\n}'
             ),
         ),
     ],
-    "required_fields": [
-        {
-            "name": "query",
-            "type": "string",
-            "position": "data",
-            "description": "The user question in data",
+    model={
+        "model_name": "qwen-plus",
+        "stream": False,
+        "client_args": {
+            "timeout": 60,
         },
-        {
-            "name": "answer",
-            "type": "string",
-            "position": "sample",
-            "description": "The assistant response in sample",
-        },
-    ],
-}
-
-DEFAULT_MODEL = {
-    "model_name": "qwen-plus",
-    "stream": False,
-    "client_args": {
-        "timeout": 60,
     },
-}
+)
 
 
 class FactualGrader(LLMGrader):
@@ -64,12 +50,13 @@ class FactualGrader(LLMGrader):
         self,
         name="factual_grader",
         evaluation_mode=GraderMode.POINTWISE,
-        template: List[dict] | dict = DEFAULT_TEMPLATE,
-        model: dict = DEFAULT_MODEL,
+        chat_template=DEFAULT_CHAT_TEMPLATE,
     ):
         """Initialize a FactualGrader with a predefined chat template."""
         super().__init__(
-            name=name, evaluation_mode=evaluation_mode, template=template, model=model
+            name=name,
+            evaluation_mode=GraderMode.POINTWISE,
+            chat=chat_template,
         )
 
 

@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from rm_gallery.core.dataset import DataSample
+from rm_gallery.core.data import DataSample
 from rm_gallery.core.grader import GraderScore
 
 

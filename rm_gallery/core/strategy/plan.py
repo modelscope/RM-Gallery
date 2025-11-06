@@ -2,7 +2,7 @@ from typing import List
 
 from pydantic import BaseModel, Field
 
-from rm_gallery.core.dataset import DataSample
+from rm_gallery.core.data import DataSample
 from rm_gallery.core.grader import Grader, GraderScore
 from rm_gallery.core.model.message import ChatMessage
 from rm_gallery.core.model.template import ChatTemplate, RequiredField, Template

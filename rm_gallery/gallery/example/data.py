@@ -2,7 +2,7 @@
 
 import asyncio
 
-from rm_gallery.core.dataset import DataSample, DataSampleMapping
+from rm_gallery.core.data import DataSample, DataSampleMapping
 from rm_gallery.core.grader import evaluate
 from rm_gallery.gallery.example.llm import FactualGrader
 

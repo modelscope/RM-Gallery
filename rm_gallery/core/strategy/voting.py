@@ -3,7 +3,7 @@ from typing import Callable, List
 
 from loguru import logger
 
-from rm_gallery.core.dataset import DataSample
+from rm_gallery.core.data import DataSample
 from rm_gallery.core.grader import Grader, GraderScore, evaluate
 from rm_gallery.core.strategy.base import GraderStrategy
 from rm_gallery.gallery.example.llm import FactualGrader
