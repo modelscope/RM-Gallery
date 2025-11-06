@@ -9,7 +9,7 @@ from pydantic import BaseModel, Field
 
 from rm_gallery.core.dataset import DataSample, DataSampleMapping
 from rm_gallery.core.model.message import ChatMessage
-from rm_gallery.core.model.template import ChatTemplate
+from rm_gallery.core.model.template import ChatTemplate, LanguageEnum, RequiredField
 
 
 class GraderMode(str, Enum):
@@ -181,6 +181,7 @@ class LLMGrader(Grader):
         name (str): The name of the grader.
         evaluation_mode (GraderMode): The evaluation mode.
         chat (ChatTemplate): The chat template for the LLM.
+        rubrics (str): The rubrics for the evaluation.
         kwargs (dict): The kwargs for the grader.
     """
 
@@ -188,7 +189,11 @@ class LLMGrader(Grader):
         self,
         name: str = "",
         evaluation_mode: GraderMode = GraderMode.POINTWISE,
-        chat: ChatTemplate | dict | None = None,
+        template: List[ChatMessage]
+        | Dict[LanguageEnum, List[ChatMessage]]
+        | None = None,
+        model: Dict[str, Any] | None = None,
+        rubrics: str = "",
         **kwargs,
     ):
         """Initialize an LLMGrader.
@@ -196,14 +201,31 @@ class LLMGrader(Grader):
         Args:
             name: The name of the grader.
             evaluation_mode: The evaluation mode.
-            chat: The chat template for the LLM.
+            template: The chat template for the LLM.
+            model: The model parameters for the LLM.
+            rubrics: The rubrics for the evaluation.
             kwargs: The kwargs for the grader.
         """
         super().__init__(name, evaluation_mode)
-        if isinstance(chat, dict):
-            chat = ChatTemplate(**chat)
-        self.chat = chat
+        if template is not None and model is not None:
+            self.chat = ChatTemplate(template=template, model=model)
+        else:
+            self.chat = None
         self.kwargs = kwargs
+        self.rubrics = rubrics
+
+    @property
+    def required_fields(
+        self,
+    ) -> List[RequiredField] | Dict[LanguageEnum, List[RequiredField]]:
+        """Get the required fields for the grader.
+
+        Returns:
+            List of required fields.
+        """
+        if self.chat is None:
+            return []
+        return self.chat.required_fields
 
     async def evaluate(self, **kwargs) -> GraderScore | GraderRank:
         """Evaluate using LLM.
@@ -218,15 +240,17 @@ class LLMGrader(Grader):
             ValueError: If the evaluation mode is unsupported.
         """
         if self.evaluation_mode == GraderMode.LISTWISE:
-            model_output = GraderRank
+            chat_output = GraderRank
         else:
-            model_output = GraderScore
+            chat_output = GraderScore
 
         # Check if chat is not None before calling it
         if self.chat is None:
             raise ValueError("Chat template is not set")
 
-        response = await self.chat(model_output=model_output, **kwargs, **self.kwargs)
+        response = await self.chat(
+            chat_output=chat_output, rubrics=self.rubrics, **kwargs, **self.kwargs
+        )
         if self.evaluation_mode == GraderMode.LISTWISE:
             result = GraderRank(
                 rank=response.metadata["rank"],  # type: ignore
@@ -306,10 +330,10 @@ GraderType = Grader | Callable
 async def evaluate(
     grader: Callable,
     mapping: DataSampleMapping | Callable | None,
-    data_sample: DataSample,
+    data_sample: DataSample | List[DataSample],
     *args,
     **kwargs,
-) -> List[GraderScore]:
+) -> List[GraderScore] | List[List[GraderScore]]:
     """Evaluate a data sample using a grader.
 
     Args:
@@ -325,6 +349,13 @@ async def evaluate(
     Raises:
         ValueError: If grader function signature is invalid.
     """
+
+    if isinstance(data_sample, list):
+        corutines = [
+            evaluate(grader, mapping, sample, *args, **kwargs) for sample in data_sample
+        ]
+        return await asyncio.gather(*corutines)
+
     # Check that function has at least one parameter and first parameter is data_sample
     sig = inspect.signature(grader)
     params = list(sig.parameters.keys())
@@ -342,72 +373,3 @@ async def evaluate(
         *args,
         **kwargs,
     )
-
-
-class FactualGrader(LLMGrader):
-    """Factual evaluation grader.
-
-    A specific implementation of LLMGrader for factual accuracy evaluation.
-    """
-
-    def __init__(self):
-        """Initialize a FactualGrader with a predefined chat template."""
-        chat_template = ChatTemplate(
-            template=[
-                ChatMessage(
-                    role="system",
-                    content=(
-                        "You are a helpful assistant that evaluates the quality of a "
-                        "response. Your job is to evaluate the quality of the response "
-                        "and give a score between 0 and 1. The score should be based on "
-                        "the quality of the response. The higher the score, the better "
-                        "the response. The score should be a number between 0 and 1"
-                    ),
-                ),
-                ChatMessage(
-                    role="user",
-                    content=(
-                        "Please evaluate the quality of the response provided by the "
-                        "assistant.\nThe user question is: {query}\nThe assistant "
-                        "response is: {answer}\n\nPlease output as the following json "
-                        'object:\n{\n    "score": <score>,\n    "reason": <reason>\n}'
-                    ),
-                ),
-            ],
-            model={
-                "model_name": "qwen-plus",
-                "stream": False,
-                "client_args": {
-                    "timeout": 60,
-                },
-            },
-        )
-
-        super().__init__(
-            name="factual_grader",
-            evaluation_mode=GraderMode.POINTWISE,
-            chat=chat_template,
-        )
-
-
-def test_factual_grader():
-    """Test the factual grader."""
-    grader = FactualGrader()
-
-    data_sample = DataSample(
-        data={"query": "What is the capital of France?"},
-        samples=[{"answer": "Paris"}, {"answer": "London"}],
-    )
-
-    result = asyncio.run(
-        evaluate(
-            grader,
-            mapping=None,
-            data_sample=data_sample,
-        )
-    )
-    logger.info(result)
-
-
-if __name__ == "__main__":
-    test_factual_grader()

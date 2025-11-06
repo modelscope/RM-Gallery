@@ -6,10 +6,10 @@ from rm_gallery.core.grader import Grader, GraderScore
 
 
 class GraderOptimizer(ABC):
-    """Base grader optimizer class for optimizing input reward functions.
+    """Base grader strategy class for optimizing input reward functions.
 
     This class serves as an abstract base class that defines the basic interface
-    for reward optimizers. Subclasses should implement the specific optimization logic.
+    for reward strategies. Subclasses should implement the specific optimization logic.
     """
 
     def __init__(self, grader: Grader | Callable, **kwargs):

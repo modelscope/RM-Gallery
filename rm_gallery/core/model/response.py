@@ -4,7 +4,12 @@ from typing import Any, Dict, Literal, Sequence
 import shortuuid
 from pydantic import BaseModel, Field
 
-from rm_gallery.core.model.block import AudioBlock, TextBlock, ThinkingBlock, ToolUseBlock
+from rm_gallery.core.model.block import (
+    AudioBlock,
+    TextBlock,
+    ThinkingBlock,
+    ToolUseBlock,
+)
 from rm_gallery.core.model.usage import ChatUsage
 
 
