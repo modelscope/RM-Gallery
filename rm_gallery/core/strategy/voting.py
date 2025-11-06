@@ -5,25 +5,26 @@ from loguru import logger
 
 from rm_gallery.core.dataset import DataSample
 from rm_gallery.core.grader import Grader, GraderScore, evaluate
-from rm_gallery.core.strategy.base import GraderOptimizer
+from rm_gallery.core.strategy.base import GraderStrategy
 from rm_gallery.gallery.example.llm import FactualGrader
 
 
-class VotingOptimizer(GraderOptimizer):
+class VotingStrategy(GraderStrategy):
     """Voting grader strategy that optimizes results by executing the grader
     multiple times and averaging the results.
     """
 
     def __init__(self, grader: Grader | Callable, num_repeats: int = 5, **kwargs):
-        """Initialize VotingOptimizer.
+        """Initialize VotingStrategy.
 
         Args:
             grader: The grader to optimize
             num_repeats: Number of repetitions, defaults to 5
             **kwargs: Other parameters
         """
-        super().__init__(grader, **kwargs)
+        super().__init__(**kwargs)
         self.num_repeats = num_repeats
+        self.grader = grader
 
     def __name__(self) -> str:
         return f"{self.grader.__name__}_voting_{self.num_repeats}"
@@ -71,7 +72,9 @@ class VotingOptimizer(GraderOptimizer):
                     score=avg_score,
                     reason=f"Voting optimization over {self.num_repeats} runs. "
                     f"Individual scores: {scores}, reasons: {reasons}",
-                    metadata={f"attempt_{j+1}": result[i] for j, result in enumerate(results)},
+                    metadata={
+                        f"attempt_{j+1}": result[i] for j, result in enumerate(results)
+                    },
                 )
             )
 
@@ -86,7 +89,7 @@ if __name__ == "__main__":
 
     result = asyncio.run(
         evaluate(
-            VotingOptimizer(FactualGrader()),
+            VotingStrategy(FactualGrader()),
             mapping=None,
             data_sample=data_sample,
         )

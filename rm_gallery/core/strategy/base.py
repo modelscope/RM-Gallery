@@ -1,22 +1,20 @@
-from abc import ABC
-from typing import Callable, List
+from abc import ABC, abstractmethod
+from typing import List
 
 from rm_gallery.core.dataset import DataSample
-from rm_gallery.core.grader import Grader, GraderScore
+from rm_gallery.core.grader import GraderScore
 
 
-class GraderOptimizer(ABC):
+class GraderStrategy(ABC):
     """Base grader strategy class for optimizing input reward functions.
 
     This class serves as an abstract base class that defines the basic interface
     for reward strategies. Subclasses should implement the specific optimization logic.
     """
 
-    def __init__(self, grader: Grader | Callable, **kwargs):
-        self.grader = grader
-
+    @abstractmethod
     def __name__(self) -> str:
-        return self.__class__.__name__
+        ...
 
     async def __call__(
         self, data_sample: DataSample, *args, **kwargs

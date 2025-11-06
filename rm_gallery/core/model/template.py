@@ -23,7 +23,7 @@ class RequiredField(BaseModel):
 
     name: str = Field(default=..., description="name of the field")
     type: str = Field(default=..., description="type of the field")
-    position: Literal["data", "sample"] = Field(
+    position: Literal["data", "sample", "others"] = Field(
         default="data", description="position of the field"
     )
     description: str = Field(default=..., description="description of the field")
