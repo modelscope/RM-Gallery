@@ -1,8 +1,10 @@
 import asyncio
+import json
 import re
 from enum import Enum
 from typing import Any, AsyncGenerator, Callable, Dict, List, Literal, Type
 
+import yaml
 from pydantic import BaseModel, Field, model_validator
 
 from rm_gallery.core.model.message import ChatMessage
@@ -23,7 +25,7 @@ class RequiredField(BaseModel):
 
     name: str = Field(default=..., description="name of the field")
     type: str = Field(default=..., description="type of the field")
-    position: Literal["data", "sample", "others"] = Field(
+    position: Literal["data", "sample", "grader"] = Field(
         default="data", description="position of the field"
     )
     description: str = Field(default=..., description="description of the field")
@@ -198,6 +200,18 @@ class ChatTemplate(BaseModel):
             response.metadata = metadata
 
         return response
+
+    @classmethod
+    def load(cls, path: str):
+        if path.endswith("json"):
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+        elif path.endswith("yaml"):
+            with open(path, "r", encoding="utf-8") as f:
+                data = yaml.safe_load(f)
+        else:
+            raise ValueError("Invalid file format")
+        return cls(**data)
 
 
 if __name__ == "__main__":

@@ -69,7 +69,7 @@ class FactualGrader(LLMGrader):
     ):
         """Initialize a FactualGrader with a predefined chat template."""
         super().__init__(
-            name=name, evaluation_mode=evaluation_mode, template=template, model=model
+            name=name, grader_mode=evaluation_mode, template=template, model=model
         )
 
 

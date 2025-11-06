@@ -8,16 +8,20 @@ from loguru import logger
 from pydantic import BaseModel, Field
 
 from rm_gallery.core.data import DataSample, DataSampleMapping
-from rm_gallery.core.model.message import ChatMessage
-from rm_gallery.core.model.template import ChatTemplate, LanguageEnum, RequiredField
+from rm_gallery.core.model.template import (
+    ChatTemplate,
+    LanguageEnum,
+    RequiredField,
+    Template,
+)
 
 
 class GraderMode(str, Enum):
     """Grader modes for grader functions.
 
     Attributes:
-        POINTWISE: Pointwise evaluation mode.
-        LISTWISE: Listwise evaluation mode.
+        POINTWISE: Pointwise grader mode.
+        LISTWISE: Listwise grader mode.
     """
 
     POINTWISE = "pointwise"
@@ -70,24 +74,24 @@ class Grader(ABC):
 
     Attributes:
         name (str): The name of the grader.
-        evaluation_mode (GraderMode): The evaluation mode (pointwise or listwise).
+        grader_mode (GraderMode): The grader mode (pointwise or listwise).
         description: The description of the grader.
     """
 
     def __init__(
         self,
         name: str = "",
-        evaluation_mode: GraderMode = GraderMode.POINTWISE,
+        grader_mode: GraderMode = GraderMode.POINTWISE,
         description: str = "",
     ):
         """Initialize a Grader.
 
         Args:
             name: The name of the grader.
-            evaluation_mode: The evaluation mode. Defaults to POINTWISE.
+            grader_mode: The grader mode. Defaults to POINTWISE.
         """
         self.name = name
-        self.evaluation_mode = evaluation_mode
+        self.grader_mode = grader_mode
         self.description = description
 
     def __name__(self):
@@ -117,7 +121,7 @@ class Grader(ABC):
             **kwargs: Arguments for the evaluation.
 
         Returns:
-            GraderScore | GraderRank: The evaluation result or error result.
+            GraderScore | GraderRank: The grader result or error result.
         """
         try:
             result = await self.evaluate(**kwargs)
@@ -132,7 +136,7 @@ class Grader(ABC):
     async def __call__(
         self, data_sample: DataSample, *args, **kwargs
     ) -> List[GraderScore]:
-        """Evaluate based on the specified evaluation mode.
+        """Evaluate based on the specified grader mode.
 
         Args:
             data_sample: The data sample to evaluate.
@@ -143,9 +147,9 @@ class Grader(ABC):
             List of grader scores.
 
         Raises:
-            ValueError: If the evaluation mode is invalid.
+            ValueError: If the grader mode is invalid.
         """
-        if self.evaluation_mode == GraderMode.POINTWISE:
+        if self.grader_mode == GraderMode.POINTWISE:
             # Pointwise: Evaluate each sample individually
             coroutines = [
                 self._safe_evaluate(**data_sample.data, **sample)
@@ -162,7 +166,7 @@ class Grader(ABC):
                     raise ValueError(f"Invalid result type: {type(result)}")
             return results
 
-        elif self.evaluation_mode == GraderMode.LISTWISE:
+        elif self.grader_mode == GraderMode.LISTWISE:
             # Listwise: Evaluate all samples together in one call
             params = {key: value for key, value in kwargs.items()}
             if len(data_sample.samples) > 1:
@@ -191,7 +195,7 @@ class Grader(ABC):
 
             return results
         else:
-            raise ValueError(f"Invalid evaluation mode: {self.evaluation_mode}")
+            raise ValueError(f"Invalid grader mode: {self.grader_mode}")
 
 
 class LLMGrader(Grader):
@@ -201,7 +205,7 @@ class LLMGrader(Grader):
 
     Attributes:
         name (str): The name of the grader.
-        evaluation_mode (GraderMode): The evaluation mode.
+        grader_mode (GraderMode): The grader mode.
         chat (ChatTemplate): The chat template for the LLM.
         rubrics (str): The rubrics for the evaluation.
         kwargs (dict): The kwargs for the grader.
@@ -210,10 +214,8 @@ class LLMGrader(Grader):
     def __init__(
         self,
         name: str = "",
-        evaluation_mode: GraderMode = GraderMode.POINTWISE,
-        template: List[ChatMessage]
-        | Dict[LanguageEnum, List[ChatMessage]]
-        | None = None,
+        grader_mode: GraderMode = GraderMode.POINTWISE,
+        template: Template | None = None,
         model: Dict[str, Any] | None = None,
         rubrics: str = "",
         **kwargs,
@@ -222,13 +224,15 @@ class LLMGrader(Grader):
 
         Args:
             name: The name of the grader.
-            evaluation_mode: The evaluation mode.
+            grader_mode: The grader mode.
             template: The chat template for the LLM.
             model: The model parameters for the LLM.
             rubrics: The rubrics for the evaluation.
             kwargs: The kwargs for the grader.
         """
-        super().__init__(name, evaluation_mode)
+        super().__init__(name, grader_mode)
+        self.template = template
+        self.model = model
         if template is not None and model is not None:
             self.chat = ChatTemplate(template=template, model=model)
         else:
@@ -259,9 +263,9 @@ class LLMGrader(Grader):
             Evaluation result (score or rank).
 
         Raises:
-            ValueError: If the evaluation mode is unsupported.
+            ValueError: If the grader mode is unsupported.
         """
-        if self.evaluation_mode == GraderMode.LISTWISE:
+        if self.grader_mode == GraderMode.LISTWISE:
             chat_output = GraderRank
         else:
             chat_output = GraderScore
@@ -273,18 +277,18 @@ class LLMGrader(Grader):
         params.update(kwargs)
 
         response = await self.chat(chat_output=chat_output, **params)
-        if self.evaluation_mode == GraderMode.LISTWISE:
+        if self.grader_mode == GraderMode.LISTWISE:
             result = GraderRank(
                 rank=response.metadata["rank"],  # type: ignore
                 reason=response.metadata["reason"],  # type: ignore
             )
-        elif self.evaluation_mode == GraderMode.POINTWISE:
+        elif self.grader_mode == GraderMode.POINTWISE:
             result = GraderScore(
                 score=response.metadata["score"],  # type: ignore
                 reason=response.metadata["reason"],  # type: ignore
             )
         else:
-            raise ValueError(f"Unsupported evaluation mode: {self.evaluation_mode}")
+            raise ValueError(f"Unsupported grader mode: {self.grader_mode}")
         return result
 
 
@@ -296,23 +300,23 @@ class FunctionGrader(Grader):
     Attributes:
         func (Callable): The function to use for evaluation.
         name (str): The name of the grader.
-        evaluation_mode (GraderMode): The evaluation mode.
+        grader_mode (GraderMode): The grader mode.
     """
 
     def __init__(
         self,
         func: Callable,
         name: str = "",
-        evaluation_mode: GraderMode = GraderMode.POINTWISE,
+        grader_mode: GraderMode = GraderMode.POINTWISE,
     ):
         """Initialize a FunctionGrader.
 
         Args:
             func: The function to use for evaluation.
             name: The name of the grader.
-            evaluation_mode: The evaluation mode.
+            grader_mode: The grader mode.
         """
-        super().__init__(name, evaluation_mode)
+        super().__init__(name, grader_mode)
         self.func = func
 
     async def evaluate(self, **kwargs) -> GraderScore | GraderRank:
@@ -325,25 +329,42 @@ class FunctionGrader(Grader):
             Evaluation result (score or rank).
 
         Raises:
-            TypeError: If result type doesn't match evaluation mode.
+            TypeError: If result type doesn't match grader mode.
         """
         result = await self.func(**kwargs)
 
-        # Check return type based on evaluation mode
-        if self.evaluation_mode == GraderMode.POINTWISE:
+        # Check return type based on grader mode
+        if self.grader_mode == GraderMode.POINTWISE:
             if not isinstance(result, GraderScore):
                 raise TypeError(
                     f"Expected GraderScore for pointwise mode, got {type(result)}"
                 )
-        elif self.evaluation_mode == GraderMode.LISTWISE:
+        elif self.grader_mode == GraderMode.LISTWISE:
             if not isinstance(result, GraderRank):
                 raise TypeError(
                     f"Expected GraderRank for listwise mode, got {type(result)}"
                 )
         else:
-            raise ValueError(f"Unsupported evaluation mode: {self.evaluation_mode}")
+            raise ValueError(f"Unsupported grader mode: {self.grader_mode}")
 
         return result
+
+    @classmethod
+    def register(cls, name: str) -> Callable:
+        """Register a function as a grader.
+
+        Args:
+            name: The name of the grader.
+            func: The function to register.
+
+        Returns:
+            The Callable grader.
+        """
+
+        def decorator(func: Callable) -> "FunctionGrader":
+            return FunctionGrader(func, name)
+
+        return decorator
 
 
 GraderType = Grader | Callable
