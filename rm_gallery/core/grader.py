@@ -71,10 +71,14 @@ class Grader(ABC):
     Attributes:
         name (str): The name of the grader.
         evaluation_mode (GraderMode): The evaluation mode (pointwise or listwise).
+        description: The description of the grader.
     """
 
     def __init__(
-        self, name: str = "", evaluation_mode: GraderMode = GraderMode.POINTWISE
+        self,
+        name: str = "",
+        evaluation_mode: GraderMode = GraderMode.POINTWISE,
+        description: str = "",
     ):
         """Initialize a Grader.
 
@@ -84,6 +88,7 @@ class Grader(ABC):
         """
         self.name = name
         self.evaluation_mode = evaluation_mode
+        self.description = description
 
     def __name__(self):
         """Get the name of the grader.
@@ -105,20 +110,24 @@ class Grader(ABC):
         """
         ...
 
-    async def run(self, *args, **kwargs) -> GraderScore | GraderRank | GraderError:
-        """Run the grader.
+    async def _safe_evaluate(self, **kwargs) -> GraderScore | GraderRank | GraderError:
+        """Safely evaluate, handling exceptions gracefully.
+
         Args:
-            *args: Additional positional arguments.
-            **kwargs: Additional keyword arguments.
+            **kwargs: Arguments for the evaluation.
+
         Returns:
-            GraderScore | GraderRank | GraderError: The evaluation result.
+            GraderScore | GraderRank: The evaluation result or error result.
         """
         try:
-            return await self.run(*args, **kwargs)
+            result = await self.evaluate(**kwargs)
         except Exception as e:
-            error = f"Error in {self.name}: {e}"
-            logger.error(error)
-            return GraderError(reason=str(e))
+            error_msg = f"Error in {self.name} during  evaluation: {str(e)}"
+            logger.error(error_msg)
+            result = GraderScore(
+                reason=error_msg,
+            )
+        return result
 
     async def __call__(
         self, data_sample: DataSample, *args, **kwargs
@@ -139,10 +148,18 @@ class Grader(ABC):
         if self.evaluation_mode == GraderMode.POINTWISE:
             # Pointwise: Evaluate each sample individually
             coroutines = [
-                self.evaluate(**data_sample.data, **sample)
+                self._safe_evaluate(**data_sample.data, **sample)
                 for sample in data_sample.samples
             ]
             results: List[GraderScore] = await asyncio.gather(*coroutines)  # type: ignore
+            _results = []
+            for result in results:
+                if isinstance(result, GraderScore):
+                    _results.append(result)
+                elif isinstance(result, GraderError):
+                    _results.append(GraderScore(score=0.0, reason=result.reason))
+                else:
+                    raise ValueError(f"Invalid result type: {type(result)}")
             return results
 
         elif self.evaluation_mode == GraderMode.LISTWISE:
@@ -158,16 +175,21 @@ class Grader(ABC):
                             ]
                         )
 
-            result = await self.evaluate(**params)
-            assert isinstance(result, GraderRank)
-            result_list = [
-                GraderScore(
-                    score=score,
-                    reason=result.reason,
-                )
-                for score in result.rank
-            ]
-            return result_list
+            result = await self._safe_evaluate(**params)
+            if isinstance(result, GraderRank):
+                results = [
+                    GraderScore(
+                        score=score,
+                        reason=result.reason,
+                    )
+                    for score in result.rank
+                ]
+            elif isinstance(result, GraderError):
+                results = [GraderScore(score=0.0, reason=result.reason)]
+            else:
+                raise ValueError(f"Invalid result type: {type(result)}")
+
+            return results
         else:
             raise ValueError(f"Invalid evaluation mode: {self.evaluation_mode}")
 
