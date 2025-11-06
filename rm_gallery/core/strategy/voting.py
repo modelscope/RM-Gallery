@@ -4,12 +4,13 @@ from typing import Callable, List
 from loguru import logger
 
 from rm_gallery.core.dataset import DataSample
-from rm_gallery.core.grader import FactualGrader, Grader, GraderScore, evaluate
-from rm_gallery.core.optimizer.base import GraderOptimizer
+from rm_gallery.core.grader import Grader, GraderScore, evaluate
+from rm_gallery.core.strategy.base import GraderOptimizer
+from rm_gallery.gallery.example.llm import FactualGrader
 
 
 class VotingOptimizer(GraderOptimizer):
-    """Voting grader optimizer that optimizes results by executing the grader
+    """Voting grader strategy that optimizes results by executing the grader
     multiple times and averaging the results.
     """
 
@@ -64,18 +65,15 @@ class VotingOptimizer(GraderOptimizer):
             # Calculate average score
             avg_score = sum(scores) / len(scores)
 
-            # Combine reasons (simply take the first reason, other strategies are possible)
-            combined_reason = reasons[0] + f" (voted over {self.num_repeats} runs)"
-
-            # Create new GraderScore object
-            averaged_score = GraderScore(
-                score=avg_score,
-                reason=combined_reason,
-                metadata={
-                    f"attempt_{j+1}": result[i] for j, result in enumerate(results)
-                },
+            # Create new GraderScore with detailed voting information
+            averaged_results.append(
+                GraderScore(
+                    score=avg_score,
+                    reason=f"Voting optimization over {self.num_repeats} runs. "
+                    f"Individual scores: {scores}, reasons: {reasons}",
+                    metadata={f"attempt_{j+1}": result[i] for j, result in enumerate(results)},
+                )
             )
-            averaged_results.append(averaged_score)
 
         return averaged_results
 

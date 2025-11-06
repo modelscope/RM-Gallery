@@ -23,7 +23,7 @@ v2框架是一个为AI模型评估而设计的下一代评估系统，具有灵�
 - `FunctionReward`：基于自定义函数的评估实现
 - `FactualGrader`：内置的事实准确性检查评估示例
 
-### 3. 优化器 ([optimizer/](file:///mnt3/huangsen.huang/codes/RM-Gallery/rm_gallery/v2/optimizer/))
+### 3. 策略 ([strategy/](file:///mnt3/huangsen.huang/codes/RM-Gallery/rm_gallery/v2/strategy/))
 
 用于优化评估器性能的组件：
 
@@ -83,7 +83,7 @@ v2框架是一个为AI模型评估而设计的下一代评估系统，具有灵�
 
 ### 基本使用
 
-```python
+```
 from rm_gallery.core.grader import FactualGrader
 from rm_gallery.core.dataset import DataSample
 
@@ -100,11 +100,11 @@ data_sample = DataSample(
 results = await grader(data_sample)
 ```
 
-### 使用优化器
+### 使用策略
 
-```python
+```
 from rm_gallery.core.grader import FactualGrader
-from rm_gallery.core.optimizer.repeat import RepeatOptimizer
+from rm_gallery.core.strategy.repeat import RepeatOptimizer
 from rm_gallery.core.dataset import DataSample
 
 # 创建一个评估器
@@ -125,7 +125,7 @@ results = await optimized_grader(data_sample)
 
 ### 运行完整实验
 
-```python
+```
 from rm_gallery.core.dataset import EvaluationDataset
 from rm_gallery.core.experiment import EvaluationExperiment
 from rm_gallery.core.grader import FactualGrader
@@ -161,7 +161,7 @@ result = await experiment(dataset)
 
 ### 自定义评估函数
 
-```python
+```
 from rm_gallery.core.grader import FunctionGrader, GraderScore
 from rm_gallery.core.registry import GraderRegistry
 
@@ -187,7 +187,7 @@ grader = GraderRegistry.get("custom.length_grader")
 
 ### 使用LLM评估函数
 
-```python
+```
 from rm_gallery.core.grader import LLMGrader
 from rm_gallery.core.model.template import ChatTemplate
 from rm_gallery.core.model.message import ChatMessage

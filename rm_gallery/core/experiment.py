@@ -5,7 +5,8 @@ from loguru import logger
 from pydantic import BaseModel, Field, model_validator
 
 from rm_gallery.core.dataset import DataSample, EvaluationDataset
-from rm_gallery.core.grader import FactualGrader, Grader, GraderType, evaluate
+from rm_gallery.core.grader import Grader, GraderType, evaluate
+from rm_gallery.gallery.example.llm import FactualGrader
 
 
 class EvaluationResult(BaseModel):
