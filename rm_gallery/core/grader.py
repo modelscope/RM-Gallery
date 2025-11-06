@@ -269,10 +269,10 @@ class LLMGrader(Grader):
         # Check if chat is not None before calling it
         if self.chat is None:
             raise ValueError("Chat template is not set")
+        params = {"rubrics": self.rubrics, **self.kwargs}
+        params.update(kwargs)
 
-        response = await self.chat(
-            chat_output=chat_output, rubrics=self.rubrics, **kwargs, **self.kwargs
-        )
+        response = await self.chat(chat_output=chat_output, **params)
         if self.evaluation_mode == GraderMode.LISTWISE:
             result = GraderRank(
                 rank=response.metadata["rank"],  # type: ignore
