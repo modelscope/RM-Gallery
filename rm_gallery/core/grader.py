@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict, List
 from loguru import logger
 from pydantic import BaseModel, Field
 
-from rm_gallery.core.dataset import DataSample, DataSampleMapping
+from rm_gallery.core.data import DataSample, DataSampleMapping
 from rm_gallery.core.model.message import ChatMessage
 from rm_gallery.core.model.template import ChatTemplate, LanguageEnum, RequiredField
 
