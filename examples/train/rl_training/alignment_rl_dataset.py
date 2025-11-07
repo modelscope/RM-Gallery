@@ -57,23 +57,23 @@ class DataKeys:
 
 
 class AlignmentChatRLDataset(BaseChatRLDataset):
-    """Alignment任务聊天强化学习数据集
+    """Alignment Chat RL Dataset
 
-    专门处理包含chosen/rejected格式的alignment数据
+    Specialized for handling alignment data with chosen/rejected format
     """
 
     def __init__(self, data_files, tokenizer, config, processor=None):
         super().__init__(data_files, tokenizer, config, processor)
-        print("使用 Alignment 模式")
+        print("Using Alignment mode")
 
     def _build_messages(self, example: dict) -> List[dict]:
-        """从样本构建聊天消息 - Alignment模式"""
+        """Build chat messages from sample - Alignment mode"""
         messages = []
 
-        # 优先从x字段构建消息
+        # Priority: build messages from x field
         if "x" in example and example["x"] is not None:
             x_data = example["x"]
-            # 处理numpy数组格式
+            # Handle numpy array format
             if hasattr(x_data, "tolist"):
                 x_data = x_data.tolist()
             elif not isinstance(x_data, (list, tuple)):
@@ -83,26 +83,26 @@ class AlignmentChatRLDataset(BaseChatRLDataset):
                 if isinstance(msg, dict) and msg.get("role") and msg.get("content"):
                     messages.append({"role": msg["role"], "content": msg["content"]})
 
-        # 如果x字段为空，从chosen字段构建消息（取前面的对话，不包括最后的assistant回复）
+        # If x field is empty, build messages from chosen field (excluding last assistant reply)
         elif DataKeys.CHOSEN in example and example[DataKeys.CHOSEN]:
             chosen_messages = example[DataKeys.CHOSEN]
-            # 处理numpy数组格式
+            # Handle numpy array format
             if hasattr(chosen_messages, "tolist"):
                 chosen_messages = chosen_messages.tolist()
 
             if isinstance(chosen_messages, (list, tuple)):
                 for msg in chosen_messages:
                     if isinstance(msg, dict) and msg.get("role") and msg.get("content"):
-                        # 只添加user消息，不添加assistant消息（因为那是要预测的目标）
+                        # Only add user messages, not assistant messages (as they are the prediction target)
                         if msg.get("role") == "user":
                             messages.append(
                                 {"role": msg["role"], "content": msg["content"]}
                             )
 
-        # 如果还是没有找到消息，尝试从rejected字段构建
+        # If still no messages found, try building from rejected field
         elif DataKeys.REJECTED in example and example[DataKeys.REJECTED]:
             rejected_messages = example[DataKeys.REJECTED]
-            # 处理numpy数组格式
+            # Handle numpy array format
             if hasattr(rejected_messages, "tolist"):
                 rejected_messages = rejected_messages.tolist()
 
@@ -114,39 +114,39 @@ class AlignmentChatRLDataset(BaseChatRLDataset):
                                 {"role": msg["role"], "content": msg["content"]}
                             )
 
-        # 如果还是没有消息，创建一个默认的用户消息
+        # If still no messages, create a default user message
         if len(messages) == 0:
-            messages = [{"role": "user", "content": "请协助完成这个任务。"}]
+            messages = [{"role": "user", "content": "Please help complete this task."}]
 
         return messages
 
     def _format_template(self, messages: List[dict], example: dict) -> str:
-        """格式化alignment模板"""
+        """Format alignment template"""
         return messages
 
     def _extract_ground_truth(self, row_dict):
-        """提取alignment真实标签
+        """Extract alignment ground truth
 
-        对于alignment数据，chosen可以作为一种"更好"的参考
+        For alignment data, chosen can serve as a "better" reference
         """
         try:
             ground_truth_info = {}
 
-            # 将chosen和rejected都保存到ground_truth中，供奖励函数使用
+            # Save both chosen and rejected to ground_truth for reward function use
             chosen_key = DataKeys.CHOSEN
             rejected_key = DataKeys.REJECTED
             source_key = DataKeys.SOURCE
 
             if chosen_key in row_dict and row_dict[chosen_key] is not None:
                 chosen_data = row_dict[chosen_key]
-                # 处理numpy数组格式
+                # Handle numpy array format
                 if hasattr(chosen_data, "tolist"):
                     chosen_data = chosen_data.tolist()
                 ground_truth_info[chosen_key] = chosen_data
 
             if rejected_key in row_dict and row_dict[rejected_key] is not None:
                 rejected_data = row_dict[rejected_key]
-                # 处理numpy数组格式
+                # Handle numpy array format
                 if hasattr(rejected_data, "tolist"):
                     rejected_data = rejected_data.tolist()
                 ground_truth_info[rejected_key] = rejected_data
@@ -161,26 +161,26 @@ class AlignmentChatRLDataset(BaseChatRLDataset):
             return {}
 
     def __getitem__(self, item):
-        """获取数据集中的一个项目"""
+        """Get an item from the dataset"""
         row_dict = dict(self.dataframe[item])
         messages = self._build_messages(row_dict)
 
-        # 格式化提示
+        # Format prompt
         raw_prompt_messages = self._format_template(messages, row_dict)
 
-        # 应用聊天模板
+        # Apply chat template
         raw_prompt = self.tokenizer.apply_chat_template(
             raw_prompt_messages, add_generation_prompt=True, tokenize=False
         )
 
-        # 分词
+        # Tokenize
         model_inputs = self.tokenizer(
             raw_prompt, return_tensors="pt", add_special_tokens=False
         )
         input_ids = model_inputs["input_ids"]
         attention_mask = model_inputs["attention_mask"]
 
-        # 后处理
+        # Post-process
         input_ids, attention_mask = verl_F.postprocess_data(
             input_ids=input_ids,
             attention_mask=attention_mask,
@@ -190,10 +190,10 @@ class AlignmentChatRLDataset(BaseChatRLDataset):
             truncation=self.truncation,
         )
 
-        # 计算位置ID
+        # Compute position IDs
         position_ids = compute_position_id_with_mask(attention_mask)
 
-        # 准备原始提示ID
+        # Prepare raw prompt IDs
         raw_prompt_ids = self.tokenizer.encode(raw_prompt, add_special_tokens=False)
         if len(raw_prompt_ids) > self.max_prompt_length:
             if self.truncation == "left":
@@ -202,18 +202,18 @@ class AlignmentChatRLDataset(BaseChatRLDataset):
                 raw_prompt_ids = raw_prompt_ids[: self.max_prompt_length]
             elif self.truncation == "error":
                 raise RuntimeError(
-                    f"提示长度 {len(raw_prompt_ids)} 超过 {self.max_prompt_length}"
+                    f"Prompt length {len(raw_prompt_ids)} exceeds {self.max_prompt_length}"
                 )
 
-        # 构建x字段（用于传递给奖励函数）
+        # Build x field (for passing to reward function)
         x_messages = []
 
-        # 从原始数据构建完整的对话上下文
+        # Build complete conversation context from raw data
         chosen_key = DataKeys.CHOSEN
         if chosen_key in row_dict and row_dict[chosen_key]:
-            # 使用chosen作为基础构建对话上下文
+            # Use chosen as base for conversation context
             chosen_messages = row_dict[chosen_key]
-            # 处理numpy数组格式
+            # Handle numpy array format
             if hasattr(chosen_messages, "tolist"):
                 chosen_messages = chosen_messages.tolist()
 
@@ -224,11 +224,11 @@ class AlignmentChatRLDataset(BaseChatRLDataset):
                             {"role": msg["role"], "content": msg["content"]}
                         )
 
-        # 如果没有从chosen获取到消息，使用我们构建的messages
+        # If no messages obtained from chosen, use our built messages
         if not x_messages:
             x_messages = messages
 
-        # 构建结果
+        # Build result
         result = {
             "input_ids": input_ids[0],
             "attention_mask": attention_mask[0],
@@ -240,7 +240,7 @@ class AlignmentChatRLDataset(BaseChatRLDataset):
             "data_source": row_dict.get("source", "alignment"),
         }
 
-        # 添加x字段，包含对话上下文
+        # Add x field with conversation context
         result["extra_info"]["x"] = x_messages
 
         if self.return_raw_chat:

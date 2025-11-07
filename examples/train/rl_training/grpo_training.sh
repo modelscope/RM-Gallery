@@ -18,10 +18,10 @@ export MAX_WORKERS=10
 export VERBOSE="false"
 
 # ============================================================================
-# Performance & Timeout Configuration (防止阻塞)
+# Performance & Timeout Configuration (prevent blocking)
 # ============================================================================
-export LLM_TIMEOUT="30.0"          # 每次LLM调用超时（秒）
-export MAX_RETRIES="2"             # LLM失败重试次数
+export LLM_TIMEOUT="30.0"          # LLM call timeout per request (seconds)
+export MAX_RETRIES="2"             # LLM retry attempts on failure
 
 # ============================================================================
 # Path Configuration
