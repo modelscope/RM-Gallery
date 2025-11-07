@@ -47,8 +47,8 @@ PAIRWISE_MODE = os.getenv("PAIRWISE_MODE", "dgr")  # dgr, copeland, winrate, elo
 MAX_WORKERS = int(os.getenv("MAX_WORKERS", "10"))
 TEMPERATURE = float(os.getenv("TEMPERATURE", "0.7"))
 MAX_TOKENS = int(os.getenv("MAX_TOKENS", "2048"))
-LLM_TIMEOUT = float(os.getenv("LLM_TIMEOUT", "30.0"))  # LLM调用超时（秒）
-MAX_RETRIES = int(os.getenv("MAX_RETRIES", "2"))  # LLM调用失败重试次数
+LLM_TIMEOUT = float(os.getenv("LLM_TIMEOUT", "30.0"))  # LLM call timeout (seconds)
+MAX_RETRIES = int(os.getenv("MAX_RETRIES", "2"))  # LLM call retry attempts on failure
 
 # Debug Configuration
 VERBOSE = os.getenv("VERBOSE", "false").lower() == "true"
@@ -127,8 +127,8 @@ alignment_reward = AlignmentReward(
     max_tokens=MAX_TOKENS,
     max_workers=MAX_WORKERS,
     verbose=VERBOSE,
-    llm_timeout=LLM_TIMEOUT,  # 添加超时配置
-    max_retries=MAX_RETRIES,  # 添加重试配置
+    llm_timeout=LLM_TIMEOUT,  # Add timeout configuration
+    max_retries=MAX_RETRIES,  # Add retry configuration
 )
 
 # Log configuration

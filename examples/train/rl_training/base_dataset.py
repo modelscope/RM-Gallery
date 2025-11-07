@@ -30,14 +30,14 @@ except ImportError:
 
 
 class BaseChatRLDataset(Dataset):
-    """聊天强化学习数据集基类"""
+    """Base class for chat reinforcement learning datasets"""
 
     def __init__(
         self,
         data_files: Union[str, List[str]],
         tokenizer,
         config,
-        processor=None,  # 保持向后兼容性，但不使用
+        processor=None,  # Keep for backward compatibility, but unused
     ):
         # Initialize basic attributes
         self.data_files = self._normalize_data_files(data_files)
@@ -52,13 +52,13 @@ class BaseChatRLDataset(Dataset):
         self._load_dataset()
 
     def _normalize_data_files(self, data_files):
-        """将数据文件转换为列表格式"""
+        """Convert data files to list format"""
         if not isinstance(data_files, (List, ListConfig)):
             data_files = [data_files]
         return copy.deepcopy(data_files)
 
     def _load_config(self):
-        """加载配置参数"""
+        """Load configuration parameters"""
         self.cache_dir = os.path.expanduser(
             self.config.get("cache_dir", "~/.cache/verl/rlhf")
         )
@@ -76,31 +76,31 @@ class BaseChatRLDataset(Dataset):
         self.serialize_dataset = False
 
     def _download_files(self):
-        """下载文件到本地缓存"""
+        """Download files to local cache"""
         from verl.utils.fs import copy_to_local
 
         for i, file in enumerate(self.data_files):
             self.data_files[i] = copy_to_local(src=file, cache_dir=self.cache_dir)
 
     def _load_dataset(self):
-        """加载和处理数据集"""
+        """Load and process dataset"""
         self._download_files()
 
-        # 加载parquet文件
+        # Load parquet files
         dataframes = []
         for file in self.data_files:
             df = datasets.load_dataset("parquet", data_files=file)["train"]
             dataframes.append(df)
 
         self.dataframe = datasets.concatenate_datasets(dataframes)
-        print(f"数据集长度: {len(self.dataframe)}")
+        print(f"Dataset length: {len(self.dataframe)}")
 
-        # 过滤过长的提示
+        # Filter overlong prompts
         if self.filter_overlong_prompts:
             self._filter_long_prompts()
 
     def _filter_long_prompts(self):
-        """过滤掉过长的提示"""
+        """Filter out overlong prompts"""
 
         def is_prompt_valid(doc):
             try:
@@ -112,19 +112,19 @@ class BaseChatRLDataset(Dataset):
         self.dataframe = self.dataframe.filter(
             is_prompt_valid,
             num_proc=self.num_workers,
-            desc=f"过滤长度超过 {self.max_prompt_length} tokens的提示",
+            desc=f"Filtering prompts longer than {self.max_prompt_length} tokens",
         )
-        print(f"过滤后数据集长度: {len(self.dataframe)}")
+        print(f"Filtered dataset length: {len(self.dataframe)}")
 
     def _extract_prompt(self, example):
-        """从样本中提取提示"""
-        # 首先尝试新的数据结构
+        """Extract prompt from sample"""
+        # First try new data structure
         if "input" in example and example["input"]:
             for msg in example["input"]:
                 if msg.get("role") == "user" and msg.get("content"):
                     return msg["content"]
 
-        # 回退到旧的数据结构
+        # Fallback to old data structure
         prompt = example.get(self.prompt_key)
         if prompt is None:
             prompt = example.get("x", [])
@@ -143,23 +143,23 @@ class BaseChatRLDataset(Dataset):
         return ""
 
     def _build_messages(self, example: dict) -> List[dict]:
-        """从样本构建聊天消息 - 子类需要重写"""
+        """Build chat messages from sample - Must be implemented by subclasses"""
         raise NotImplementedError("Subclasses must implement _build_messages")
 
     def _format_template(self, messages: List[dict], example: dict) -> str:
-        """格式化模板 - 子类需要重写"""
+        """Format template - Must be implemented by subclasses"""
         raise NotImplementedError("Subclasses must implement _format_template")
 
     def _extract_ground_truth(self, row_dict):
-        """提取真实标签 - 子类需要重写"""
+        """Extract ground truth - Must be implemented by subclasses"""
         raise NotImplementedError("Subclasses must implement _extract_ground_truth")
 
     def __getitem__(self, item):
-        """获取数据集中的一个项目"""
+        """Get an item from the dataset"""
         row_dict = dict(self.dataframe[item])
         messages = self._build_messages(row_dict)
 
-        # 格式化提示
+        # Format prompt
         raw_prompt_messages = self._format_template(messages, row_dict)
 
         raw_prompt = self.tokenizer.apply_chat_template(
@@ -169,14 +169,14 @@ class BaseChatRLDataset(Dataset):
             enable_thinking=True,
         )
 
-        # 分词
+        # Tokenize
         model_inputs = self.tokenizer(
             raw_prompt, return_tensors="pt", add_special_tokens=False
         )
         input_ids = model_inputs["input_ids"]
         attention_mask = model_inputs["attention_mask"]
 
-        # 后处理
+        # Post-process
         input_ids, attention_mask = verl_F.postprocess_data(
             input_ids=input_ids,
             attention_mask=attention_mask,
@@ -186,10 +186,10 @@ class BaseChatRLDataset(Dataset):
             truncation=self.truncation,
         )
 
-        # 计算位置ID
+        # Compute position IDs
         position_ids = compute_position_id_with_mask(attention_mask)
 
-        # 准备原始提示ID
+        # Prepare raw prompt IDs
         raw_prompt_ids = self.tokenizer.encode(raw_prompt, add_special_tokens=False)
         if len(raw_prompt_ids) > self.max_prompt_length:
             if self.truncation == "left":
@@ -198,10 +198,10 @@ class BaseChatRLDataset(Dataset):
                 raw_prompt_ids = raw_prompt_ids[: self.max_prompt_length]
             elif self.truncation == "error":
                 raise RuntimeError(
-                    f"提示长度 {len(raw_prompt_ids)} 超过 {self.max_prompt_length}"
+                    f"Prompt length {len(raw_prompt_ids)} exceeds {self.max_prompt_length}"
                 )
 
-        # 构建结果
+        # Build result
         result = {
             "input_ids": input_ids[0],
             "attention_mask": attention_mask[0],
@@ -222,16 +222,18 @@ class BaseChatRLDataset(Dataset):
         return len(self.dataframe)
 
     def resume_dataset_state(self):
-        """恢复数据集状态用于检查点"""
+        """Resume dataset state for checkpointing"""
         self.serialize_dataset = not hasattr(self, "original_data_files")
         if not self.serialize_dataset:
             self.data_files = copy.deepcopy(self.original_data_files)
             self._load_dataset()
         else:
-            print("使用旧的数据加载器检查点文件，建议从头开始训练")
+            print(
+                "Using old dataloader checkpoint file, recommend training from scratch"
+            )
 
     def __getstate__(self):
-        """获取用于序列化的状态"""
+        """Get state for serialization"""
         if not self.serialize_dataset:
             state = self.__dict__.copy()
             if "dataframe" in state:

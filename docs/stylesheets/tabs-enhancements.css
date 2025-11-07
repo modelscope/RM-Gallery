@@ -1,0 +1,181 @@
+/* Tabbed Content Styling for RM-Gallery Documentation */
+/* Enhanced specificity to override theme styles */
+
+/* Main tabbed container */
+.tabbed-set.tabbed-alternate,
+.tabbed-set {
+    position: relative !important;
+    display: flex !important;
+    flex-wrap: wrap !important;
+    margin: 1.5em 0 !important;
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08) !important;
+    border: 1px solid #e1e4e8 !important;
+}
+
+/* Hide radio inputs */
+.tabbed-set > input[type="radio"] {
+    position: absolute !important;
+    width: 0 !important;
+    height: 0 !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
+/* Tab labels container */
+.tabbed-set > .tabbed-labels {
+    display: flex !important;
+    width: 100% !important;
+    background: #f6f8fa !important;
+    border-bottom: 2px solid #e1e4e8 !important;
+    overflow-x: auto !important;
+    scrollbar-width: thin !important;
+    margin: 0 !important;
+    padding: 0 !important;
+}
+
+/* Individual tab label */
+.tabbed-set > .tabbed-labels > label {
+    padding: 0.8em 1.5em !important;
+    font-size: 0.95em !important;
+    font-weight: 600 !important;
+    color: #586069 !important;
+    cursor: pointer !important;
+    border-bottom: 3px solid transparent !important;
+    transition: all 0.2s ease !important;
+    white-space: nowrap !important;
+    user-select: none !important;
+    background: transparent !important;
+    margin: 0 !important;
+    display: block !important;
+}
+
+/* Tab label hover state */
+.tabbed-set > .tabbed-labels > label:hover {
+    color: #3b82f6 !important;
+    background: rgba(59, 130, 246, 0.05) !important;
+}
+
+/* Active tab label - only highlight the selected tab */
+.tabbed-set > input:nth-child(1):checked ~ .tabbed-labels > label:nth-child(1),
+.tabbed-set > input:nth-child(2):checked ~ .tabbed-labels > label:nth-child(2),
+.tabbed-set > input:nth-child(3):checked ~ .tabbed-labels > label:nth-child(3),
+.tabbed-set > input:nth-child(4):checked ~ .tabbed-labels > label:nth-child(4),
+.tabbed-set > input:nth-child(5):checked ~ .tabbed-labels > label:nth-child(5) {
+    color: #3b82f6 !important;
+    border-bottom-color: #3b82f6 !important;
+    background: #fff !important;
+}
+
+/* Content wrapper */
+.tabbed-set > .tabbed-content {
+    width: 100% !important;
+    order: 999 !important;
+    background: #fff !important;
+    display: block !important;
+}
+
+/* Individual content blocks */
+.tabbed-set > .tabbed-content > .tabbed-block {
+    display: none !important;
+    padding: 1.5em !important;
+}
+
+/* Show active content block */
+.tabbed-set > input:nth-child(1):checked ~ .tabbed-content > .tabbed-block:nth-child(1),
+.tabbed-set > input:nth-child(2):checked ~ .tabbed-content > .tabbed-block:nth-child(2),
+.tabbed-set > input:nth-child(3):checked ~ .tabbed-content > .tabbed-block:nth-child(3),
+.tabbed-set > input:nth-child(4):checked ~ .tabbed-content > .tabbed-block:nth-child(4),
+.tabbed-set > input:nth-child(5):checked ~ .tabbed-content > .tabbed-block:nth-child(5) {
+    display: block !important;
+}
+
+/* Code blocks within tabs */
+.tabbed-set .tabbed-block pre {
+    margin: 0;
+}
+
+.tabbed-set .tabbed-block .highlight {
+    margin: 0;
+}
+
+/* Responsive design for mobile */
+@media (max-width: 768px) {
+    .tabbed-set > .tabbed-labels {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .tabbed-set > .tabbed-labels > label {
+        padding: 0.7em 1.2em;
+        font-size: 0.9em;
+    }
+
+    .tabbed-set > .tabbed-content > .tabbed-block {
+        padding: 1.2em;
+    }
+}
+
+/* Dark mode support */
+[data-md-color-scheme="slate"] .tabbed-set > .tabbed-labels,
+.dark .tabbed-set > .tabbed-labels {
+    background: #161b22 !important;
+    border-bottom-color: #30363d !important;
+}
+
+[data-md-color-scheme="slate"] .tabbed-set > .tabbed-labels > label,
+.dark .tabbed-set > .tabbed-labels > label {
+    color: #8b949e !important;
+}
+
+[data-md-color-scheme="slate"] .tabbed-set > .tabbed-labels > label:hover,
+.dark .tabbed-set > .tabbed-labels > label:hover {
+    color: #58a6ff !important;
+    background: rgba(88, 166, 255, 0.1) !important;
+}
+
+[data-md-color-scheme="slate"] .tabbed-set > input:nth-child(1):checked ~ .tabbed-labels > label:nth-child(1),
+[data-md-color-scheme="slate"] .tabbed-set > input:nth-child(2):checked ~ .tabbed-labels > label:nth-child(2),
+[data-md-color-scheme="slate"] .tabbed-set > input:nth-child(3):checked ~ .tabbed-labels > label:nth-child(3),
+[data-md-color-scheme="slate"] .tabbed-set > input:nth-child(4):checked ~ .tabbed-labels > label:nth-child(4),
+[data-md-color-scheme="slate"] .tabbed-set > input:nth-child(5):checked ~ .tabbed-labels > label:nth-child(5),
+.dark .tabbed-set > input:nth-child(1):checked ~ .tabbed-labels > label:nth-child(1),
+.dark .tabbed-set > input:nth-child(2):checked ~ .tabbed-labels > label:nth-child(2),
+.dark .tabbed-set > input:nth-child(3):checked ~ .tabbed-labels > label:nth-child(3),
+.dark .tabbed-set > input:nth-child(4):checked ~ .tabbed-labels > label:nth-child(4),
+.dark .tabbed-set > input:nth-child(5):checked ~ .tabbed-labels > label:nth-child(5) {
+    color: #58a6ff !important;
+    border-bottom-color: #58a6ff !important;
+    background: #0d1117 !important;
+}
+
+[data-md-color-scheme="slate"] .tabbed-set > .tabbed-content,
+.dark .tabbed-set > .tabbed-content {
+    background: #0d1117 !important;
+}
+
+/* Accessibility improvements */
+.tabbed-set > .tabbed-labels > label:focus-visible {
+    outline: 2px solid #3b82f6;
+    outline-offset: -2px;
+    z-index: 1;
+}
+
+/* Smooth transitions */
+.tabbed-set > .tabbed-labels > label {
+    transition: color 0.15s ease, background-color 0.15s ease, border-color 0.15s ease;
+}
+
+/* Print styles */
+@media print {
+    .tabbed-set > .tabbed-labels {
+        display: none;
+    }
+
+    .tabbed-set > .tabbed-content > .tabbed-block {
+        display: block !important;
+        page-break-inside: avoid;
+    }
+}
+
