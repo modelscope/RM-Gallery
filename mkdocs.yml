@@ -30,13 +30,11 @@ nav:
       - Building Custom RMs: tutorial/building_rm/custom_reward.md
       - Rubric as Rewards: tutorial/building_rm/autorubric.md
 
-  - Evaluating RM:
-      - Overview: tutorial/evaluation/overview.md
-      - RMB: tutorial/evaluation/rmb.md
-      - RM-Bench: tutorial/evaluation/rmbench.md
-      - JudgeBench: tutorial/evaluation/judgebench.md
-      - RewardBench2: tutorial/evaluation/rewardbench2.md
-      - Conflict Detector: tutorial/evaluation/conflict_detector.md
+  - Training RM:
+      - Overview: tutorial/training_rm/overview.md
+      - Training Bradley-Terry RM: tutorial/training_rm/bradley_terry_rm.md
+      - Training RM with SFT: tutorial/training_rm/sft_rm.md
+      - Training RM with RL: tutorial/training_rm/training_rm.md
 
   - Using RM:
       - RM Server: tutorial/rm_serving/rm_server.md
@@ -45,11 +43,14 @@ nav:
       - Post Training with RM: tutorial/rm_application/post_training.md
       - Best of N: tutorial/rm_application/best_of_n.md
 
-  - Training RM:
-      - Overview: tutorial/training_rm/overview.md
-      - Training Bradley-Terry RM: tutorial/training_rm/bradley_terry_rm.md
-      - Training RM with SFT: tutorial/training_rm/sft_rm.md
-      - Training RM with RL: tutorial/training_rm/training_rm.md
+
+  - Evaluating RM:
+      - Overview: tutorial/evaluation/overview.md
+      - RMB: tutorial/evaluation/rmb.md
+      - RM-Bench: tutorial/evaluation/rmbench.md
+      - JudgeBench: tutorial/evaluation/judgebench.md
+      - RewardBench2: tutorial/evaluation/rewardbench2.md
+      - Conflict Detector: tutorial/evaluation/conflict_detector.md
 
   - Data:
       - Overview: tutorial/data/pipeline.md
