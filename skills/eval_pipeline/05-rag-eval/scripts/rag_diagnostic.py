@@ -23,6 +23,7 @@ USAGE
 
 EXIT: 0 always (diagnostic), 1 on usage error.
 """
+# pylint: disable=missing-function-docstring
 from __future__ import annotations
 
 import argparse
@@ -59,21 +60,26 @@ def _retrieval_good(row: dict[str, Any], threshold: float) -> bool | None:
     return None
 
 
-def analyze(traces: list[dict[str, Any]], faithful_threshold: float = 4.0,
-            recall_threshold: float = 0.5) -> dict[str, Any]:
+def analyze(
+    traces: list[dict[str, Any]], faithful_threshold: float = 4.0, recall_threshold: float = 0.5
+) -> dict[str, Any]:
     n = len(traces)
     faith = [_faithful(t, faithful_threshold) for t in traces]
     retr = [_retrieval_good(t, recall_threshold) for t in traces]
     have_retrieval = all(r is not None for r in retr)
 
-    gen = {"faithful": round(sum(faith) / n, 3) if n else 0.0,
-           "hallucinating": round(sum(1 for f in faith if not f) / n, 3) if n else 0.0}
+    gen = {
+        "faithful": round(sum(faith) / n, 3) if n else 0.0,
+        "hallucinating": round(sum(1 for f in faith if not f) / n, 3) if n else 0.0,
+    }
 
     result: dict[str, Any] = {"n": n, "generation": gen, "has_retrieval_signal": have_retrieval}
     if not have_retrieval:
         result["primary_issue"] = (
-            "generation: {:.0%} of answers hallucinate".format(gen["hallucinating"])
-            if gen["hallucinating"] > 0.1 else "generation looks healthy; add a retrieval signal to localize further")
+            f"generation: {gen['hallucinating']:.0%} of answers hallucinate"
+            if gen["hallucinating"] > 0.1
+            else "generation looks healthy; add a retrieval signal to localize further"
+        )
         return result
 
     # 2x2 matrix
@@ -84,11 +90,15 @@ def analyze(traces: list[dict[str, Any]], faithful_threshold: float = 4.0,
     matrix = {k: round(v / n, 3) for k, v in cells.items()} if n else cells
     # Primary issue heuristic
     if matrix["good_hallucinating"] >= matrix["poor_hallucinating"] and matrix["good_hallucinating"] > 0.1:
-        primary = (f"generation: {matrix['good_hallucinating']:.0%} hallucinate DESPITE good retrieval "
-                   "-> fix the generation prompt/model, not retrieval")
+        primary = (
+            f"generation: {matrix['good_hallucinating']:.0%} hallucinate DESPITE good retrieval "
+            "-> fix the generation prompt/model, not retrieval"
+        )
     elif matrix["poor_hallucinating"] > 0.15:
-        primary = (f"retrieval: {matrix['poor_hallucinating']:.0%} have poor retrieval AND hallucinate "
-                   "-> fix retrieval (chunking/embeddings) first")
+        primary = (
+            f"retrieval: {matrix['poor_hallucinating']:.0%} have poor retrieval AND hallucinate "
+            "-> fix retrieval (chunking/embeddings) first"
+        )
     else:
         primary = "system largely healthy"
     result.update({"matrix": matrix, "primary_issue": primary})
@@ -96,9 +106,11 @@ def analyze(traces: list[dict[str, Any]], faithful_threshold: float = 4.0,
 
 
 def render(report: dict[str, Any]) -> str:
-    lines = [f"RAG diagnostic  (n={report['n']})",
-             f"  generation: faithful={report['generation']['faithful']:.0%}  "
-             f"hallucinating={report['generation']['hallucinating']:.0%}"]
+    lines = [
+        f"RAG diagnostic  (n={report['n']})",
+        f"  generation: faithful={report['generation']['faithful']:.0%}  "
+        f"hallucinating={report['generation']['hallucinating']:.0%}",
+    ]
     if report["has_retrieval_signal"]:
         m = report["matrix"]
         lines += [
