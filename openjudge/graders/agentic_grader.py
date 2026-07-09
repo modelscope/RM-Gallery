@@ -55,7 +55,7 @@ def _build_prompt(query: str, response: str, rubrics: List[Rubric]) -> str:
         "it inside this sandbox to verify (and record exactly what you ran); if it is a natural-language "
         "judging criterion, judge it against the available evidence and the response text below.",
         "When done, write your verdict strictly following output_schema to ./_judge_result.json in this directory.",
-        'The result file must be flat JSON whose top-level keys are the checkpoint ids themselves '
+        "The result file must be flat JSON whose top-level keys are the checkpoint ids themselves "
         '(not wrapped in "dimensions" or any other envelope). Each checkpoint value must be an object of the '
         'form {"passed": <true/false>, "reason": "...", "execution_log": "<commands + output you actually ran, '
         'omit this key if not applicable>"}.',
@@ -196,8 +196,7 @@ class AgenticGrader(BaseGrader):
         super().__init__(name=name, mode=mode, description=description, **kwargs)
         if harness is None:
             raise ValueError(
-                "harness is required for AgenticGrader. Construct one first, "
-                "e.g. harness = ClaudeCodeHarness()."
+                "harness is required for AgenticGrader. Construct one first, e.g. harness = ClaudeCodeHarness()."
             )
         if not rubrics:
             raise ValueError("rubrics is required for AgenticGrader and must contain at least one Rubric.")

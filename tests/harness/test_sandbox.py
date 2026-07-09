@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 import json
 import shutil
-from pathlib import Path
 
 import pytest
 

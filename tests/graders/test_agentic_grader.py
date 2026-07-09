@@ -12,7 +12,14 @@ from openjudge.graders.agentic_grader import (
     _build_prompt,
     _normalize_sample,
 )
-from openjudge.graders.schema import Checkpoint, CheckpointResult, GraderError, GraderScore, Rubric, RubricResult
+from openjudge.graders.schema import (
+    Checkpoint,
+    CheckpointResult,
+    GraderError,
+    GraderScore,
+    Rubric,
+    RubricResult,
+)
 from openjudge.harness.base import BaseHarness, HarnessResult
 
 
@@ -31,9 +38,7 @@ class FakeHarness(BaseHarness):
     def build_command(self, sandbox_dir: Path, prompt: str, model: Optional[str]) -> List[str]:
         return [self.binary, prompt]
 
-    def run(
-        self, sandbox_dir: Path, prompt: str, schema: Dict[str, Any], model: Optional[str] = None
-    ) -> HarnessResult:
+    def run(self, sandbox_dir: Path, prompt: str, schema: Dict[str, Any], model: Optional[str] = None) -> HarnessResult:
         idx = len(self.run_calls)
         self.run_calls.append({"sandbox_dir": sandbox_dir, "prompt": prompt, "schema": schema, "model": model})
         return self._results[idx % len(self._results)]
@@ -203,14 +208,10 @@ class TestAgenticGraderEvaluateFullFlow:
         assert result.score == pytest.approx(1.0 / 3.0)  # only c2 (weight=1.0 of total 3.0) passed
 
     async def test_rubrics_kwarg_overrides_constructor_default(self, tmp_path):
-        override_rubrics = [
-            Rubric(name="other", checkpoints=[Checkpoint(id="o1", description="Different checkpoint")])
-        ]
+        override_rubrics = [Rubric(name="other", checkpoints=[Checkpoint(id="o1", description="Different checkpoint")])]
         harness = FakeHarness([HarnessResult(available=True, result={"o1": {"passed": True, "reason": "ok"}})])
         grader = AgenticGrader(harness=harness, rubrics=_rubrics())
-        result = await grader.aevaluate(
-            query="q", response="r", workspace_path=str(tmp_path), rubrics=override_rubrics
-        )
+        result = await grader.aevaluate(query="q", response="r", workspace_path=str(tmp_path), rubrics=override_rubrics)
 
         assert isinstance(result, GraderScore)
         assert harness.run_calls[0]["schema"] == {"o1": {}}

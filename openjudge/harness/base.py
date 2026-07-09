@@ -137,6 +137,7 @@ class BaseHarness(ABC):
                 capture_output=True,
                 text=True,
                 timeout=self.timeout_s,
+                check=False,
             )
         except subprocess.TimeoutExpired:
             timed_out = True

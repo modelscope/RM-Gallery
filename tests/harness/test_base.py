@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 import pytest
 
 from openjudge.harness import base as base_module
-from openjudge.harness.base import BaseHarness, RESULT_FILENAME, SPEC_FILENAME
+from openjudge.harness.base import RESULT_FILENAME, SPEC_FILENAME, BaseHarness
 
 
 class DummyHarness(BaseHarness):
@@ -33,7 +33,7 @@ def _write_result(cwd: str, payload: Dict[str, Any]) -> None:
 @pytest.mark.unit
 class TestBaseHarnessSuccess:
     def test_successful_run_reads_back_result_file(self, tmp_path, monkeypatch):
-        def fake_run(cmd, cwd, capture_output, text, timeout):
+        def fake_run(cmd, cwd, capture_output, text, timeout, **kwargs):
             _write_result(cwd, {"c1": {"passed": True, "reason": "ok"}})
             return subprocess.CompletedProcess(cmd, returncode=0, stdout="done", stderr="")
 
@@ -47,7 +47,7 @@ class TestBaseHarnessSuccess:
         assert result.raw_stdout == "done"
 
     def test_writes_spec_file_with_instructions_and_schema(self, tmp_path, monkeypatch):
-        def fake_run(cmd, cwd, capture_output, text, timeout):
+        def fake_run(cmd, cwd, capture_output, text, timeout, **kwargs):
             _write_result(cwd, {"c1": {"passed": True, "reason": "ok"}})
             return subprocess.CompletedProcess(cmd, returncode=0, stdout="", stderr="")
 
@@ -63,7 +63,7 @@ class TestBaseHarnessSuccess:
             json.dumps({"c1": {"passed": False, "reason": "stale"}}), encoding="utf-8"
         )
 
-        def fake_run(cmd, cwd, capture_output, text, timeout):
+        def fake_run(cmd, cwd, capture_output, text, timeout, **kwargs):
             # Simulate a CLI that exits cleanly but crashes before writing a fresh result file.
             return subprocess.CompletedProcess(cmd, returncode=0, stdout="", stderr="")
 
@@ -74,7 +74,7 @@ class TestBaseHarnessSuccess:
         assert result.available is False
 
     def test_passes_sandbox_dir_prompt_and_model_to_build_command(self, tmp_path, monkeypatch):
-        def fake_run(cmd, cwd, capture_output, text, timeout):
+        def fake_run(cmd, cwd, capture_output, text, timeout, **kwargs):
             _write_result(cwd, {"c1": {"passed": True, "reason": "ok"}})
             return subprocess.CompletedProcess(cmd, returncode=0, stdout="", stderr="")
 
@@ -88,7 +88,7 @@ class TestBaseHarnessSuccess:
 @pytest.mark.unit
 class TestBaseHarnessFailureGates:
     def test_nonzero_returncode_rejects_even_with_valid_result_file(self, tmp_path, monkeypatch):
-        def fake_run(cmd, cwd, capture_output, text, timeout):
+        def fake_run(cmd, cwd, capture_output, text, timeout, **kwargs):
             _write_result(cwd, {"c1": {"passed": True, "reason": "ok"}})
             return subprocess.CompletedProcess(cmd, returncode=1, stdout="", stderr="boom")
 
@@ -101,7 +101,7 @@ class TestBaseHarnessFailureGates:
         assert result.raw_stderr == "boom"
 
     def test_file_not_found_error_rejects(self, tmp_path, monkeypatch):
-        def fake_run(cmd, cwd, capture_output, text, timeout):
+        def fake_run(cmd, cwd, capture_output, text, timeout, **kwargs):
             raise FileNotFoundError("dummy-cli: command not found")
 
         monkeypatch.setattr(base_module.subprocess, "run", fake_run)
@@ -111,7 +111,7 @@ class TestBaseHarnessFailureGates:
         assert result.available is False
 
     def test_os_error_rejects(self, tmp_path, monkeypatch):
-        def fake_run(cmd, cwd, capture_output, text, timeout):
+        def fake_run(cmd, cwd, capture_output, text, timeout, **kwargs):
             raise OSError("permission denied")
 
         monkeypatch.setattr(base_module.subprocess, "run", fake_run)
@@ -121,7 +121,7 @@ class TestBaseHarnessFailureGates:
         assert result.available is False
 
     def test_missing_result_file_rejects(self, tmp_path, monkeypatch):
-        def fake_run(cmd, cwd, capture_output, text, timeout):
+        def fake_run(cmd, cwd, capture_output, text, timeout, **kwargs):
             return subprocess.CompletedProcess(cmd, returncode=0, stdout="no result written", stderr="")
 
         monkeypatch.setattr(base_module.subprocess, "run", fake_run)
@@ -132,7 +132,7 @@ class TestBaseHarnessFailureGates:
         assert result.raw_stdout == "no result written"
 
     def test_malformed_json_result_file_rejects(self, tmp_path, monkeypatch):
-        def fake_run(cmd, cwd, capture_output, text, timeout):
+        def fake_run(cmd, cwd, capture_output, text, timeout, **kwargs):
             Path(cwd, RESULT_FILENAME).write_text("{not valid json", encoding="utf-8")
             return subprocess.CompletedProcess(cmd, returncode=0, stdout="", stderr="")
 
@@ -155,7 +155,7 @@ class TestBaseHarnessFailureGates:
 @pytest.mark.unit
 class TestBaseHarnessTimeout:
     def test_timeout_with_result_file_already_written_is_rescued(self, tmp_path, monkeypatch):
-        def fake_run(cmd, cwd, capture_output, text, timeout):
+        def fake_run(cmd, cwd, capture_output, text, timeout, **kwargs):
             _write_result(cwd, {"c1": {"passed": True, "reason": "finished just before being killed"}})
             raise subprocess.TimeoutExpired(cmd=cmd, timeout=timeout)
 
@@ -169,7 +169,7 @@ class TestBaseHarnessTimeout:
         assert result.result == {"c1": {"passed": True, "reason": "finished just before being killed"}}
 
     def test_timeout_without_result_file_rejects(self, tmp_path, monkeypatch):
-        def fake_run(cmd, cwd, capture_output, text, timeout):
+        def fake_run(cmd, cwd, capture_output, text, timeout, **kwargs):
             raise subprocess.TimeoutExpired(cmd=cmd, timeout=timeout)
 
         monkeypatch.setattr(base_module.subprocess, "run", fake_run)
