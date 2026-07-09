@@ -307,3 +307,104 @@ class GraderError(GraderResult):
     """
 
     error: str = Field(description="error")
+
+
+class Checkpoint(BaseModel):
+    """A single verifiable judging criterion within a Rubric.
+
+    `content` is intentionally generic free text rather than a typed union:
+    it may hold executable code/test scripts, natural-language judging
+    criteria, or a reference answer. The agentic judge decides at runtime
+    whether to execute it (if it looks like code) or reason about it (if
+    it is a natural-language criterion).
+
+    Attributes:
+        id: Unique identifier within the parent Rubric's checkpoints list.
+        description: Human-readable description of what this checkpoint verifies.
+        content: Optional freeform content (code/test script/criteria/reference answer).
+        weight: Relative weight among checkpoints in the same rubric.
+
+    Example:
+        >>> Checkpoint(id="c1", description="Response includes a citation", weight=1.0)
+        >>> Checkpoint(
+        ...     id="c2",
+        ...     description="Code compiles and passes the provided test",
+        ...     content="assert add(2, 2) == 4",
+        ... )
+    """
+
+    id: str = Field(description="Unique identifier for this checkpoint within its rubric")
+    description: str = Field(description="Human-readable description of what this checkpoint verifies")
+    content: Optional[str] = Field(
+        default=None,
+        description="Freeform content: code/test script, judging criteria, or reference answer",
+    )
+    weight: float = Field(default=1.0, description="Relative weight among checkpoints in the same rubric")
+
+
+class Rubric(BaseModel):
+    """A named evaluation dimension made up of one or more Checkpoints.
+
+    Attributes:
+        name: Rubric dimension name (e.g. "correctness", "safety").
+        description: Optional human-readable description of this dimension.
+        weight: Relative weight of this rubric among all rubrics passed to AgenticGrader.
+        checkpoints: The checkpoints belonging to this rubric.
+
+    Example:
+        >>> Rubric(
+        ...     name="correctness",
+        ...     checkpoints=[Checkpoint(id="c1", description="Answer matches ground truth")],
+        ... )
+    """
+
+    name: str = Field(description="Rubric dimension name")
+    description: Optional[str] = Field(default=None, description="Human-readable description of this dimension")
+    weight: float = Field(default=1.0, description="Relative weight of this rubric among all rubrics")
+    checkpoints: List[Checkpoint] = Field(description="Checkpoints belonging to this rubric")
+
+
+class CheckpointResult(BaseModel):
+    """The judged outcome of a single Checkpoint.
+
+    Attributes:
+        checkpoint_id: Matches the `id` of the Checkpoint this result is for.
+        passed: Whether this checkpoint was judged as passed.
+        reason: Evidence/explanation for the pass/fail judgment.
+        execution_log: If the checkpoint's content was executable, the actual command(s)
+            run and their output — evidence that the agent really executed it rather than
+            guessing.
+
+    Example:
+        >>> CheckpointResult(checkpoint_id="c1", passed=True, reason="Matches reference answer verbatim")
+    """
+
+    checkpoint_id: str = Field(description="Matches Checkpoint.id")
+    passed: bool = Field(description="Whether this checkpoint was judged as passed")
+    reason: str = Field(default="", description="Evidence/explanation for the pass/fail judgment")
+    execution_log: Optional[str] = Field(
+        default=None,
+        description="Command(s) actually executed and their output, if applicable",
+    )
+
+
+class RubricResult(BaseModel):
+    """The aggregated outcome of a single Rubric across all its Checkpoints.
+
+    Attributes:
+        name: Matches the `name` of the Rubric this result is for.
+        score: Weighted mean of this rubric's checkpoints' pass rates (each checkpoint
+            contributes `weight * (1.0 if passed else 0.0)`).
+        checkpoint_results: Per-checkpoint results that fed into this aggregation.
+
+    Example:
+        >>> RubricResult(
+        ...     name="correctness",
+        ...     score=1.0,
+        ...     checkpoint_results=[CheckpointResult(checkpoint_id="c1", passed=True, reason="ok")],
+        ... )
+    """
+
+    name: str = Field(description="Matches Rubric.name")
+    score: float = Field(description="Aggregated score for this rubric")
+    checkpoint_results: List[CheckpointResult] = Field(description="Per-checkpoint results")

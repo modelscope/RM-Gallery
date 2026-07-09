@@ -9,7 +9,7 @@ Every grader inherits from `BaseGrader` and implements `async _aevaluate(**kwarg
 |------|-------|----------|
 | LLM-based | `LLMGrader` | Subjective quality, semantic understanding |
 | Function-based | `FunctionGrader` | Exact rules, fast deterministic checks |
-| Agentic | `AgenticGrader` | Evaluation requiring tool calls (search, code run) |
+| Agentic | `AgenticGrader` | Evaluation requiring an autonomous coding agent (read a workspace/transcript, run code, verify rubric checkpoints) |
 
 ---
 
@@ -24,7 +24,6 @@ Every grader inherits from `BaseGrader` and implements `async _aevaluate(**kwarg
 | `RelevanceGrader` | `openjudge.graders.common.relevance` | `query`, `response` | How relevant the response is |
 | `HarmfulnessGrader` | `openjudge.graders.common.harmfulness` | `query`, `response` | Toxic or harmful content |
 | `InstructionFollowingGrader` | `openjudge.graders.common.instruction_following` | `query`, `response` | Instruction compliance |
-| `SearchCorrectnessGrader` | `openjudge.graders.common.search_correctness` | `query`, `response`, `context` | Correctness in RAG/search context |
 
 All `common/` graders accept `model` (required) and optional `threshold`, `language`, `strategy`.
 
@@ -315,39 +314,55 @@ grader = exact_match(name="exact_match", mode=GraderMode.POINTWISE)
 
 ---
 
-## AgenticGrader — Tool-augmented Evaluation
+## AgenticGrader — Agent-as-judge Evaluation
 
-Use when the evaluation itself requires external tools (e.g., web search to verify facts).
+Use when evaluation requires an autonomous agent that can inspect a candidate's produced
+files and/or execution transcript and run code to verify claims, not just read text.
+`AgenticGrader` shells out to a real external coding-agent CLI (Claude Code / Codex /
+Cursor CLI) inside an isolated, throwaway sandbox — it never runs untrusted code
+in-process. See `openjudge/harness/` for the harness implementations and
+`cookbooks/agentic_judge/` for full runnable examples against each CLI.
 
 ```python
-from openjudge.agentic import ReActAgent
 from openjudge.graders.agentic_grader import AgenticGrader
+from openjudge.graders.schema import Checkpoint, Rubric
+from openjudge.harness import ClaudeCodeHarness  # or CodexHarness / CursorAgentHarness
 
-# Step 1: build agent with tools
-agent = ReActAgent(
-    model={"model": "gpt-4o", "api_key": "sk-..."},
-    tools=[WebSearchTool()],      # any BaseTool implementation
-    max_iterations=10,
-)
+# Step 1: define what to check as Rubric/Checkpoint (a checkpoint's `content` can be
+# executable code the agent is instructed to actually run, or a natural-language criterion)
+rubrics = [
+    Rubric(
+        name="correctness",
+        weight=2.0,
+        checkpoints=[
+            Checkpoint(
+                id="passes_tests",
+                description="The submitted solution passes the provided test",
+                content="assert fibonacci(10) == 55",
+            ),
+        ],
+    ),
+]
 
-# Step 2: create grader
-grader = AgenticGrader(
-    agent=agent,
-    name="fact_check",
-    template="""
-Verify the factual accuracy of the response using web search if needed.
+# Step 2: pick a harness (requires the corresponding CLI installed + authenticated
+# on this machine -- e.g. `claude`, authenticated via ANTHROPIC_API_KEY)
+harness = ClaudeCodeHarness(timeout_s=120)
 
-Query: {query}
-Response: {response}
-
-Return JSON: {{"score": <0.0-1.0>, "reason": "<explanation>"}}
-""",
-)
+# Step 3: create grader
+grader = AgenticGrader(harness=harness, rubrics=rubrics)
 
 result = await grader.aevaluate(
-    query="When was Python first released?",
-    response="Python was first released in 1991.",
+    query="Implement fibonacci(n) in fibonacci.py.",
+    response="See fibonacci.py in the workspace.",
+    workspace_path="/path/to/candidate/workspace",  # and/or transcript=[...]/"path/to/transcript.jsonl"
 )
+# result is a GraderScore on success, or a GraderError if no evidence was given
+# or the harness sample was not trustworthy (e.g. CLI unavailable) --
+# it is never silently coerced into a 0 score.
+#
+# v1 note: this runs a single sample and has no must_have AND-gate or k-sample
+# majority voting yet; see the design doc's "Deferred to a follow-up iteration"
+# discussion if you need those for a higher-stakes grading.
 ```
 
 ---

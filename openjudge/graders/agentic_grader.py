@@ -1,483 +1,313 @@
 # -*- coding: utf-8 -*-
 """
-Agentic grader implementation for tool-augmented evaluation.
+Agentic grader implementation: agent-as-judge backed by an external
+coding-agent CLI harness (Claude Code / Codex / Cursor CLI / ...).
 
-This module provides the AgenticGrader class, which uses autonomous tool calling
-to evaluate model responses. The grader supports multi-turn interactions where
-the LLM decides which tools to call and when to produce final judgment.
-
-Architecture:
-    AgenticGrader extends BaseGrader with agentic capabilities:
-
-    - Tool Layer (openjudge.agentic.tools):
-      BaseTool defines what capabilities the agent has (search, code execution, etc.)
-
-    - Agent Layer (openjudge.agentic.agents):
-      BaseAgent defines how the agent thinks (ReAct, CoT, etc.)
-      ReActAgent is the built-in implementation
-
-    - Adapter Layer (openjudge.agentic.adapters):
-      FunctionToolAdapter for wrapping Python functions as tools.
-      External framework adapters (LangChain, AgentScope) are provided as
-      examples in tutorials/integrations/ to avoid circular dependencies.
-
-Design Principle:
-    AgenticGrader follows "unified interface" design - it only accepts a
-    pre-built agent parameter. Whether using built-in ReActAgent or external
-    framework adapters, the agent must be constructed externally first.
-
-Classes:
-    AgenticGrader: Main class for tool-augmented evaluation.
+Unlike a single LLM call (LLMGrader) or the in-process ReAct tool-calling
+loop this module used to implement, AgenticGrader shells out to a real
+external coding-agent CLI inside an isolated sandbox: the agent can read a
+candidate's workspace and/or execution transcript, actually execute code
+to verify checkpoints, and write its verdict into a fixed result file
+inside the sandbox. AgenticGrader never depends on parsing a CLI's own
+stdout/`--output-format` schema -- only the sandboxed result file (see
+`openjudge.harness.base` for the shared protocol).
 """
-
-import json
-import os
-import re
-import textwrap
+import asyncio
 import time
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
-from openjudge.agentic import BaseAgent, BaseTool, ReActAgent
 from openjudge.graders.base_grader import BaseGrader
-from openjudge.graders.schema import GraderMode, GraderRank, GraderScore
-from openjudge.models.schema.oai.message import ChatMessage
-from openjudge.models.schema.prompt_template import LanguageEnum, PromptTemplate
+from openjudge.graders.schema import (
+    CheckpointResult,
+    GraderError,
+    GraderMode,
+    GraderScore,
+    Rubric,
+    RubricResult,
+)
+from openjudge.harness.base import BaseHarness
+from openjudge.harness.sandbox import ProcessSandbox
 
-__all__ = [
-    "AgenticGrader",
-]
+__all__ = ["AgenticGrader"]
+
+
+def _build_output_schema(rubrics: List[Rubric]) -> Dict[str, Any]:
+    """Build the flat `{checkpoint_id: {}}` schema description passed to the harness."""
+    schema: Dict[str, Any] = {}
+    for rubric in rubrics:
+        for checkpoint in rubric.checkpoints:
+            schema[checkpoint.id] = {}
+    return schema
+
+
+def _build_prompt(query: str, response: str, rubrics: List[Rubric]) -> str:
+    """Render rubrics/checkpoints plus query/response into full judge instructions."""
+    lines = [
+        "You are an evidence-based judge running inside a sandbox directory. "
+        "Only read from this directory and its subdirectories; never access any path outside it.",
+        "Evidence available in this directory: "
+        "./workspace/ holds the candidate's produced artifacts, if any; "
+        "./transcript.jsonl holds the candidate's execution transcript "
+        "(one JSON message per line, in order), if any.",
+        "Full instructions and the required output_schema are also available in "
+        "./_judge_spec.json in this directory.",
+        "For each checkpoint below: if its content looks like executable code or a test script, actually run "
+        "it inside this sandbox to verify (and record exactly what you ran); if it is a natural-language "
+        "judging criterion, judge it against the available evidence and the response text below.",
+        "When done, write your verdict strictly following output_schema to ./_judge_result.json in this directory.",
+        'The result file must be flat JSON whose top-level keys are the checkpoint ids themselves '
+        '(not wrapped in "dimensions" or any other envelope). Each checkpoint value must be an object of the '
+        'form {"passed": <true/false>, "reason": "...", "execution_log": "<commands + output you actually ran, '
+        'omit this key if not applicable>"}.',
+        "Every checkpoint's reason must cite concrete evidence (a file path, or a transcript line number and "
+        "excerpt); if you cannot find evidence for a checkpoint, mark it failed and say so in reason.",
+        "",
+        f"<query>{query}</query>",
+        f"<response>{response}</response>",
+        "",
+    ]
+    for rubric in rubrics:
+        lines.append(f"## Rubric: {rubric.name} (weight={rubric.weight})")
+        if rubric.description:
+            lines.append(rubric.description)
+        for checkpoint in rubric.checkpoints:
+            lines.append(f"- [{checkpoint.id}] (weight={checkpoint.weight}) {checkpoint.description}")
+            if checkpoint.content:
+                lines.append("  content:")
+                lines.append("  ```")
+                lines.append(f"  {checkpoint.content}")
+                lines.append("  ```")
+        lines.append("")
+    return "\n".join(lines)
+
+
+def _normalize_sample(parsed: Dict[str, Any], all_checkpoint_ids: List[str]) -> Dict[str, CheckpointResult]:
+    """Normalize one harness sample into `{checkpoint_id: CheckpointResult}`, dropping unknown/malformed entries."""
+    normalized: Dict[str, CheckpointResult] = {}
+    for checkpoint_id in all_checkpoint_ids:
+        val = parsed.get(checkpoint_id)
+        if isinstance(val, dict) and "passed" in val:
+            normalized[checkpoint_id] = CheckpointResult(
+                checkpoint_id=checkpoint_id,
+                passed=bool(val.get("passed")),
+                reason=str(val.get("reason", "")),
+                execution_log=val.get("execution_log"),
+            )
+    return normalized
+
+
+def _aggregate_rubric(rubric: Rubric, checkpoint_results: Dict[str, CheckpointResult]) -> RubricResult:
+    """Combine a rubric's checkpoint results into a RubricResult.
+
+    Plain weighted mean of all checkpoints' pass/fail outcomes (each checkpoint
+    contributes `weight * (1.0 if passed else 0.0)`); a checkpoint missing from
+    `checkpoint_results` (the harness never returned a verdict for it) counts as
+    failed rather than being excluded, so a rubric with no evidence at all scores 0.0
+    instead of vacuously scoring 1.0. A rubric with zero checkpoints (or zero total
+    weight) scores 0.0.
+
+    Note: this is a v1 simplification — there is no `must_have` AND-gate here.
+    See "Deferred to a follow-up iteration" at the end of this plan.
+    """
+    total_weight = sum(cp.weight for cp in rubric.checkpoints)
+    if total_weight <= 0:
+        score = 0.0
+    else:
+        weighted = sum(
+            cp.weight * (1.0 if checkpoint_results.get(cp.id) and checkpoint_results[cp.id].passed else 0.0)
+            for cp in rubric.checkpoints
+        )
+        score = weighted / total_weight
+
+    results = [checkpoint_results[cp.id] for cp in rubric.checkpoints if cp.id in checkpoint_results]
+    return RubricResult(name=rubric.name, score=score, checkpoint_results=results)
+
+
+def _aggregate_overall(rubrics: List[Rubric], rubric_results: List[RubricResult]) -> float:
+    """Weighted mean of `rubric_results` by each rubric's `weight`."""
+    total_weight = sum(r.weight for r in rubrics)
+    if total_weight <= 0:
+        return 0.0
+    by_name = {r.name: r for r in rubric_results}
+    weighted = sum(r.weight * by_name[r.name].score for r in rubrics if r.name in by_name)
+    return weighted / total_weight
 
 
 class AgenticGrader(BaseGrader):
-    """Agentic grader using tool-augmented LLM evaluation.
+    """Agent-as-judge grader backed by an external coding-agent CLI harness.
 
-    This grader extends BaseGrader with agentic capabilities:
-    - Tool Layer: Defines what capabilities the agent has (search, code execution, etc.)
-    - Agent Layer: Defines how the agent thinks (ReAct, CoT, Multi-Agent, etc.)
-
-    Design Principle (Unified Interface):
-        AgenticGrader only accepts a pre-built `agent` parameter. Whether using
-        the built-in ReActAgent or external framework adapters, the agent must
-        be constructed externally first. This design:
-        - Keeps the interface simple and consistent
-        - Separates concerns: Grader handles evaluation, Agent handles reasoning
-        - Avoids parameter conflicts (model/tools vs agent)
+    Unlike LLMGrader (a single LLM call) or the in-process tool-calling loop
+    this class used to implement, AgenticGrader shells out to a real external
+    coding-agent CLI (Claude Code / Codex / Cursor CLI) inside an isolated
+    sandbox, so the judge can read a candidate's workspace/transcript and
+    actually execute code to verify checkpoints rather than guessing.
 
     Attributes:
-        agent (BaseAgent): The agent responsible for reasoning and tool calling.
-        template (PromptTemplate): Template for generating evaluation prompts.
-        language (LanguageEnum): Language for prompts.
+        harness: The BaseHarness implementation used to invoke the external CLI.
+        rubrics: Default list of Rubric dimensions to evaluate against (can be
+            overridden per-call via the `rubrics` keyword argument to `aevaluate()`).
+        model: Optional model name passed through to the harness.
 
-    Example (Built-in ReActAgent - Recommended):
-        >>> from openjudge.agentic import ReActAgent
-        >>> # Step 1: Build the agent first
-        >>> agent = ReActAgent(
-        ...     model={"model": "gpt-4", "api_key": "..."},
-        ...     tools=[WebSearchTool()],
-        ...     max_iterations=10,
-        ... )
-        >>> # Step 2: Create grader with the agent
-        >>> grader = AgenticGrader(
-        ...     agent=agent,
-        ...     template="Evaluate the response: {response}",
-        ... )
-        >>> result = await grader.aevaluate(query="...", response="...")
+    Note:
+        This is a v1: each evaluation runs exactly one sandboxed harness sample and
+        aggregates checkpoints with a plain weighted mean — there is no k-sample
+        majority voting, no `agreement` reliability gate, and no `must_have` AND-gate.
+        See "Deferred to a follow-up iteration" at the end of this plan for why, and
+        for the shape a later `k`/`min_agreement`/`must_have` addition would take.
 
-    Example (With External Agent - LangChain):
-        >>> # Adapter code: see tutorials/integrations/langchain_adapter.py
-        >>> from langchain.agents import create_react_agent
-        >>> lc_agent = create_react_agent(llm, tools)
-        >>> # Wrap with adapter (implement BaseAgent.arun)
-        >>> class LangChainAgentAdapter(BaseAgent):
-        ...     def __init__(self, lc_agent):
-        ...         self._lc_agent = lc_agent
-        ...     async def arun(self, messages):
-        ...         result = await self._lc_agent.ainvoke({"messages": messages})
-        ...         return AgentResult(content=result.get("output", ""))
-        >>> agent = LangChainAgentAdapter(lc_agent)
-        >>> grader = AgenticGrader(agent=agent, template="...")
+    Example:
+        >>> from openjudge.harness import ClaudeCodeHarness
+        >>> from openjudge.graders.schema import Checkpoint, Rubric
+        >>> harness = ClaudeCodeHarness(timeout_s=90)
+        >>> rubrics = [Rubric(name="correctness", checkpoints=[
+        ...     Checkpoint(id="c1", description="Output matches expected format"),
+        ... ])]
+        >>> grader = AgenticGrader(harness=harness, rubrics=rubrics)
+        >>> result = await grader.aevaluate(
+        ...     query="...", response="...", workspace_path="/tmp/candidate",
+        ... )
     """
 
     def __init__(
         self,
-        agent: BaseAgent,
-        template: Optional[Union[str, dict, list, PromptTemplate]] = None,
+        harness: BaseHarness,
+        rubrics: List[Rubric],
         name: str = "agentic_grader",
         mode: GraderMode = GraderMode.POINTWISE,
-        description: str = "Tool-augmented agentic grader",
-        language: Optional[Union[LanguageEnum, str]] = None,
+        description: str = "Agent-as-judge grader backed by an external coding-agent harness",
+        model: Optional[str] = None,
         **kwargs: Any,
     ):
         """Initialize AgenticGrader.
 
         Args:
-            agent: Pre-configured agent (required). Can be built-in ReActAgent or
-                   external framework adapter (LangChain, AgentScope, etc.).
-                   The agent must be constructed externally first.
-            template: Template for generating prompts (required). Can be a str, list,
-                     dict or PromptTemplate object. Defines how query/response are
-                     formatted and passed to the agent.
+            harness: Pre-constructed BaseHarness (e.g. `ClaudeCodeHarness()`, required.
+            rubrics: Default rubrics to evaluate against (required, non-empty). Can be
+                overridden per-call via the `rubrics` keyword to `aevaluate()`.
             name: Grader name.
-            mode: POINTWISE or LISTWISE.
+            mode: Only POINTWISE is supported.
             description: Grader description.
-            language: Language for prompts. Can be LanguageEnum, string, or None.
-                     If None, defaults to environment variable LANGUAGE or "en".
-            **kwargs: Additional keyword arguments passed to template rendering.
+            model: Optional model name passed through to `harness.run(..., model=model)`.
+            **kwargs: Additional keyword arguments forwarded to `BaseGrader.__init__`.
 
         Raises:
-            ValueError: If agent is not provided.
-            ValueError: If template is not provided.
-
-        Example:
-            >>> from openjudge.agentic import ReActAgent
-            >>> agent = ReActAgent(
-            ...     model={"model": "gpt-4", "api_key": "..."},
-            ...     tools=[WebSearchTool()],
-            ... )
-            >>> grader = AgenticGrader(agent=agent, template="Evaluate: {response}")
+            ValueError: If `harness` is None or `rubrics` is empty.
         """
         super().__init__(name=name, mode=mode, description=description, **kwargs)
-
-        # Validate inputs
-        if agent is None:
+        if harness is None:
             raise ValueError(
-                "Agent is required for AgenticGrader. "
-                "Please construct an agent first (e.g., ReActAgent) and pass it in. "
-                "Example: agent = ReActAgent(model=..., tools=[...])"
+                "harness is required for AgenticGrader. Construct one first, "
+                "e.g. harness = ClaudeCodeHarness()."
             )
-
-        if template is None:
-            raise ValueError(
-                "Template is required for AgenticGrader. "
-                "Please provide a template that defines the evaluation criteria "
-                "and output format."
-            )
-
-        # Handle language parameter
-        if not language:
-            language = os.environ.get("LANGUAGE", "en")
-
-        if isinstance(language, str):
-            self.language = (
-                LanguageEnum(language) if language in [item.value for item in LanguageEnum] else LanguageEnum.EN
-            )
-        else:
-            self.language = language
-
-        # Handle template parameter
-        if isinstance(template, str):
-            self.template = PromptTemplate(
-                messages={
-                    LanguageEnum.EN: [
-                        ChatMessage(
-                            role="system",
-                            content="You are a professional evaluation assistant. "
-                            "Please evaluate according to the user's requirements.",
-                        ),
-                        ChatMessage(
-                            role="user",
-                            content=textwrap.dedent(template),
-                        ),
-                    ],
-                    LanguageEnum.ZH: [
-                        ChatMessage(
-                            role="system",
-                            content="你是个专业的评估助手，请你根据用户要求进行评估。",
-                        ),
-                        ChatMessage(
-                            role="user",
-                            content=textwrap.dedent(template),
-                        ),
-                    ],
-                },
-            )
-        elif isinstance(template, PromptTemplate):
-            self.template = template
-        elif isinstance(template, list):
-            self.template = PromptTemplate.from_prompt(template)
-        elif isinstance(template, dict):
-            self.template = PromptTemplate(**template)
-        else:
-            raise ValueError("Template must be a str, list, dict or PromptTemplate object")
-
-        # Use the provided agent directly
-        self.agent = agent
+        if not rubrics:
+            raise ValueError("rubrics is required for AgenticGrader and must contain at least one Rubric.")
+        self.harness = harness
+        self.rubrics = rubrics
+        self.model = model
 
     async def _aevaluate(
         self,
         query: str = "",
         response: str = "",
+        workspace_path: Optional[str] = None,
+        transcript: Optional[Any] = None,
         **kwargs: Any,
-    ) -> Union[GraderScore, GraderRank]:
-        """Evaluate using tool-augmented LLM.
+    ) -> Union[GraderScore, GraderError]:
+        """Evaluate a candidate by running a single sandboxed harness sample.
 
-        The agent (ReActAgent or external agent) autonomously decides which
-        tools to call and when to produce the final judgment.
+        Builds a judge prompt + output schema from `rubrics` (or the `rubrics`
+        keyword override), runs one `ProcessSandbox` + harness invocation, then
+        aggregates the returned checkpoint verdicts into a weighted score.
 
         Args:
-            query: The original query/task.
-            response: The response to evaluate.
-            **kwargs: Additional context passed to the template.
+            query: The original task/query being judged.
+            response: The candidate's response text being judged.
+            workspace_path: Path to the candidate's produced artifacts directory.
+                At least one of `workspace_path`/`transcript` must be provided.
+            transcript: The candidate's execution transcript (path to a JSONL file,
+                or an already-parsed list of message dicts).
+            **kwargs: May include `rubrics: List[Rubric]` to override `self.rubrics`
+                for this call only.
 
         Returns:
-            GraderScore: In POINTWISE mode, contains score, reason, and metadata.
-            GraderRank: In LISTWISE mode, contains rank list, reason, and metadata.
-
-        Raises:
-            ValueError: If required fields cannot be extracted from agent output.
-
-        Example:
-            >>> from openjudge.agentic import ReActAgent
-            >>> agent = ReActAgent(
-            ...     model={"model": "gpt-4", "api_key": "..."},
-            ...     tools=[WebSearchTool()],
-            ... )
-            >>> grader = AgenticGrader(agent=agent, template="Evaluate: {response}")
-            >>> result = await grader.aevaluate(
-            ...     query="What is the capital of France?",
-            ...     response="The capital of France is Paris."
-            ... )
-            >>> print(result.score, result.reason)
+            GraderScore on success. GraderError if no evidence was given, or the
+            harness sample failed/was unavailable.
         """
+        rubrics: List[Rubric] = kwargs.pop("rubrics", self.rubrics)
+        if workspace_path is None and transcript is None:
+            return GraderError(
+                name=self.name,
+                error="no_evidence",
+                reason="At least one of workspace_path or transcript must be provided.",
+            )
+
+        all_checkpoint_ids = [cp.id for rubric in rubrics for cp in rubric.checkpoints]
+        schema = _build_output_schema(rubrics)
+        prompt = _build_prompt(query, response, rubrics)
+
         start_time = time.time()
-
-        # Build initial messages from template
-        params = {**self.kwargs}
-        params.update(kwargs)
-        params["query"] = query
-        params["response"] = response
-        messages = self.template.format(language=self.language, **params)
-        messages = [msg.to_dict() if hasattr(msg, "to_dict") else msg for msg in messages]
-
-        # Run agent
-        agent_result = await self.agent.arun(messages)
-
-        # Parse result
-        parsed = self._parse_agent_output(agent_result.content)
-
-        # Extract common fields before creating result objects
-        eval_feedback_data = parsed.pop("eval_feedback", None)
-
-        # Build EvalFeedback from raw data
-        from openjudge.graders.schema import EvalFeedback
-
-        eval_feedback = None
-        if eval_feedback_data is not None:
-            if isinstance(eval_feedback_data, EvalFeedback):
-                eval_feedback = eval_feedback_data
-            elif isinstance(eval_feedback_data, dict):
-                eval_feedback = EvalFeedback(**eval_feedback_data)
-
-        # Build result based on mode
-        if self.mode == GraderMode.LISTWISE:
-            rank = parsed.pop("rank")
-            reason = parsed.pop("reason", agent_result.content)
-            result = GraderRank(
+        checkpoint_results = await self._run_sample(prompt, schema, workspace_path, transcript, all_checkpoint_ids)
+        if checkpoint_results is None:
+            return GraderError(
                 name=self.name,
-                rank=rank,
-                reason=reason,
-                metadata=parsed,
-            )
-        else:
-            score = parsed.pop("score")
-            reason = parsed.pop("reason", agent_result.content)
-            result = GraderScore(
-                name=self.name,
-                score=float(score),
-                reason=reason,
-                eval_feedback=eval_feedback,
-                metadata=parsed,
+                error="unavailable",
+                reason="The harness sample failed or the harness CLI is unavailable.",
             )
 
-        # Add execution metadata
-        result.metadata.update(
-            {
+        rubric_results = [_aggregate_rubric(rubric, checkpoint_results) for rubric in rubrics]
+        overall_score = _aggregate_overall(rubrics, rubric_results)
+        reasons = [f"{r.name}: score={r.score:.2f}" for r in rubric_results]
+
+        return GraderScore(
+            name=self.name,
+            score=overall_score,
+            reason="; ".join(reasons),
+            metadata={
+                "rubric_results": [r.model_dump() for r in rubric_results],
+                "harness_type": type(self.harness).__name__,
                 "total_time": time.time() - start_time,
-                "tool_calls": agent_result.tool_calls_count,
-                "iterations": agent_result.iterations,
-                "messages": agent_result.messages,
-                **agent_result.metadata,
-            }
+            },
         )
 
-        return result
+    async def _run_sample(
+        self,
+        prompt: str,
+        schema: Dict[str, Any],
+        workspace_path: Optional[str],
+        transcript: Optional[Any],
+        all_checkpoint_ids: List[str],
+    ) -> Optional[Dict[str, CheckpointResult]]:
+        """Run a single sandboxed harness invocation.
 
-    def _parse_agent_output(self, content: str) -> Dict[str, Any]:
-        """Parse agent output to extract structured data.
-
-        Attempts to extract structured data from agent output using multiple strategies:
-        1. Try to parse JSON (supports nested JSON with recursive matching)
-        2. Fall back to regex extraction for score/rank patterns
-
-        Args:
-            content: Raw agent output string.
+        `ProcessSandbox`/`BaseHarness.run` are both blocking, so the call runs on
+        the default thread pool executor to avoid blocking the event loop.
 
         Returns:
-            Dictionary containing parsed fields (score/rank, reason, etc.)
-
-        Raises:
-            ValueError: If required fields cannot be extracted.
+            `{checkpoint_id: CheckpointResult}` if the harness came back `available`,
+            else `None`.
         """
-        data: Dict[str, Any] = {}
+        loop = asyncio.get_running_loop()
 
-        # Strategy 1: Try to extract JSON from text (supports nested JSON)
-        json_pattern = r"\{(?:[^{}]|\{(?:[^{}]|\{[^{}]*\})*\})*\}"
-        json_matches = re.findall(json_pattern, content, re.DOTALL)
-
-        for match in json_matches:
+        def _run_one() -> Optional[Dict[str, CheckpointResult]]:
             try:
-                parsed = json.loads(match)
-                if "score" in parsed or "rank" in parsed:
-                    data = parsed
-                    break
-            except json.JSONDecodeError:
-                continue
+                with ProcessSandbox(workspace_path=workspace_path, transcript=transcript) as sandbox_dir:
+                    result = self.harness.run(sandbox_dir, prompt, schema, model=self.model)
+            except Exception:
+                return None
+            if not result.available:
+                return None
+            return _normalize_sample(result.result, all_checkpoint_ids)
 
-        # Strategy 2: Fall back to regex extraction if no valid JSON found
-        if not data:
-            if self.mode == GraderMode.POINTWISE:
-                score_patterns = [
-                    r"(?:score|rating|分数)[:\s]*(\d+(?:\.\d+)?)",
-                    r"(\d+(?:\.\d+)?)\s*(?:out of|/)\s*\d+",
-                    r"(?:give|assign|rate)[^0-9]*(\d+(?:\.\d+)?)",
-                ]
-                for pattern in score_patterns:
-                    match = re.search(pattern, content, re.IGNORECASE)
-                    if match:
-                        data["score"] = float(match.group(1))
-                        break
-            else:
-                rank_patterns = [
-                    r"rank[:\s]*\[([^\]]+)\]",
-                    r"\[(\d+(?:\s*,\s*\d+)+)\]",
-                    r"rank[:\s]*([\d,\s]+)",
-                ]
-                for pattern in rank_patterns:
-                    match = re.search(pattern, content, re.IGNORECASE)
-                    if match:
-                        try:
-                            rank_str = match.group(1)
-                            data["rank"] = [int(x.strip()) for x in rank_str.split(",")]
-                            break
-                        except ValueError:
-                            continue
-
-        # Validate required fields
-        if self.mode == GraderMode.POINTWISE and "score" not in data:
-            raise ValueError(f"Failed to extract 'score' from agent output: {content}")
-        if self.mode == GraderMode.LISTWISE and "rank" not in data:
-            raise ValueError(f"Failed to extract 'rank' from agent output: {content}")
-
-        # Use content as reason if not provided
-        if "reason" not in data:
-            data["reason"] = content
-
-        return data
-
-    @property
-    def tools(self) -> Dict[str, BaseTool]:
-        """Get all registered tools from the agent."""
-        return self.agent.tools
-
-    def to_dict(self) -> dict:
-        """Convert the AgenticGrader to a dictionary representation.
-
-        Returns:
-            A dictionary containing the serialized AgenticGrader information.
-        """
-        d = {
-            "name": self.name,
-            "mode": self.mode.value,
-            "description": self.description,
-            "template": (self.template.model_dump() if isinstance(self.template, PromptTemplate) else self.template),
-            "tools": list(self.tools.keys()),
-            "agent_type": type(self.agent).__name__,
-            **self.kwargs,
-        }
-
-        # Include agent's max_iterations if available
-        if hasattr(self.agent, "max_iterations"):
-            d["max_iterations"] = self.agent.max_iterations
-
-        return d
-
-    @classmethod
-    def from_config(cls, config: dict) -> "AgenticGrader":
-        """Create an AgenticGrader from a configuration dictionary.
-
-        This is a convenience method for creating AgenticGrader from serialized
-        config (e.g., from YAML/JSON files). It internally builds a ReActAgent
-        from the model/tools config.
-
-        Note:
-            This method is provided for convenience when loading from config files.
-            For programmatic usage, prefer constructing the agent explicitly:
-
-            >>> agent = ReActAgent(model=..., tools=[...])
-            >>> grader = AgenticGrader(agent=agent, template=...)
-
-        Args:
-            config: A dictionary containing the AgenticGrader configuration.
-                Required keys:
-                - template: The evaluation template
-                - model: Model configuration dict (for building ReActAgent)
-                Optional keys:
-                - tools: List of tool instances
-                - max_iterations: Max iterations for ReActAgent (default: 10)
-                - name, mode, description, language: Grader settings
-
-        Returns:
-            A new AgenticGrader instance.
-
-        Example:
-            >>> config = {
-            ...     "model": {"model": "gpt-4", "api_key": "..."},
-            ...     "tools": [my_search_tool],
-            ...     "template": "Evaluate: {response}",
-            ...     "max_iterations": 10,
-            ... }
-            >>> grader = AgenticGrader.from_config(config)
-        """
-        config = config.copy()
-
-        # Extract grader-level config
-        name = config.pop("name", "agentic_grader")
-        mode = config.pop("mode", GraderMode.POINTWISE)
-        description = config.pop("description", "Tool-augmented agentic grader")
-        template = config.pop("template", None)
-        language = config.pop("language", None)
-
-        # Extract agent-level config
-        model_config = config.pop("model", None)
-        tools = config.pop("tools", None)
-        max_iterations = config.pop("max_iterations", 10)
-        callback = config.pop("callback", None)
-
-        # Build the agent from config
-        if model_config is None:
-            raise ValueError(
-                "Model configuration is required in config for from_config(). "
-                "Please provide 'model' key with model configuration dict."
-            )
-
-        agent = ReActAgent(
-            model=model_config,
-            tools=tools,
-            max_iterations=max_iterations,
-            callback=callback,
-        )
-
-        return cls(
-            agent=agent,
-            template=template,
-            name=name,
-            mode=mode,
-            description=description,
-            language=language,
-            **config,
-        )
+        return await loop.run_in_executor(None, _run_one)
 
     @staticmethod
     def get_metadata() -> Dict[str, Any]:
-        """Return metadata about the AgenticGrader."""
-        return {"aevaluate": AgenticGrader.aevaluate.__doc__, "prompt": {}}
+        """Return metadata about how AgenticGrader's evaluation mechanism works."""
+        return {
+            "aevaluate": AgenticGrader._aevaluate.__doc__,
+            "protocol": (
+                "Writes rubrics/checkpoints as a spec file into an isolated sandbox, invokes an external "
+                "coding-agent CLI harness non-interactively, and reads back a result file the agent is "
+                "instructed to write -- never parses the CLI's own stdout output format."
+            ),
+        }
