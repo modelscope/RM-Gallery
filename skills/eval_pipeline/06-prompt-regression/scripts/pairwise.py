@@ -18,6 +18,7 @@ USAGE
 
 EXIT CODE: 0 if candidate is BETTER, 2 otherwise (worse/tied/inconclusive), 1 on usage error.
 """
+# pylint: disable=missing-function-docstring
 from __future__ import annotations
 
 import argparse
@@ -27,8 +28,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
-MIN_SAMPLES = 10          # below this, CI is too wide to conclude (see SKILL.md)
-TIE_CI_WIDTH = 0.30       # CI brackets 0.5 and is narrower than this => genuine tie
+MIN_SAMPLES = 10  # below this, CI is too wide to conclude (see SKILL.md)
+TIE_CI_WIDTH = 0.30  # CI brackets 0.5 and is narrower than this => genuine tie
 
 try:
     import numpy as _np
@@ -94,8 +95,14 @@ def verdict_for(wins: list[str], candidate: str, baseline: str, n_iter: int = 10
             verdict = "TIED (CI brackets 0.5, narrow)"
         else:
             verdict = "INCONCLUSIVE (CI too wide — need more samples)"
-    return {"n": n, "candidate_win_rate": round(cand, 3), "baseline_win_rate": round(base, 3),
-            "tie_rate": round(tie, 3), "candidate_ci95": [round(ci[0], 3), round(ci[1], 3)], "verdict": verdict}
+    return {
+        "n": n,
+        "candidate_win_rate": round(cand, 3),
+        "baseline_win_rate": round(base, 3),
+        "tie_rate": round(tie, 3),
+        "candidate_ci95": [round(ci[0], 3), round(ci[1], 3)],
+        "verdict": verdict,
+    }
 
 
 def analyze(comparisons: list[dict[str, Any]], candidate: str, baseline: str, n_iter: int = 1000) -> dict[str, Any]:
@@ -108,13 +115,17 @@ def analyze(comparisons: list[dict[str, Any]], candidate: str, baseline: str, n_
 
 
 def render(report: dict[str, Any]) -> str:
-    lines = [f"Pairwise: candidate='{report['candidate']}' vs baseline='{report['baseline']}'",
-             f"{'Dimension':<16}{'Cand':>7}{'Base':>7}{'Tie':>7}  {'95% CI':>14}  Verdict",
-             "-" * 78]
+    lines = [
+        f"Pairwise: candidate='{report['candidate']}' vs baseline='{report['baseline']}'",
+        f"{'Dimension':<16}{'Cand':>7}{'Base':>7}{'Tie':>7}  {'95% CI':>14}  Verdict",
+        "-" * 78,
+    ]
     for d, v in report["by_dimension"].items():
         ci = f"[{v['candidate_ci95'][0]:.2f},{v['candidate_ci95'][1]:.2f}]"
-        lines.append(f"{d:<16}{v['candidate_win_rate']:>7.0%}{v['baseline_win_rate']:>7.0%}"
-                     f"{v['tie_rate']:>7.0%}  {ci:>14}  {v['verdict']}")
+        lines.append(
+            f"{d:<16}{v['candidate_win_rate']:>7.0%}{v['baseline_win_rate']:>7.0%}"
+            f"{v['tie_rate']:>7.0%}  {ci:>14}  {v['verdict']}"
+        )
     return "\n".join(lines)
 
 
@@ -122,8 +133,24 @@ def _self_test() -> None:
     comps = []
     # Candidate clearly better on relevance: wins both orders for 15 queries (30 rows).
     for i in range(15):
-        comps.append({"id": f"q{i}", "model_a": "baseline", "model_b": "candidate", "score": 0.0, "dimension": "relevance"})
-        comps.append({"id": f"q{i}", "model_a": "candidate", "model_b": "baseline", "score": 1.0, "dimension": "relevance"})
+        comps.append(
+            {
+                "id": f"q{i}",
+                "model_a": "baseline",
+                "model_b": "candidate",
+                "score": 0.0,
+                "dimension": "relevance",
+            }
+        )
+        comps.append(
+            {
+                "id": f"q{i}",
+                "model_a": "candidate",
+                "model_b": "baseline",
+                "score": 1.0,
+                "dimension": "relevance",
+            }
+        )
     w = winners(comps)
     assert all(x == "candidate" for x in w), w[:5]
     r = analyze(comps, "candidate", "baseline", n_iter=200)

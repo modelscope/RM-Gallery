@@ -15,7 +15,8 @@ below still resolves to ``eval_pipeline`` when no flags are given, so existing
 
 Usage:
     python skills/eval_pipeline/tests/run_eval_pipeline_skill_tests.py
-    python skills/eval_pipeline/tests/run_eval_pipeline_skill_tests.py --case-id rag_eval_001_diagnose_generation_problem
+    python skills/eval_pipeline/tests/run_eval_pipeline_skill_tests.py \\
+        --case-id rag_eval_001_diagnose_generation_problem
 
     # Running against a different suite (e.g. academic-eval):
     python skills/eval_pipeline/tests/run_eval_pipeline_skill_tests.py \\
@@ -38,6 +39,7 @@ The actor follows the skill; a separate (stronger) judge grades the actor output
 against the acceptance criteria. Using one model for both roles inflates pass rates,
 so the actor and judge default to different models.
 """
+# pylint: disable=missing-function-docstring
 
 from __future__ import annotations
 
@@ -52,7 +54,6 @@ from typing import Any
 
 from dotenv import load_dotenv
 from openai import OpenAI
-
 
 # Paths are derived from this file's own location so the runner works wherever it
 # lives. It sits at skills/eval_pipeline/tests/run_eval_pipeline_skill_tests.py:
@@ -82,6 +83,7 @@ def load_skill_text(skill_root: Path, skill_id: str) -> str:
     """Load a skill's text. Each skill is self-contained (Anthropic Agent Skill protocol),
     so a single SKILL.md is the full unit; if a skill later bundles its own
     <skill>/references/*.md, append those too (per-skill, so they travel on install)."""
+
     def with_bundled_refs(skill_dir: Path, text: str) -> str:
         ref_dir = skill_dir / "references"
         if not ref_dir.is_dir():
@@ -323,8 +325,7 @@ def aggregate_runs(runs: list[dict[str, Any]]) -> tuple[str, dict[str, Any]]:
     judge["score"] = round(mean_score, 3)
     judge["reason"] = (
         f"[aggregated over {len(runs)} runs: verdicts={counts}, "
-        f"scores={[round(s, 2) for s in scores]}, mean={mean_score:.2f}] "
-        + str(rep["judge"].get("reason", ""))
+        f"scores={[round(s, 2) for s in scores]}, mean={mean_score:.2f}] " + str(rep["judge"].get("reason", ""))
     )
     judge["repeat_verdicts"] = verdicts
     judge["repeat_scores"] = scores
@@ -345,13 +346,21 @@ def main() -> None:
     )
     parser.add_argument("--case-id", action="append", help="Run only the given case id. Can be repeated.")
     parser.add_argument("--limit", type=int, default=None, help="Limit number of cases after filtering.")
-    parser.add_argument("--model", default=os.environ.get("OPENAI_MODEL", "qwen3.6-plus"),
-                        help="Actor model that follows the skill.")
-    parser.add_argument("--judge-model", default=os.environ.get("OPENAI_JUDGE_MODEL", "qwen3-max"),
-                        help="Judge model that grades actor output (default stronger than actor).")
-    parser.add_argument("--repeat", type=int, default=1,
-                        help="Run each case N times and report the majority verdict + mean score. "
-                             "Single-run verdicts are noisy (LLM actor + judge); use >=3 for robust claims.")
+    parser.add_argument(
+        "--model", default=os.environ.get("OPENAI_MODEL", "qwen3.6-plus"), help="Actor model that follows the skill."
+    )
+    parser.add_argument(
+        "--judge-model",
+        default=os.environ.get("OPENAI_JUDGE_MODEL", "qwen3-max"),
+        help="Judge model that grades actor output (default stronger than actor).",
+    )
+    parser.add_argument(
+        "--repeat",
+        type=int,
+        default=1,
+        help="Run each case N times and report the majority verdict + mean score. "
+        "Single-run verdicts are noisy (LLM actor + judge); use >=3 for robust claims.",
+    )
     args = parser.parse_args()
     report_prefix = args.report_prefix or args.skill_root.name.replace("-", "_")
 
@@ -379,11 +388,14 @@ def main() -> None:
             judge = judge_actor_output(client, args.judge_model, case, actor_output)
             runs.append({"actor_output": actor_output, "judge": judge})
             if repeat > 1:
-                print(f"    run {rep + 1}/{repeat}: {judge.get('verdict')} "
-                      f"score={float(judge.get('score', 0.0)):.2f}")
+                print(
+                    f"    run {rep + 1}/{repeat}: {judge.get('verdict')} " f"score={float(judge.get('score', 0.0)):.2f}"
+                )
         actor_output, judge = aggregate_runs(runs)
-        print(f"  -> {judge.get('verdict')} score={float(judge.get('score', 0.0)):.2f}"
-              + (f"  (n={repeat})" if repeat > 1 else ""))
+        print(
+            f"  -> {judge.get('verdict')} score={float(judge.get('score', 0.0)):.2f}"
+            + (f"  (n={repeat})" if repeat > 1 else "")
+        )
         results.append({"case": case, "actor_output": actor_output, "judge": judge})
 
     args.out_dir.mkdir(parents=True, exist_ok=True)

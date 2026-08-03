@@ -29,6 +29,7 @@ USAGE
 
 EXIT CODE: 0 if calibrated, 2 if not_calibrated/insufficient_evidence, 1 on usage error.
 """
+# pylint: disable=missing-function-docstring
 from __future__ import annotations
 
 import argparse
@@ -86,12 +87,14 @@ def load_pairs(
     out: list[dict[str, str]] = []
     if pairs is not None:
         for row in _read_jsonl(pairs):
-            out.append({
-                "id": str(row.get("id", len(out))),
-                "judge": _norm(row["judge"]),
-                "human": _norm(row["human"]),
-                "stratum": str(row.get(stratum_key, "")) or "all",
-            })
+            out.append(
+                {
+                    "id": str(row.get("id", len(out))),
+                    "judge": _norm(row["judge"]),
+                    "human": _norm(row["human"]),
+                    "stratum": str(row.get(stratum_key, "")) or "all",
+                }
+            )
         return out
 
     if verdicts is None or labels is None:
@@ -101,12 +104,14 @@ def load_pairs(
         rid = str(row["id"])
         if rid not in label_by_id:
             continue
-        out.append({
-            "id": rid,
-            "judge": _norm(row.get("verdict", row.get("judge"))),
-            "human": _norm(label_by_id[rid]),
-            "stratum": str(row.get(stratum_key, "")) or "all",
-        })
+        out.append(
+            {
+                "id": rid,
+                "judge": _norm(row.get("verdict", row.get("judge"))),
+                "human": _norm(label_by_id[rid]),
+                "stratum": str(row.get(stratum_key, "")) or "all",
+            }
+        )
     return out
 
 
@@ -133,7 +138,7 @@ def _safe_div(num: float, den: float) -> float:
 def core_metrics(pairs: list[dict[str, str]], positive: str = "fail") -> dict[str, float]:
     c = confusion(pairs, positive)
     tp, fp, tn, fn = c["tp"], c["fp"], c["tn"], c["fn"]
-    tpr = _safe_div(tp, tp + fn)            # recall on the positive (caught failures)
+    tpr = _safe_div(tp, tp + fn)  # recall on the positive (caught failures)
     tnr = _safe_div(tn, tn + fp)
     precision = _safe_div(tp, tp + fp)
     f1 = _safe_div(2 * precision * tpr, precision + tpr)
@@ -216,8 +221,9 @@ def per_stratum(pairs: list[dict[str, str]], positive: str = "fail") -> dict[str
     return out
 
 
-def calibration_gate(pairs: list[dict[str, str]], metrics: dict[str, float], kappa: float,
-                     positive: str = "fail") -> dict[str, Any]:
+def calibration_gate(
+    pairs: list[dict[str, str]], metrics: dict[str, float], kappa: float, positive: str = "fail"
+) -> dict[str, Any]:
     """Apply the SKILL.md hard gate. Returns verdict + blocking reasons."""
     n = len(pairs)
     n_pos = sum(1 for p in pairs if p["human"] == positive)
@@ -228,20 +234,29 @@ def calibration_gate(pairs: list[dict[str, str]], metrics: dict[str, float], kap
     if min(n_pos, n_neg) < N_PER_CLASS_MIN:
         reasons.append(f"min class count {min(n_pos, n_neg)} (need >= {N_PER_CLASS_MIN} per class)")
     if reasons:
-        return {"verdict": "insufficient_evidence", "blocking": reasons,
-                "next": f"collect more labels: aim for >= {N_TOTAL_MIN} total, >= {N_PER_CLASS_MIN} per class"}
+        return {
+            "verdict": "insufficient_evidence",
+            "blocking": reasons,
+            "next": f"collect more labels: aim for >= {N_TOTAL_MIN} total, >= {N_PER_CLASS_MIN} per class",
+        }
     not_ready = []
     if metrics["tpr"] < TPR_MIN:
         not_ready.append(f"TPR {metrics['tpr']:.2f} < {TPR_MIN}")
     if metrics["tnr"] < TNR_MIN:
         not_ready.append(f"TNR {metrics['tnr']:.2f} < {TNR_MIN}")
     if not_ready:
-        return {"verdict": "not_calibrated", "blocking": not_ready,
-                "next": "refine the judge prompt (add borderline few-shot) then re-measure"}
+        return {
+            "verdict": "not_calibrated",
+            "blocking": not_ready,
+            "next": "refine the judge prompt (add borderline few-shot) then re-measure",
+        }
     phase = 2 if kappa >= KAPPA_PHASE2_MIN else 1
-    return {"verdict": "calibrated", "blocking": [],
-            "human_reduction_phase": phase,
-            "next": "phase 2 (assisted) ok" if phase == 2 else "calibrated but kappa<0.6: keep humans primary"}
+    return {
+        "verdict": "calibrated",
+        "blocking": [],
+        "human_reduction_phase": phase,
+        "next": "phase 2 (assisted) ok" if phase == 2 else "calibrated but kappa<0.6: keep humans primary",
+    }
 
 
 def analyze(pairs: list[dict[str, str]], positive: str = "fail", n_iter: int = 1000) -> dict[str, Any]:
@@ -279,8 +294,11 @@ def render(report: dict[str, Any]) -> str:
         f"  kappa={report['kappa']:.2f}  Gwet's AC1={report['gwet_ac1']:.2f}"
         + ("  [gap>0.15: class imbalance — trust AC1]" if report["kappa_ac1_gap"] > 0.15 else ""),
         f"  bias={report['bias']:+.2f} "
-        + ("(stricter than humans)" if report["bias"] > 0.1 else
-           "(more lenient than humans)" if report["bias"] < -0.1 else "(no significant bias)"),
+        + (
+            "(stricter than humans)"
+            if report["bias"] > 0.1
+            else "(more lenient than humans)" if report["bias"] < -0.1 else "(no significant bias)"
+        ),
     ]
     if report["per_stratum"]:
         lines.append("  per-stratum:")
@@ -327,8 +345,12 @@ def main(argv: list[str] | None = None) -> int:
     ap.add_argument("--pairs", type=Path, help="JSONL with id,judge,human[,stratum].")
     ap.add_argument("--verdicts", type=Path, help="JSONL with id,verdict[,stratum].")
     ap.add_argument("--labels", type=Path, help="JSONL with id,label.")
-    ap.add_argument("--positive", default="fail", choices=["fail", "pass"],
-                    help="Positive class for TPR (default: fail = caught problems).")
+    ap.add_argument(
+        "--positive",
+        default="fail",
+        choices=["fail", "pass"],
+        help="Positive class for TPR (default: fail = caught problems).",
+    )
     ap.add_argument("--stratum-key", default="stratum", help="Field name for stratum (default: stratum).")
     ap.add_argument("--n-iter", type=int, default=1000, help="Bootstrap iterations.")
     ap.add_argument("--json", action="store_true", help="Emit JSON instead of a text report.")
