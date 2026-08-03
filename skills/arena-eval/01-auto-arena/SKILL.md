@@ -270,5 +270,5 @@ evaluation_results/
 
 ## Additional resources
 
-- Full config examples: [cookbooks/auto_arena/examples/](../../cookbooks/auto_arena/examples/)
+- Full config examples: [cookbooks/auto_arena/examples/](../../../cookbooks/auto_arena/examples/)
 - Documentation: [Auto Arena Guide](https://agentscope-ai.github.io/OpenJudge/applications/auto_arena/)

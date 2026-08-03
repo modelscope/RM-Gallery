@@ -40,6 +40,11 @@ local/
 tests/plt_*
 tests/graders/skills/*.json
 
+# Skill functional-test fixtures — tracked despite the *.jsonl rule above;
+# only the fixtures themselves, not generated results/ (ignored below).
+!skills/**/tests/*_test_cases.jsonl
+skills/**/tests/results/
+
 # Security Files
 *.pem
 *.key
