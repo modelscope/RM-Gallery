@@ -61,6 +61,31 @@ class TestProcessSandboxWorkspaceCopy:
             pass
         assert sandbox.symlinks_skipped == 2
 
+    def test_raises_file_not_found_for_missing_workspace_path(self, tmp_path):
+        """A nonexistent workspace_path must fail loudly, not silently produce an empty
+        workspace/ dir -- otherwise a misconfigured/mistyped path is indistinguishable
+        from "the candidate genuinely produced no artifacts" once judged."""
+        missing = tmp_path / "does-not-exist"
+        with pytest.raises(FileNotFoundError, match="workspace_path not found"):
+            with ProcessSandbox(workspace_path=str(missing)):
+                pass
+
+    def test_raises_not_a_directory_for_file_workspace_path(self, tmp_path):
+        not_a_dir = tmp_path / "candidate.txt"
+        not_a_dir.write_text("oops, this is a file not a directory", encoding="utf-8")
+        with pytest.raises(NotADirectoryError, match="workspace_path is not a directory"):
+            with ProcessSandbox(workspace_path=str(not_a_dir)):
+                pass
+
+    def test_cleans_up_sandbox_dir_when_workspace_path_missing(self, tmp_path):
+        missing = tmp_path / "does-not-exist"
+        sandbox = ProcessSandbox(workspace_path=str(missing))
+        with pytest.raises(FileNotFoundError):
+            with sandbox:
+                pass
+        assert sandbox.sandbox_dir is not None
+        assert not sandbox.sandbox_dir.exists()
+
 
 @pytest.mark.unit
 class TestProcessSandboxTranscript:
