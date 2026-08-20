@@ -113,6 +113,72 @@ class TestCorrelationAnalyzer:
         assert "explanation" in result.metadata
         assert "No data or grader results provided for correlation calculation" in result.metadata["explanation"]
 
+    def test_analyze_zero_variance_scores(self):
+        """Test analyze method when predicted scores are all identical (zero variance)."""
+        dataset = [
+            {"label": 0.8},
+            {"label": 0.6},
+            {"label": 0.9},
+        ]
+
+        grader_results = [
+            GraderScore(name="test", score=1.0, reason="Score 1"),
+            GraderScore(name="test", score=1.0, reason="Score 2"),
+            GraderScore(name="test", score=1.0, reason="Score 3"),
+        ]
+
+        analyzer = CorrelationAnalyzer()
+        result = analyzer.analyze(dataset, grader_results, label_path="label")
+
+        assert isinstance(result, CorrelationAnalysisResult)
+        assert result.correlation == 0.0
+        assert result.correlation == result.correlation  # not NaN
+        assert "explanation" in result.metadata
+        assert "Correlation based on 3 data points: 0.0000" in result.metadata["explanation"]
+
+    def test_analyze_zero_variance_labels(self):
+        """Test analyze method when ground truth labels are all identical (zero variance)."""
+        dataset = [
+            {"label": 1.0},
+            {"label": 1.0},
+            {"label": 1.0},
+        ]
+
+        grader_results = [
+            GraderScore(name="test", score=0.1, reason="Score 1"),
+            GraderScore(name="test", score=0.5, reason="Score 2"),
+            GraderScore(name="test", score=0.9, reason="Score 3"),
+        ]
+
+        analyzer = CorrelationAnalyzer()
+        result = analyzer.analyze(dataset, grader_results, label_path="label")
+
+        assert isinstance(result, CorrelationAnalysisResult)
+        assert result.correlation == 0.0
+        assert result.correlation == result.correlation  # not NaN
+        assert "explanation" in result.metadata
+        assert "Correlation based on 3 data points: 0.0000" in result.metadata["explanation"]
+
+    def test_analyze_zero_variance_scores_and_labels_matching(self):
+        """Test analyze method when both scores and labels are identical and equal to each other."""
+        dataset = [
+            {"label": 1.0},
+            {"label": 1.0},
+        ]
+
+        grader_results = [
+            GraderScore(name="test", score=1.0, reason="Score 1"),
+            GraderScore(name="test", score=1.0, reason="Score 2"),
+        ]
+
+        analyzer = CorrelationAnalyzer()
+        result = analyzer.analyze(dataset, grader_results, label_path="label")
+
+        assert isinstance(result, CorrelationAnalysisResult)
+        assert result.correlation == 1.0
+        assert "explanation" in result.metadata
+        assert "Correlation based on 2 data points: 1.0000" in result.metadata["explanation"]
+
     def test_analyze_insufficient_data(self):
         """Test analyze method with insufficient data."""
         # Prepare test data with only one sample (insufficient for correlation)

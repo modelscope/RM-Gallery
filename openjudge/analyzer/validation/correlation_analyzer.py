@@ -147,6 +147,19 @@ class CorrelationAnalyzer(BaseValidationAnalyzer):
                 # Calculate Pearson correlation coefficient
                 correlation_matrix = np.corrcoef(predicted_scores, ground_truth_labels)
                 correlation_score = correlation_matrix[0, 1]
+
+                # Handle NaN case - occurs when one array has zero variance (all values identical)
+                if np.isnan(correlation_score):
+                    # If all values in either array are identical, perfect correlation if both
+                    # arrays have constant values that match each other
+                    scores_unique = len(set(predicted_scores)) == 1
+                    labels_unique = len(set(ground_truth_labels)) == 1
+                    if scores_unique and labels_unique and predicted_scores[0] == ground_truth_labels[0]:
+                        correlation_score = 1.0
+                    else:
+                        # If one array has variance and the other doesn't, they're uncorrelated
+                        correlation_score = 0.0
+
                 explanation = f"Correlation based on {len(predicted_scores)} data points: {correlation_score:.4f}"
             except Exception as e:
                 correlation_score = 0.0
