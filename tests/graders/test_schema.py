@@ -6,6 +6,7 @@ and the eval_feedback field on GraderScore and GraderScoreCallback.
 """
 
 import pytest
+from pydantic import ValidationError
 
 from openjudge.graders.schema import (
     Checkpoint,
@@ -17,6 +18,23 @@ from openjudge.graders.schema import (
     Rubric,
     RubricResult,
 )
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("weight", [-1.0, float("nan"), float("inf"), float("-inf")])
+@pytest.mark.parametrize("checkpoint", [False, True], ids=["rubric", "checkpoint"])
+def test_judge_weights_must_be_finite_and_non_negative(weight, checkpoint):
+    with pytest.raises(ValidationError):
+        if checkpoint:
+            Checkpoint(id="c", description="criterion", weight=weight)
+        else:
+            Rubric(name="r", checkpoints=[], weight=weight)
+
+
+@pytest.mark.unit
+def test_zero_judge_weights_remain_supported():
+    checkpoint = Checkpoint(id="c", description="criterion", weight=0)
+    assert Rubric(name="r", checkpoints=[checkpoint], weight=0).weight == checkpoint.weight == 0
 
 
 @pytest.mark.unit

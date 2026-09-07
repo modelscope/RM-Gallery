@@ -16,13 +16,15 @@ import json
 import os
 import shutil
 import tempfile
+from concurrent.futures import CancelledError
 from pathlib import Path
+from threading import Event
 from typing import Any, Optional
 
 __all__ = ["ProcessSandbox"]
 
 
-def _copytree_no_symlinks(src: Path, dest: Path) -> int:
+def _copytree_no_symlinks(src: Path, dest: Path, cancel_event: Optional[Event] = None) -> int:
     """Recursively copy `src` into `dest`, skipping symlinks entirely.
 
     Symlinks are skipped rather than dereferenced (which could pull file
@@ -33,6 +35,7 @@ def _copytree_no_symlinks(src: Path, dest: Path) -> int:
     Args:
         src: Source directory to copy from.
         dest: Destination directory to copy into (created if missing).
+        cancel_event: Optional signal to stop copying between files.
 
     Returns:
         The number of symlinks skipped, counted recursively.
@@ -40,24 +43,27 @@ def _copytree_no_symlinks(src: Path, dest: Path) -> int:
     dest.mkdir(parents=True, exist_ok=True)
     skipped = 0
     for entry in src.iterdir():
+        if cancel_event is not None and cancel_event.is_set():
+            raise CancelledError()
         target = dest / entry.name
         if entry.is_symlink():
             skipped += 1
             continue
         if entry.is_dir():
-            skipped += _copytree_no_symlinks(entry, target)
+            skipped += _copytree_no_symlinks(entry, target, cancel_event)
         elif entry.is_file():
             shutil.copy2(entry, target)
     return skipped
 
 
-def _materialize_transcript(dest_path: Path, transcript: Any) -> None:
+def _materialize_transcript(dest_path: Path, transcript: Any, cancel_event: Optional[Event] = None) -> None:
     """Write transcript evidence to `dest_path` as JSONL.
 
     Args:
         dest_path: Destination file path (e.g. `sandbox_dir / "transcript.jsonl"`).
         transcript: Either a path (str/PathLike) to an existing JSONL file to copy,
             or a list of JSON-serializable message dicts to serialize one-per-line.
+        cancel_event: Optional signal to stop serialization between messages.
 
     Raises:
         FileNotFoundError: If `transcript` is a path-like value that does not exist.
@@ -72,6 +78,8 @@ def _materialize_transcript(dest_path: Path, transcript: Any) -> None:
     if isinstance(transcript, list):
         with open(dest_path, "w", encoding="utf-8") as f:
             for msg in transcript:
+                if cancel_event is not None and cancel_event.is_set():
+                    raise CancelledError()
                 f.write(json.dumps(msg, ensure_ascii=False) + "\n")
         return
     raise TypeError("transcript must be a file path (str/PathLike) or a list of message dicts")
@@ -87,6 +95,7 @@ class ProcessSandbox:
             (for debugging failed harness runs).
         sandbox_dir: The created sandbox `Path`, set once `__enter__` has run.
         symlinks_skipped: Count of symlinks skipped while copying `workspace_path`.
+        cancel_event: Optional signal to cancel sandbox setup.
 
     Example:
         >>> with ProcessSandbox(workspace_path="/tmp/candidate") as sandbox_dir:
@@ -99,14 +108,18 @@ class ProcessSandbox:
         workspace_path: Optional[str] = None,
         transcript: Optional[Any] = None,
         keep_on_exit: bool = False,
+        cancel_event: Optional[Event] = None,
     ):
         self.workspace_path = workspace_path
         self.transcript = transcript
         self.keep_on_exit = keep_on_exit
+        self.cancel_event = cancel_event
         self.sandbox_dir: Optional[Path] = None
         self.symlinks_skipped: int = 0
 
     def __enter__(self) -> Path:
+        if self.cancel_event is not None and self.cancel_event.is_set():
+            raise CancelledError()
         self.sandbox_dir = Path(tempfile.mkdtemp(prefix="openjudge_harness_"))
         try:
             if self.workspace_path is not None:
@@ -116,9 +129,11 @@ class ProcessSandbox:
                     raise FileNotFoundError(f"workspace path not found: {src}")
                 if not src.is_dir():
                     raise NotADirectoryError(f"workspace path is not a directory: {src}")
-                self.symlinks_skipped = _copytree_no_symlinks(src, dest)
+                if self.sandbox_dir.resolve().is_relative_to(src.resolve()):
+                    raise ValueError("Sandbox must be outside the workspace; set TMPDIR to a directory outside it.")
+                self.symlinks_skipped = _copytree_no_symlinks(src, dest, self.cancel_event)
             if self.transcript is not None:
-                _materialize_transcript(self.sandbox_dir / "transcript.jsonl", self.transcript)
+                _materialize_transcript(self.sandbox_dir / "transcript.jsonl", self.transcript, self.cancel_event)
         except Exception:
             shutil.rmtree(self.sandbox_dir, ignore_errors=True)
             raise

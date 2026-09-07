@@ -339,7 +339,9 @@ class Checkpoint(BaseModel):
         default=None,
         description="Freeform content: code/test script, judging criteria, or reference answer",
     )
-    weight: float = Field(default=1.0, description="Relative weight among checkpoints in the same rubric")
+    weight: float = Field(
+        default=1.0, ge=0, allow_inf_nan=False, description="Finite, non-negative weight within the rubric"
+    )
 
 
 class Rubric(BaseModel):
@@ -360,7 +362,9 @@ class Rubric(BaseModel):
 
     name: str = Field(description="Rubric dimension name")
     description: Optional[str] = Field(default=None, description="Human-readable description of this dimension")
-    weight: float = Field(default=1.0, description="Relative weight of this rubric among all rubrics")
+    weight: float = Field(
+        default=1.0, ge=0, allow_inf_nan=False, description="Finite, non-negative weight among all rubrics"
+    )
     checkpoints: List[Checkpoint] = Field(description="Checkpoints belonging to this rubric")
 
 

@@ -16,6 +16,7 @@ from openjudge.graders.schema import (
     Checkpoint,
     CheckpointResult,
     GraderError,
+    GraderMode,
     GraderScore,
     Rubric,
     RubricResult,
@@ -38,7 +39,9 @@ class FakeHarness(BaseHarness):
     def build_command(self, sandbox_dir: Path, prompt: str, model: Optional[str]) -> List[str]:
         return [self.binary, prompt]
 
-    def run(self, sandbox_dir: Path, prompt: str, schema: Dict[str, Any], model: Optional[str] = None) -> HarnessResult:
+    def run(
+        self, sandbox_dir: Path, prompt: str, schema: Dict[str, Any], model: Optional[str] = None, cancel_event=None
+    ) -> HarnessResult:
         idx = len(self.run_calls)
         self.run_calls.append({"sandbox_dir": sandbox_dir, "prompt": prompt, "schema": schema, "model": model})
         return self._results[idx % len(self._results)]
@@ -59,6 +62,11 @@ def _rubrics() -> List[Rubric]:
 
 @pytest.mark.unit
 class TestAgenticGraderConstruction:
+    @pytest.mark.parametrize("mode", [GraderMode.LISTWISE, "listwise", "unknown"])
+    def test_rejects_unsupported_modes(self, mode):
+        with pytest.raises(ValueError, match="only supports POINTWISE"):
+            AgenticGrader(harness=FakeHarness([]), rubrics=_rubrics(), mode=mode)
+
     def test_requires_harness(self):
         with pytest.raises(ValueError, match="harness is required"):
             AgenticGrader(harness=None, rubrics=_rubrics())
@@ -146,6 +154,13 @@ class TestNormalizeSample:
 
 @pytest.mark.unit
 class TestAggregateRubric:
+    def test_large_finite_weights_do_not_overflow(self):
+        rubric = _rubrics()[0]
+        for cp in rubric.checkpoints:
+            cp.weight = 1e308
+        result = _aggregate_rubric(rubric, {"c1": CheckpointResult(checkpoint_id="c1", passed=True)})
+        assert result.score == 0.5
+
     def test_weighted_mean_of_checkpoints(self):
         rubric = _rubrics()[0]  # c1 weight=2.0, c2 weight=1.0
         results = {
@@ -178,6 +193,14 @@ class TestAggregateRubric:
 
 @pytest.mark.unit
 class TestAggregateOverall:
+    def test_large_finite_weights_do_not_overflow(self):
+        rubrics = [Rubric(name="a", weight=1e308, checkpoints=[]), Rubric(name="b", weight=1e308, checkpoints=[])]
+        results = [
+            RubricResult(name="a", score=0.5, checkpoint_results=[]),
+            RubricResult(name="b", score=1.0, checkpoint_results=[]),
+        ]
+        assert _aggregate_overall(rubrics, results) == 0.75
+
     def test_weighted_mean_across_rubrics(self):
         rubrics = [Rubric(name="a", weight=1.0, checkpoints=[]), Rubric(name="b", weight=3.0, checkpoints=[])]
         rubric_results = [
@@ -190,6 +213,20 @@ class TestAggregateOverall:
 
 @pytest.mark.unit
 class TestAgenticGraderEvaluateFullFlow:
+    @pytest.mark.parametrize("checkpoint_weight", [False, True], ids=["rubric", "checkpoint"])
+    @pytest.mark.parametrize("use_override", [False, True], ids=["mutated-default", "override"])
+    async def test_revalidates_weights_before_running(self, checkpoint_weight, use_override):
+        harness = FakeHarness([])
+        grader = AgenticGrader(harness=harness, rubrics=_rubrics())
+        rubrics = _rubrics() if use_override else grader.rubrics
+        target = rubrics[0].checkpoints[0] if checkpoint_weight else rubrics[0]
+        target.weight = float("nan")
+        kwargs = {"rubrics": rubrics} if use_override else {}
+        result = await grader.aevaluate(transcript=[], **kwargs)
+        assert isinstance(result, GraderError)
+        assert result.error == "invalid_rubrics"
+        assert harness.run_calls == []
+
     @pytest.mark.parametrize("invalid_result", [{"passed": "false"}, {"passed": True, "execution_log": ["ok"]}])
     async def test_malformed_verdicts_do_not_raise_or_award_credit(self, invalid_result):
         harness = FakeHarness([HarnessResult(available=True, result={"c1": invalid_result, "c2": {"passed": True}})])

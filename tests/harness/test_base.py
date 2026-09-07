@@ -38,7 +38,7 @@ def _write_result(cwd: str, payload: Dict[str, Any]) -> None:
 @pytest.mark.unit
 class TestBaseHarnessSuccess:
     def test_successful_run_reads_back_result_file(self, tmp_path, monkeypatch):
-        def fake_run(cmd, cwd, timeout):
+        def fake_run(cmd, cwd, timeout, cancel_event=None):
             _write_result(cwd, {"c1": {"passed": True, "reason": "ok"}})
             return subprocess.CompletedProcess(cmd, returncode=0, stdout="done", stderr="")
 
@@ -52,7 +52,7 @@ class TestBaseHarnessSuccess:
         assert result.raw_stdout == "done"
 
     def test_writes_spec_file_with_instructions_and_schema(self, tmp_path, monkeypatch):
-        def fake_run(cmd, cwd, timeout):
+        def fake_run(cmd, cwd, timeout, cancel_event=None):
             _write_result(cwd, {"c1": {"passed": True, "reason": "ok"}})
             return subprocess.CompletedProcess(cmd, returncode=0, stdout="", stderr="")
 
@@ -68,7 +68,7 @@ class TestBaseHarnessSuccess:
             json.dumps({"c1": {"passed": False, "reason": "stale"}}), encoding="utf-8"
         )
 
-        def fake_run(cmd, cwd, timeout):
+        def fake_run(cmd, cwd, timeout, cancel_event=None):
             # Simulate a CLI that exits cleanly but crashes before writing a fresh result file.
             return subprocess.CompletedProcess(cmd, returncode=0, stdout="", stderr="")
 
@@ -79,7 +79,7 @@ class TestBaseHarnessSuccess:
         assert result.available is False
 
     def test_passes_sandbox_dir_prompt_and_model_to_build_command(self, tmp_path, monkeypatch):
-        def fake_run(cmd, cwd, timeout):
+        def fake_run(cmd, cwd, timeout, cancel_event=None):
             _write_result(cwd, {"c1": {"passed": True, "reason": "ok"}})
             return subprocess.CompletedProcess(cmd, returncode=0, stdout="", stderr="")
 
@@ -94,7 +94,7 @@ class TestBaseHarnessSuccess:
 class TestBaseHarnessFailureGates:
     @pytest.mark.parametrize("payload", [[], None, "not an object", 1])
     def test_non_object_json_result_is_unavailable(self, tmp_path, monkeypatch, payload):
-        def fake_run(cmd, cwd, timeout):
+        def fake_run(cmd, cwd, timeout, cancel_event=None):
             Path(cwd, RESULT_FILENAME).write_text(json.dumps(payload), encoding="utf-8")
             return subprocess.CompletedProcess(cmd, returncode=0, stdout="", stderr="")
 
@@ -102,7 +102,7 @@ class TestBaseHarnessFailureGates:
         assert DummyHarness().run(tmp_path, prompt="p", schema={}).available is False
 
     def test_nonzero_returncode_rejects_even_with_valid_result_file(self, tmp_path, monkeypatch):
-        def fake_run(cmd, cwd, timeout):
+        def fake_run(cmd, cwd, timeout, cancel_event=None):
             _write_result(cwd, {"c1": {"passed": True, "reason": "ok"}})
             return subprocess.CompletedProcess(cmd, returncode=1, stdout="", stderr="boom")
 
@@ -115,7 +115,7 @@ class TestBaseHarnessFailureGates:
         assert result.raw_stderr == "boom"
 
     def test_file_not_found_error_rejects(self, tmp_path, monkeypatch):
-        def fake_run(cmd, cwd, timeout):
+        def fake_run(cmd, cwd, timeout, cancel_event=None):
             raise FileNotFoundError("dummy-cli: command not found")
 
         monkeypatch.setattr(base_module, "_run_command", fake_run)
@@ -125,7 +125,7 @@ class TestBaseHarnessFailureGates:
         assert result.available is False
 
     def test_os_error_rejects(self, tmp_path, monkeypatch):
-        def fake_run(cmd, cwd, timeout):
+        def fake_run(cmd, cwd, timeout, cancel_event=None):
             raise OSError("permission denied")
 
         monkeypatch.setattr(base_module, "_run_command", fake_run)
@@ -135,7 +135,7 @@ class TestBaseHarnessFailureGates:
         assert result.available is False
 
     def test_missing_result_file_rejects(self, tmp_path, monkeypatch):
-        def fake_run(cmd, cwd, timeout):
+        def fake_run(cmd, cwd, timeout, cancel_event=None):
             return subprocess.CompletedProcess(cmd, returncode=0, stdout="no result written", stderr="")
 
         monkeypatch.setattr(base_module, "_run_command", fake_run)
@@ -146,7 +146,7 @@ class TestBaseHarnessFailureGates:
         assert result.raw_stdout == "no result written"
 
     def test_malformed_json_result_file_rejects(self, tmp_path, monkeypatch):
-        def fake_run(cmd, cwd, timeout):
+        def fake_run(cmd, cwd, timeout, cancel_event=None):
             Path(cwd, RESULT_FILENAME).write_text("{not valid json", encoding="utf-8")
             return subprocess.CompletedProcess(cmd, returncode=0, stdout="", stderr="")
 
@@ -169,7 +169,7 @@ class TestBaseHarnessFailureGates:
 @pytest.mark.unit
 class TestBaseHarnessTimeout:
     def test_timeout_with_result_file_already_written_is_rescued(self, tmp_path, monkeypatch):
-        def fake_run(cmd, cwd, timeout):
+        def fake_run(cmd, cwd, timeout, cancel_event=None):
             _write_result(cwd, {"c1": {"passed": True, "reason": "finished just before being killed"}})
             raise subprocess.TimeoutExpired(cmd=cmd, timeout=timeout)
 
@@ -183,7 +183,7 @@ class TestBaseHarnessTimeout:
         assert result.result == {"c1": {"passed": True, "reason": "finished just before being killed"}}
 
     def test_timeout_without_result_file_rejects(self, tmp_path, monkeypatch):
-        def fake_run(cmd, cwd, timeout):
+        def fake_run(cmd, cwd, timeout, cancel_event=None):
             raise subprocess.TimeoutExpired(cmd=cmd, timeout=timeout)
 
         monkeypatch.setattr(base_module, "_run_command", fake_run)
@@ -207,6 +207,33 @@ class PythonHarness(BaseHarness):
 
 @pytest.mark.unit
 class TestHarnessProcessLifecycle:
+    @pytest.mark.parametrize("parent_input", [None, "another evaluation row"], ids=["open-pipe", "piped-data"])
+    def test_cli_does_not_read_parent_stdin(self, tmp_path, parent_input):
+        program = (
+            "import json,sys\n"
+            "from pathlib import Path\n"
+            "from openjudge.harness.base import _run_command\n"
+            "result = _run_command([sys.executable, '-c', 'import sys; print(repr(sys.stdin.read()))'], "
+            "Path(sys.argv[1]), 1)\n"
+            "remaining = sys.stdin.read() if sys.argv[2] == 'read' else ''\n"
+            "print(json.dumps([result.stdout.strip(), remaining]))\n"
+        )
+        cmd = [sys.executable, "-c", program, str(tmp_path), "read" if parent_input is not None else "skip"]
+        with subprocess.Popen(
+            cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True
+        ) as p:
+            try:
+                if parent_input is None:
+                    # Keep the input pipe open: the judge must still finish without waiting for EOF.
+                    p.wait(timeout=5)
+                stdout, stderr = p.communicate(input=parent_input, timeout=5)
+            except subprocess.TimeoutExpired:
+                p.kill()
+                p.communicate()
+                pytest.fail("The CLI waited on its caller's stdin")
+        assert p.returncode == 0, stderr
+        assert json.loads(stdout) == ["''", parent_input or ""]
+
     @pytest.mark.parametrize("exit_code", [0, 2])
     def test_real_process_result_protocol_and_failure_gate(self, tmp_path, exit_code):
         payload = {"c1": {"passed": True, "reason": "local test"}}
@@ -239,7 +266,8 @@ class TestHarnessProcessLifecycle:
 
     @pytest.mark.skipif(os.name != "posix", reason="POSIX process group lifecycle")
     @pytest.mark.parametrize("parent_exits", [False, True], ids=["running-parent", "exited-parent"])
-    def test_timeout_stops_descendants_before_sandbox_cleanup(self, tmp_path, parent_exits):
+    @pytest.mark.parametrize("detached", [False, True], ids=["same-session", "detached-session"])
+    def test_stops_descendants_before_sandbox_cleanup(self, tmp_path, parent_exits, detached):
         heartbeat = tmp_path / "heartbeat.txt"
         pid_file = tmp_path / "child.pid"
         child_script = (
@@ -250,17 +278,19 @@ class TestHarnessProcessLifecycle:
             "    time.sleep(0.01)\n"
         )
         script = (
-            "import pathlib,subprocess,sys,time; "
-            f"child = subprocess.Popen([sys.executable, '-c', {child_script!r}]); "
-            f"pathlib.Path({str(pid_file)!r}).write_text(str(child.pid)); "
-            + ("sys.exit(0)" if parent_exits else "time.sleep(30)")
+            "import pathlib,subprocess,sys,time\n"
+            f"child = subprocess.Popen([sys.executable, '-c', {child_script!r}], start_new_session={detached})\n"
+            f"pathlib.Path({str(pid_file)!r}).write_text(str(child.pid))\n"
+            f"while not pathlib.Path({str(heartbeat)!r}).exists(): time.sleep(0.01)\n"
+            + ("time.sleep(0.3)" if parent_exits else "time.sleep(30)")
         )
         cleanup_needed = True
         try:
             with ProcessSandbox() as sandbox_dir:
                 result = PythonHarness(timeout_s=1).run(sandbox_dir, script, {})
-                assert result.timed_out is True
+                assert result.timed_out is (not parent_exits)
                 assert result.available is False
+                assert result.duration < 5, "Output collection must not wait for the child to close inherited handles"
                 assert heartbeat.exists(), "The child must have started before the timeout"
                 last_write = heartbeat.stat().st_mtime_ns
             assert not sandbox_dir.exists()

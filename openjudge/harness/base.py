@@ -17,16 +17,21 @@ Failure gate policy (never raises -- callers get `HarnessResult(available=False)
       finished writing the result file just before being killed, so the result
       file is still checked; only rejected if that file is missing/unparsable.
     - Missing or unparsable result file -> rejected.
+    - Explicit cancellation -> rejected, even if a result file was already written.
 """
 import json
 import os
 import signal
 import subprocess
+import tempfile
 import time
 from abc import ABC, abstractmethod
+from concurrent.futures import CancelledError
 from pathlib import Path
+from threading import Event
 from typing import Any, Dict, List, Optional
 
+import psutil
 from pydantic import BaseModel, Field
 
 __all__ = ["HarnessResult", "BaseHarness", "RESULT_FILENAME", "SPEC_FILENAME"]
@@ -35,45 +40,85 @@ RESULT_FILENAME = "_judge_result.json"
 SPEC_FILENAME = "_judge_spec.json"
 
 
-def _terminate_process_tree(process: subprocess.Popen) -> None:
-    """Stop the CLI and its descendants before reading results or cleaning up."""
+def _remember_descendants(parent: Optional[psutil.Process], descendants: Dict[int, psutil.Process]) -> None:
+    """Retain process identities so detached children can be stopped after reparenting."""
+    if parent is not None:
+        try:
+            descendants.update((child.pid, child) for child in parent.children(recursive=True))
+        except psutil.Error:
+            pass
+
+
+def _terminate_process_tree(process: subprocess.Popen, descendants: Dict[int, psutil.Process]) -> None:
+    """Stop the CLI's process group and observed descendants, with bounded waits."""
     if os.name == "posix":
         try:
             os.killpg(process.pid, signal.SIGKILL)
         except ProcessLookupError:
             pass
-    else:
-        # Windows has no killpg; taskkill /T terminates the process tree.
+    for child in descendants.values():
         try:
-            subprocess.run(
-                ["taskkill", "/PID", str(process.pid), "/T", "/F"],
-                capture_output=True,
-                timeout=5,
-                check=False,
-            )
+            child.kill()
+        except psutil.Error:
+            pass
+    if process.poll() is None:
+        process.kill()
+    process.wait(timeout=1)
+    psutil.wait_procs(list(descendants.values()), timeout=1)
+
+
+def _run_command(
+    cmd: List[str], sandbox_dir: Path, timeout_s: float, cancel_event: Optional[Event] = None
+) -> subprocess.CompletedProcess:
+    """Run a CLI with isolated stdin, cancellable waits, and file-backed output.
+
+    Regular files avoid waiting for EOF on pipes inherited by detached children.
+    Only the output already written at cleanup is read back.
+    """
+    if cancel_event is not None and cancel_event.is_set():
+        raise CancelledError()
+    deadline = time.monotonic() + timeout_s
+    descendants: Dict[int, psutil.Process] = {}
+    with tempfile.TemporaryFile() as stdout_file, tempfile.TemporaryFile() as stderr_file:
+        # Manage cleanup explicitly: Popen.__exit__ waits without a timeout.
+        process = subprocess.Popen(  # pylint: disable=consider-using-with
+            cmd,
+            cwd=str(sandbox_dir),
+            stdin=subprocess.DEVNULL,
+            stdout=stdout_file,
+            stderr=stderr_file,
+            start_new_session=os.name == "posix",
+        )
+        try:
+            parent = psutil.Process(process.pid)
+        except psutil.Error:
+            parent = None
+        timed_out = False
+        try:
+            while True:
+                if cancel_event is not None and cancel_event.is_set():
+                    raise CancelledError()
+                _remember_descendants(parent, descendants)
+                remaining = deadline - time.monotonic()
+                try:
+                    process.wait(timeout=max(0, min(0.1, remaining)))
+                    break
+                except subprocess.TimeoutExpired:
+                    if time.monotonic() >= deadline:
+                        timed_out = True
+                        break
         finally:
-            if process.poll() is None:
-                process.kill()
+            _remember_descendants(parent, descendants)
+            _terminate_process_tree(process, descendants)
 
-
-def _run_command(cmd: List[str], sandbox_dir: Path, timeout_s: float) -> subprocess.CompletedProcess:
-    """Capture a CLI invocation, terminating its process tree when it times out."""
-    with subprocess.Popen(
-        cmd,
-        cwd=str(sandbox_dir),
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-        encoding="utf-8",
-        errors="replace",
-        start_new_session=os.name == "posix",
-    ) as process:
-        try:
-            stdout, stderr = process.communicate(timeout=timeout_s)
-        except subprocess.TimeoutExpired as exc:
-            _terminate_process_tree(process)
-            stdout, stderr = process.communicate()
-            raise subprocess.TimeoutExpired(cmd, timeout_s, output=stdout, stderr=stderr) from exc
+        stdout_size = os.fstat(stdout_file.fileno()).st_size
+        stderr_size = os.fstat(stderr_file.fileno()).st_size
+        stdout_file.seek(0)
+        stderr_file.seek(0)
+        stdout = stdout_file.read(stdout_size).decode("utf-8", errors="replace")
+        stderr = stderr_file.read(stderr_size).decode("utf-8", errors="replace")
+        if timed_out:
+            raise subprocess.TimeoutExpired(cmd, timeout_s, output=stdout, stderr=stderr)
         return subprocess.CompletedProcess(cmd, process.returncode, stdout, stderr)
 
 
@@ -111,7 +156,8 @@ class BaseHarness(ABC):
 
     Attributes:
         binary: The CLI executable to invoke (defaults to `default_binary`).
-        timeout_s: Per-invocation subprocess timeout in seconds.
+        timeout_s: Per-invocation subprocess timeout in seconds. Process cleanup
+            has separate bounded waits, so total duration can exceed this limit.
     """
 
     def __init__(self, binary: Optional[str] = None, timeout_s: float = 90.0):
@@ -143,6 +189,7 @@ class BaseHarness(ABC):
         prompt: str,
         schema: Dict[str, Any],
         model: Optional[str] = None,
+        cancel_event: Optional[Event] = None,
     ) -> HarnessResult:
         """Run this harness once against an already-built sandbox.
 
@@ -158,6 +205,8 @@ class BaseHarness(ABC):
             schema: The `output_schema` to write into the spec file, describing the
                 shape the agent must write to `_judge_result.json`.
             model: Optional model name override for this invocation.
+            cancel_event: Per-invocation cancellation signal. Overrides of `run()`
+                must accept this argument and stop promptly when it is set.
 
         Returns:
             A `HarnessResult`; check `.available` before trusting `.result`.
@@ -175,11 +224,11 @@ class BaseHarness(ABC):
             )
             if result_path.exists():
                 result_path.unlink()
-            proc = _run_command(cmd, sandbox_dir, self.timeout_s)
+            proc = _run_command(cmd, sandbox_dir, self.timeout_s, cancel_event=cancel_event)
         except subprocess.TimeoutExpired as exc:
             timed_out = True
             proc = subprocess.CompletedProcess(cmd, -1, stdout=exc.stdout, stderr=exc.stderr)
-        except (FileNotFoundError, OSError):
+        except (CancelledError, FileNotFoundError, OSError):
             return HarnessResult(available=False, duration=time.time() - start)
 
         duration = time.time() - start

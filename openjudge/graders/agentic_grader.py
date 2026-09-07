@@ -13,7 +13,9 @@ stdout/`--output-format` schema -- only the sandboxed result file (see
 `openjudge.harness.base` for the shared protocol).
 """
 import asyncio
+import math
 import time
+from threading import Event
 from typing import Any, Dict, List, Optional, Union
 
 from pydantic import ValidationError
@@ -40,10 +42,14 @@ def _validate_rubrics(rubrics: List[Rubric]) -> None:
     rubric_names = set()
     checkpoint_ids = set()
     for rubric in rubrics:
+        if not math.isfinite(rubric.weight) or rubric.weight < 0:
+            raise ValueError(f"Rubric {rubric.name!r} must have a finite, non-negative weight.")
         if rubric.name in rubric_names:
             raise ValueError(f"Duplicate rubric name: {rubric.name!r}. Rubric names must be unique.")
         rubric_names.add(rubric.name)
         for checkpoint in rubric.checkpoints:
+            if not math.isfinite(checkpoint.weight) or checkpoint.weight < 0:
+                raise ValueError(f"Checkpoint {checkpoint.id!r} must have a finite, non-negative weight.")
             if checkpoint.id in checkpoint_ids:
                 raise ValueError(
                     f"Duplicate checkpoint ID: {checkpoint.id!r}. Checkpoint IDs must be unique across all rubrics."
@@ -128,12 +134,14 @@ def _aggregate_rubric(rubric: Rubric, checkpoint_results: Dict[str, CheckpointRe
     Note: this is a v1 simplification — there is no `must_have` AND-gate here.
     See "Deferred to a follow-up iteration" at the end of this plan.
     """
-    total_weight = sum(cp.weight for cp in rubric.checkpoints)
-    if total_weight <= 0:
+    scale = max((cp.weight for cp in rubric.checkpoints), default=0.0)
+    if scale == 0:
         score = 0.0
     else:
+        # Scaling preserves the mean without overflowing for large finite weights.
+        total_weight = sum(cp.weight / scale for cp in rubric.checkpoints)
         weighted = sum(
-            cp.weight * (1.0 if checkpoint_results.get(cp.id) and checkpoint_results[cp.id].passed else 0.0)
+            cp.weight / scale * (1.0 if checkpoint_results.get(cp.id) and checkpoint_results[cp.id].passed else 0.0)
             for cp in rubric.checkpoints
         )
         score = weighted / total_weight
@@ -144,11 +152,12 @@ def _aggregate_rubric(rubric: Rubric, checkpoint_results: Dict[str, CheckpointRe
 
 def _aggregate_overall(rubrics: List[Rubric], rubric_results: List[RubricResult]) -> float:
     """Weighted mean of `rubric_results` by each rubric's `weight`."""
-    total_weight = sum(r.weight for r in rubrics)
-    if total_weight <= 0:
+    scale = max((r.weight for r in rubrics), default=0.0)
+    if scale == 0:
         return 0.0
+    total_weight = sum(r.weight / scale for r in rubrics)
     by_name = {r.name: r for r in rubric_results}
-    weighted = sum(r.weight * by_name[r.name].score for r in rubrics if r.name in by_name)
+    weighted = sum(r.weight / scale * by_name[r.name].score for r in rubrics if r.name in by_name)
     return weighted / total_weight
 
 
@@ -211,8 +220,10 @@ class AgenticGrader(BaseGrader):
             **kwargs: Additional keyword arguments forwarded to `BaseGrader.__init__`.
 
         Raises:
-            ValueError: If `harness` is None, `rubrics` is empty, or identifiers are duplicated.
+            ValueError: If the mode is not POINTWISE, `harness` is None, or rubrics are invalid.
         """
+        if mode != GraderMode.POINTWISE:
+            raise ValueError("AgenticGrader only supports POINTWISE mode.")
         super().__init__(name=name, mode=mode, description=description, **kwargs)
         if harness is None:
             raise ValueError(
@@ -303,24 +314,51 @@ class AgenticGrader(BaseGrader):
 
         `ProcessSandbox`/`BaseHarness.run` are both blocking, so the call runs on
         the default thread pool executor to avoid blocking the event loop.
+        Cancellation signals the worker and waits for cleanup before propagating
+        `CancelledError`, preserving the caller's concurrency limit.
 
         Returns:
             `{checkpoint_id: CheckpointResult}` if the harness came back `available`,
             else `None`.
         """
         loop = asyncio.get_running_loop()
+        cancel_event = Event()
+        worker_started = Event()
 
         def _run_one() -> Optional[Dict[str, CheckpointResult]]:
+            worker_started.set()
             try:
-                with ProcessSandbox(workspace_path=workspace_path, transcript=transcript) as sandbox_dir:
-                    result = self.harness.run(sandbox_dir, prompt, schema, model=self.model)
+                with ProcessSandbox(
+                    workspace_path=workspace_path, transcript=transcript, cancel_event=cancel_event
+                ) as sandbox_dir:
+                    if cancel_event.is_set():
+                        return None
+                    result = self.harness.run(sandbox_dir, prompt, schema, model=self.model, cancel_event=cancel_event)
             except Exception:
                 return None
             if not result.available:
                 return None
             return _normalize_sample(result.result, all_checkpoint_ids)
 
-        return await loop.run_in_executor(None, _run_one)
+        worker = loop.run_in_executor(None, _run_one)
+        try:
+            return await asyncio.shield(worker)
+        except asyncio.CancelledError:
+            cancel_event.set()
+            if not worker_started.is_set():
+                # Queued work owns no resources. If it races with cancellation,
+                # ProcessSandbox observes the signal before creating any files.
+                worker.cancel()
+                raise
+            # Keep the caller's resource slot until the process and sandbox are gone.
+            # Shield cleanup from repeated cancellation requests as well.
+            while not worker.done():
+                try:
+                    await asyncio.shield(worker)
+                except asyncio.CancelledError:
+                    continue
+            worker.result()
+            raise
 
     @staticmethod
     def get_metadata() -> Dict[str, Any]:

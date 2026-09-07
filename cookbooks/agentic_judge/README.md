@@ -33,7 +33,12 @@ the agentic judge against it, and prints the resulting score/reason/metadata.
 ## Notes
 
 - Rubric names and checkpoint IDs must be unique across all rubrics in an evaluation.
+- Only POINTWISE mode is supported. All weights must be finite and non-negative.
 - Workspace paths must name an existing directory. Invalid paths return `GraderError`.
+- The temporary directory must be outside the candidate workspace. If `TMPDIR` points
+  inside it, choose another temporary directory before running the examples.
+- CLI stdin is isolated from the calling program. Cancelling an evaluation waits for
+  its process and sandbox cleanup before releasing the caller's concurrency slot.
 - Checkpoint verdicts require JSON booleans. Malformed checkpoint results are dropped
   and count as failed.
 - These examples make real, billed calls to the configured CLI/model and are not run in
