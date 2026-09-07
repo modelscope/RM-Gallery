@@ -1,5 +1,5 @@
 ---
-name: academic-router
+name: 00-academic-router
 description: >
   Use when the user wants help with academic papers or citations but it's unclear
   which specific workflow fits — reviewing a paper, checking a BibTeX file for fake

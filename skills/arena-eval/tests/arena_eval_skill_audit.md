@@ -4,6 +4,11 @@ Initial functional-test audit of the `arena-eval` suite, run right after the
 suite was created (folder-migrated from `auto-arena` + a fresh copy of
 `ref-hallucination-arena` + new `00-arena-router`).
 
+The results below cover the original nine cases. The later router-only
+regression `arena_router_005_combined_quality_and_citations` and its routing
+fix are not covered by these historical runs; re-run the updated suite to
+validate them against live actor/judge models.
+
 ## Run 1 — full set, `--repeat 1`
 
 ```bash

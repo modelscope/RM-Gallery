@@ -56,5 +56,5 @@ This suite has an actor+judge functional test harness, same pattern as
 request, and a separate *judge* model grades the answer against the case's
 acceptance criteria. See [`tests/arena_eval_testing_guide.md`](tests/arena_eval_testing_guide.md)
 for how to run it — it reuses `eval_pipeline`'s runner (parametrized, not
-duplicated) against this suite's own 9 test cases in
+duplicated) against this suite's own 10 test cases in
 [`tests/arena_eval_test_cases.jsonl`](tests/arena_eval_test_cases.jsonl).

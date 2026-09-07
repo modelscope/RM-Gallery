@@ -1,5 +1,5 @@
 ---
-name: auto-arena
+name: 01-auto-arena
 description: >
   Automatically evaluate and compare multiple AI models or agents without
   pre-existing test data. Generates test queries from a task description,

@@ -50,6 +50,7 @@ python skills/eval_pipeline/tests/run_eval_pipeline_skill_tests.py \
   --report-prefix arena_eval \
   --case-id arena_router_003_better_at_recommending_papers \
   --case-id arena_router_004_single_document_not_arena \
+  --case-id arena_router_005_combined_quality_and_citations \
   --case-id auto_arena_002_rerun_judge_only \
   --case-id ref_arena_arena_002_ranking_tiebreak_order \
   --case-id arena_eval_001_end_to_end
@@ -79,6 +80,7 @@ skills/arena-eval/tests/results/arena_eval_functional_results.json
 | Router: citation-specific | `arena_router_002_citation_hallucination_benchmark` | Ensures citation-fabrication requests go to `02-ref-hallucination-arena`, not `01-auto-arena`. |
 | Router: "better" trap | `arena_router_003_better_at_recommending_papers` | Ensures phrasing as "better" (not "hallucinates less") still routes to the verifiable workflow. |
 | Router: out-of-scope redirect | `arena_router_004_single_document_not_arena` | Ensures a single-document (not multi-model) request is redirected to `academic-eval`. |
+| Router: combined request | `arena_router_005_combined_quality_and_citations` | Loads only the router to check that both goals are preserved without help from the sub-skills. |
 | Auto arena: flag choice | `auto_arena_002_rerun_judge_only` | Ensures `--rerun-judge` is recommended over `--fresh` when only the judge changes. |
 | Ref arena: tiebreak | `ref_arena_arena_002_ranking_tiebreak_order` | Ensures the documented tiebreak order is used, not an arbitrary one. |
 | End-to-end | `arena_eval_001_end_to_end` | Ensures a request spanning both workflows isn't collapsed into one run. |
@@ -88,14 +90,25 @@ skills/arena-eval/tests/results/arena_eval_functional_results.json
 Use `--repeat 3` before claiming a skill change worked — actor and judge are
 both LLMs, so single-run verdicts near a boundary are noisy.
 
+For the combined-request regression, run the router-only case with repeats:
+
+```bash
+python skills/eval_pipeline/tests/run_eval_pipeline_skill_tests.py \
+  --skill-root skills/arena-eval \
+  --cases skills/arena-eval/tests/arena_eval_test_cases.jsonl \
+  --out-dir skills/arena-eval/tests/results \
+  --report-prefix arena_eval \
+  --case-id arena_router_005_combined_quality_and_citations --repeat 3
+```
+
 ## How To Interpret Results
 
 - `pass`: all critical acceptance criteria met.
 - `partial`: mostly correct but missed a flag, field, or caveat.
 - `fail`: routed incorrectly or gave a misleading answer.
 
-Useful pass threshold for a first audit: smoke set 5/5 pass or partial with at
-least 4 pass; full set at least 80% pass.
+Useful pass threshold for a first audit: smoke set 6/6 pass or partial with at
+least 5 pass; full set at least 80% pass.
 
 ## What To Do After A Failure
 

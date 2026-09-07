@@ -83,15 +83,27 @@ are no redirect stubs — installing the old path will 404; use the new path.
 | `skills/openjudge/` | `skills/openjudge-core/01-graders-and-pipeline/` |
 | `skills/rl-reward/` | `skills/openjudge-core/02-rl-reward/` |
 
+The migrated skills' frontmatter `name` values also change to match their
+new directory names. Update explicit skill invocations to use the final
+component of each new path (for example, `paper-review` becomes
+`01-paper-review`, and `openjudge` becomes `01-graders-and-pipeline`). The
+two reference-arena copies use distinct names: `03-ref-hallucination-arena`
+in `academic-eval` and `02-ref-hallucination-arena` in `arena-eval`.
+
+`SkillLoader.load_from_directory("skills")` discovers skills recursively
+through suite directories. A directory containing `SKILL.md` is treated as
+one package, including its bundled references and examples.
+
 `skills/eval_pipeline/`, `skills/claude-authenticity/`, `skills/mmx-cli/`,
 and `skills/find-skills-combo/` are unaffected.
 
 ## Adding a new skill
 
 - **Fits an existing suite's methodology or domain?** Add it as
-  `<suite>/<NN-name>/SKILL.md`, update that suite's `README.md`, and add a
-  router entry only if it creates real selection ambiguity with a sibling
-  (see each suite's README for its router-inclusion rationale).
+  `<suite>/<NN-name>/SKILL.md` with `name: NN-name` matching its directory,
+  choose a name unique across the repository, update that suite's `README.md`,
+  and add a router entry only if it creates real selection ambiguity with a
+  sibling (see each suite's README for its router-inclusion rationale).
 - **Genuinely stands alone?** Add it as `skills/<name>/SKILL.md` — no suite
   folder needed.
 - **Either way**, the skill's `SKILL.md` must be installable on its own: only

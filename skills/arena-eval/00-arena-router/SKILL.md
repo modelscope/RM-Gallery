@@ -1,5 +1,5 @@
 ---
-name: arena-router
+name: 00-arena-router
 description: >
   Use when the user wants to compare or benchmark multiple LLMs/agents
   arena-style but it's unclear which specific workflow fits — a general-purpose
@@ -8,14 +8,16 @@ description: >
   arena, agent arena, pairwise model comparison, win-rate ranking, or comparing
   models on a task and hasn't specified whether that task is generic or about
   citation accuracy. This skill is the entry router for the arena-eval suite:
-  it asks one diagnostic question then routes to the right sub-skill.
+  it asks one diagnostic question when needed, then recommends the workflow
+  or workflows needed to cover the request.
 ---
 
 # Arena Eval Router
 
 Entry router for the `arena-eval` suite. You diagnose what the user wants to
-compare models on and route them to one of two sub-skills. You don't run
-comparisons yourself — you're the triage desk.
+compare models on and route them to the appropriate sub-skill or both when
+the request spans both evaluation goals. You don't run comparisons yourself
+— you're the triage desk.
 
 Each sub-skill is self-contained: it carries inline everything it needs, so it
 can be installed and used on its own.
@@ -36,6 +38,8 @@ b) Specifically how often each model fabricates or hallucinates references
 **Shortcut rule**: if the user already said "run an arena eval on my chatbot
 task" or "benchmark reference hallucination across these models", skip the
 question — the routing is already clear from their phrasing.
+Also skip the question when they explicitly ask for both general quality
+and citation accuracy; recommend both workflows.
 
 ## Triage Table
 
@@ -43,6 +47,7 @@ question — the routing is already clear from their phrasing.
 |---|---|---|
 | "Compare/benchmark/rank these models on [any custom task]" | `01-auto-arena` | Generates queries from a task description, collects responses, auto-generates rubrics, runs pairwise judge comparisons, produces win-rate rankings |
 | "Which model hallucinates citations least?" / "benchmark reference recommendation accuracy" | `02-ref-hallucination-arena` | Runs reference-recommendation queries per model, verifies every returned citation against CrossRef/PubMed/arXiv/DBLP, ranks by verified accuracy |
+| "Compare general helpfulness AND citation accuracy" | `01-auto-arena`, then `02-ref-hallucination-arena` | Runs separate evaluations for judge preference and verified citation accuracy, preserving both goals |
 | "I want to review one paper's existing bibliography, not compare models" | — | Not this suite — see the `academic-eval` suite's `01-paper-review` / `02-bib-verify` instead |
 
 ## Key distinction
@@ -59,7 +64,7 @@ differ in what "correct" means:
   judge preference. Narrower scope (citation recommendation only) but higher
   ground-truth confidence.
 
-If the user cares about factual/citation accuracy specifically, prefer
+If the user cares only about citation accuracy, prefer
 `02-ref-hallucination-arena` over `01-auto-arena` even if they phrase it as
 "which model is better."
 
@@ -71,4 +76,8 @@ Recommended workflow: `[skill-name]`
 Why: [one sentence tying the user's request to the triage table row]
 ```
 
-Recommend exactly one workflow per request.
+Recommend one workflow when it covers the request. If the user asks for both
+general quality and citation accuracy, recommend `01-auto-arena` followed by
+`02-ref-hallucination-arena` as separate runs (or follow the user's requested
+order). Explain that the two runs measure different things and report their
+results separately; neither ranking substitutes for the other.

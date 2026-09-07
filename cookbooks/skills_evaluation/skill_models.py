@@ -209,7 +209,7 @@ def _read_text(path: Path) -> str:
 class SkillLoader:
     """Loads Agent Skill packages from a directory.
 
-    Supports two directory layouts:
+    Supports individual skills, flat collections, and nested domain suites:
 
     **Single skill**::
 
@@ -224,6 +224,15 @@ class SkillLoader:
             SKILL.md
             scripts/review.py
           paper-review/
+            SKILL.md
+
+    **Domain suites** (grouping directories may be nested)::
+
+        skills_dir/
+          academic-eval/
+            01-paper-review/
+              SKILL.md
+          standalone/
             SKILL.md
     """
 
@@ -330,7 +339,10 @@ class SkillLoader:
         Args:
             skills_dir: Path to a directory.  If the directory itself contains
                 ``SKILL.md`` it is treated as a single-skill directory; otherwise
-                each immediate subdirectory is checked for a ``SKILL.md``.
+                subdirectories are searched recursively. Discovery stops at
+                any directory containing ``SKILL.md`` so bundled examples are
+                not treated as separate packages. Each resolved directory is
+                visited once, including when reached through a symbolic link.
 
         Returns:
             List of successfully loaded :class:`SkillPackage` objects (may be empty).
@@ -342,20 +354,26 @@ class SkillLoader:
         if not skills_dir.is_dir():
             raise ValueError(f"Not a directory: {skills_dir}")
 
-        if (skills_dir / SKILL_MD_NAME).is_file():
-            skill = cls.load_skill(skills_dir)
-            return [skill] if skill else []
-
         skills: List[SkillPackage] = []
-        for subdir in sorted(skills_dir.iterdir()):
-            if not subdir.is_dir():
-                continue
-            if any(p in _IGNORE_DIRS for p in subdir.parts):
-                continue
-            skill = cls.load_skill(subdir)
-            if skill:
-                skills.append(skill)
+        visited: set[Path] = set()
 
+        def collect(directory: Path) -> None:
+            resolved = directory.resolve()
+            if resolved in visited:
+                return
+            visited.add(resolved)
+
+            if (directory / SKILL_MD_NAME).is_file():
+                skill = cls.load_skill(directory)
+                if skill:
+                    skills.append(skill)
+                return
+
+            for subdir in sorted(directory.iterdir()):
+                if subdir.is_dir() and subdir.name not in _IGNORE_DIRS:
+                    collect(subdir)
+
+        collect(skills_dir)
         return skills
 
 

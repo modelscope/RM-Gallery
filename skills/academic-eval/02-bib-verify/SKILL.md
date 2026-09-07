@@ -1,5 +1,5 @@
 ---
-name: bib-verify
+name: 02-bib-verify
 description: >
   Verify a BibTeX file for hallucinated or fabricated references by cross-checking
   every entry against CrossRef, arXiv, and DBLP. Reports each reference as

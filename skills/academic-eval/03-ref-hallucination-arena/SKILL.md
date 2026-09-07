@@ -1,5 +1,5 @@
 ---
-name: ref-hallucination-arena
+name: 03-ref-hallucination-arena
 description: >
   Benchmark LLM reference recommendation capabilities by verifying every cited
   paper against Crossref, PubMed, arXiv, and DBLP. Measures hallucination rate,
