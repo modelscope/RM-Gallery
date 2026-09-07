@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -288,8 +289,37 @@ class TestAgenticGraderEvaluateFullFlow:
         assert result.error == "unavailable"
         assert "FileNotFoundError" in result.metadata["setup_error"]
         assert "transcript path not found" in result.metadata["setup_error"]
+        assert "harness_error" not in result.metadata
+        assert not harness.run_calls
         # The harness subprocess was never reached, so there is no exit_code/duration to report.
         assert "exit_code" not in result.metadata
+
+    async def test_result_parsing_exception_is_not_a_sandbox_setup_error(self):
+        """A completed subprocess can fail result validation after sandbox setup succeeds."""
+        sandbox_dirs = []
+
+        class InvalidResultHarness(BaseHarness):
+            @property
+            def default_binary(self):
+                return sys.executable
+
+            def build_command(self, sandbox_dir, prompt, model):
+                sandbox_dirs.append(sandbox_dir)
+                return [
+                    self.binary,
+                    "-c",
+                    "from pathlib import Path; Path('_judge_result.json').write_text('[]', encoding='utf-8')",
+                ]
+
+        grader = AgenticGrader(harness=InvalidResultHarness(), rubrics=_rubrics())
+        result = await grader.aevaluate(transcript=[])
+
+        assert isinstance(result, GraderError)
+        assert result.error == "unavailable"
+        assert "ValidationError" in result.metadata["harness_error"]
+        assert "setup_error" not in result.metadata
+        assert len(sandbox_dirs) == 1
+        assert not sandbox_dirs[0].exists()
 
 
 @pytest.mark.unit

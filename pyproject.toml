@@ -50,13 +50,9 @@ dependencies = [
     "numpy>=1.22.0",
     "dashscope>=1.19.0",
     "tiktoken>=0.7.0",
-    # nltk>=3.10 ships a CWD-import-hijack guard (nltk/inisec.py) that false-positives
-    # whenever the venv resolving `regex` lives inside the current working directory --
-    # exactly the layout `uv sync`'s default in-project `.venv` produces, which breaks
-    # `import nltk` (and therefore rouge-score/sacrebleu) for any command run from the
-    # repo root. Neither `-P` nor `PYTHONSAFEPATH=1` (its own documented workarounds)
-    # avoid this for that layout; stay below 3.10 until upstream fixes the false positive.
-    "nltk>=3.8.1,<3.10",
+    # 3.10.2 removed the import guard that broke in-project virtual environments;
+    # 3.10.3 also fixes PorterStemmer failures on long tokens used by ROUGE.
+    "nltk>=3.10.3",
     "jieba>=0.42.1",
     "sacrebleu>=2.0.0",
     "rouge-score>=0.1.2",

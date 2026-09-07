@@ -232,8 +232,9 @@ class AgenticGrader(BaseGrader):
             GraderScore on success. GraderError if no evidence was given, or the
             harness sample failed/was unavailable -- in the latter case,
             `GraderError.metadata` carries harness-level diagnostics (`exit_code`,
-            `timed_out`, `duration`, `raw_stderr`, or `setup_error` if the sandbox
-            itself could not be built) so callers can tell an infrastructure
+            `timed_out`, `duration`, `raw_stderr`, `setup_error` if the sandbox
+            itself could not be built, or `harness_error` if the harness raised
+            during execution or result parsing) so callers can tell an infrastructure
             failure apart from "the agent judged checkpoints as failing" without
             reaching into private internals.
         """
@@ -300,6 +301,8 @@ class AgenticGrader(BaseGrader):
 
             - If sandbox setup itself raised (e.g. a bad `workspace_path`/`transcript`
               value) before any subprocess ever ran: `{"setup_error": "<ExceptionType>: <msg>"}`.
+            - If `harness.run()` raised after sandbox setup succeeded:
+              `{"harness_error": "<ExceptionType>: <msg>"}`.
             - Otherwise: `{"exit_code", "timed_out", "duration"}` straight from the
               underlying `HarnessResult`, plus `"raw_stderr"` when non-empty.
         """
@@ -308,7 +311,10 @@ class AgenticGrader(BaseGrader):
         def _run_one() -> Tuple[Optional[Dict[str, CheckpointResult]], Dict[str, Any]]:
             try:
                 with ProcessSandbox(workspace_path=workspace_path, transcript=transcript) as sandbox_dir:
-                    result = self.harness.run(sandbox_dir, prompt, schema, model=self.model)
+                    try:
+                        result = self.harness.run(sandbox_dir, prompt, schema, model=self.model)
+                    except Exception as exc:
+                        return None, {"harness_error": f"{type(exc).__name__}: {exc}"}
             except Exception as exc:
                 return None, {"setup_error": f"{type(exc).__name__}: {exc}"}
 

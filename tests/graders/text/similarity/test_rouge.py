@@ -331,6 +331,15 @@ class TestROUGEWithStemming:
     """Test ROUGE with stemming enabled/disabled"""
 
     @pytest.mark.asyncio
+    async def test_long_y_token_does_not_overflow_recursion(self):
+        """Porter stemming must handle long repeated-y tokens without recursion errors."""
+        grader = SimilarityGrader(algorithm="rouge1", use_stemmer=True)
+        text = "y" * 2000 + "ness"
+        result = await grader.aevaluate(reference_response=text, response=text)
+
+        assert result.score == 1.0
+
+    @pytest.mark.asyncio
     async def test_with_stemming(self):
         """Test ROUGE with stemming enabled"""
         grader = SimilarityGrader(
