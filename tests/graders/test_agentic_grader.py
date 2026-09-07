@@ -72,6 +72,22 @@ class TestAgenticGraderConstruction:
         assert grader.name == "agentic_grader"
         assert grader.model is None
 
+    @pytest.mark.parametrize("same_rubric", [False, True])
+    def test_rejects_duplicate_checkpoint_ids(self, same_rubric):
+        rubrics = _rubrics()
+        duplicate = Checkpoint(id="c1", description="A different criterion")
+        if same_rubric:
+            rubrics[0].checkpoints.append(duplicate)
+        else:
+            rubrics.append(Rubric(name="safety", checkpoints=[duplicate]))
+        with pytest.raises(ValueError, match="Duplicate checkpoint ID.*c1"):
+            AgenticGrader(harness=FakeHarness([]), rubrics=rubrics)
+
+    def test_rejects_duplicate_rubric_names(self):
+        rubrics = _rubrics() + [Rubric(name="correctness", checkpoints=[])]
+        with pytest.raises(ValueError, match="Duplicate rubric name"):
+            AgenticGrader(harness=FakeHarness([]), rubrics=rubrics)
+
 
 @pytest.mark.unit
 class TestBuildOutputSchemaAndPrompt:
@@ -99,6 +115,18 @@ class TestBuildOutputSchemaAndPrompt:
 
 @pytest.mark.unit
 class TestNormalizeSample:
+    @pytest.mark.parametrize("passed", ["false", "true", "0", 1, 0, None, [], {"value": False}])
+    def test_rejects_non_boolean_verdicts(self, passed):
+        normalized = _normalize_sample({"c1": {"passed": passed}}, ["c1"])
+        assert normalized == {}
+
+    @pytest.mark.parametrize("execution_log", [["pytest: passed"], {"command": "pytest"}, 42])
+    def test_drops_malformed_logs_without_losing_valid_checkpoints(self, execution_log):
+        parsed = {"c1": {"passed": True, "execution_log": execution_log}, "c2": {"passed": False}}
+        normalized = _normalize_sample(parsed, ["c1", "c2"])
+        assert set(normalized) == {"c2"}
+        assert normalized["c2"].passed is False
+
     def test_extracts_known_checkpoint_ids_only(self):
         parsed = {"c1": {"passed": True, "reason": "ok"}, "unknown_id": {"passed": True, "reason": "ignored"}}
         normalized = _normalize_sample(parsed, ["c1", "c2"])
@@ -162,6 +190,39 @@ class TestAggregateOverall:
 
 @pytest.mark.unit
 class TestAgenticGraderEvaluateFullFlow:
+    @pytest.mark.parametrize("invalid_result", [{"passed": "false"}, {"passed": True, "execution_log": ["ok"]}])
+    async def test_malformed_verdicts_do_not_raise_or_award_credit(self, invalid_result):
+        harness = FakeHarness([HarnessResult(available=True, result={"c1": invalid_result, "c2": {"passed": True}})])
+        grader = AgenticGrader(harness=harness, rubrics=_rubrics())
+        result = await grader.aevaluate(transcript=[{"role": "assistant", "content": "answer"}])
+        assert isinstance(result, GraderScore)
+        assert result.score == pytest.approx(1.0 / 3.0)
+
+    @pytest.mark.parametrize("is_file", [False, True], ids=["missing", "file"])
+    async def test_invalid_workspace_returns_error_before_invoking_harness(self, tmp_path, is_file):
+        candidate = tmp_path / "candidate"
+        if is_file:
+            candidate.write_text("not a directory", encoding="utf-8")
+        harness = FakeHarness([])
+        grader = AgenticGrader(harness=harness, rubrics=_rubrics())
+        result = await grader.aevaluate(workspace_path=str(candidate))
+        assert isinstance(result, GraderError)
+        assert result.error == "unavailable"
+        assert harness.run_calls == []
+
+    @pytest.mark.parametrize("use_override", [False, True], ids=["mutated-default", "override"])
+    async def test_validates_duplicate_checkpoint_ids_on_every_evaluation(self, use_override):
+        harness = FakeHarness([])
+        grader = AgenticGrader(harness=harness, rubrics=_rubrics())
+        rubrics = _rubrics() if use_override else grader.rubrics
+        rubrics.append(Rubric(name="safety", checkpoints=[Checkpoint(id="c1", description="Another criterion")]))
+        kwargs = {"rubrics": rubrics} if use_override else {}
+        result = await grader.aevaluate(transcript=[], **kwargs)
+        assert isinstance(result, GraderError)
+        assert result.error == "invalid_rubrics"
+        assert "c1" in result.reason
+        assert harness.run_calls == []
+
     async def test_returns_grader_error_when_no_evidence_given(self):
         grader = AgenticGrader(harness=FakeHarness([]), rubrics=_rubrics())
         result = await grader.aevaluate(query="q", response="r")

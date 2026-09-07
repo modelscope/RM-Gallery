@@ -24,6 +24,19 @@ class TestProcessSandboxNoEvidence:
 
 @pytest.mark.unit
 class TestProcessSandboxWorkspaceCopy:
+    @pytest.mark.parametrize("is_file", [False, True], ids=["missing", "file"])
+    def test_rejects_invalid_workspace_and_cleans_up(self, tmp_path, is_file):
+        candidate = tmp_path / "candidate"
+        if is_file:
+            candidate.write_text("not a directory", encoding="utf-8")
+        sandbox = ProcessSandbox(workspace_path=str(candidate))
+        error_type = NotADirectoryError if is_file else FileNotFoundError
+        with pytest.raises(error_type, match="workspace path"):
+            with sandbox:
+                pytest.fail("Invalid workspace must not be exposed to the judge")
+        assert sandbox.sandbox_dir is not None
+        assert not sandbox.sandbox_dir.exists()
+
     def test_copies_workspace_files_into_workspace_subdir(self, tmp_path):
         candidate = tmp_path / "candidate"
         candidate.mkdir()

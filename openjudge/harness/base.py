@@ -19,6 +19,8 @@ Failure gate policy (never raises -- callers get `HarnessResult(available=False)
     - Missing or unparsable result file -> rejected.
 """
 import json
+import os
+import signal
 import subprocess
 import time
 from abc import ABC, abstractmethod
@@ -31,6 +33,48 @@ __all__ = ["HarnessResult", "BaseHarness", "RESULT_FILENAME", "SPEC_FILENAME"]
 
 RESULT_FILENAME = "_judge_result.json"
 SPEC_FILENAME = "_judge_spec.json"
+
+
+def _terminate_process_tree(process: subprocess.Popen) -> None:
+    """Stop the CLI and its descendants before reading results or cleaning up."""
+    if os.name == "posix":
+        try:
+            os.killpg(process.pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+    else:
+        # Windows has no killpg; taskkill /T terminates the process tree.
+        try:
+            subprocess.run(
+                ["taskkill", "/PID", str(process.pid), "/T", "/F"],
+                capture_output=True,
+                timeout=5,
+                check=False,
+            )
+        finally:
+            if process.poll() is None:
+                process.kill()
+
+
+def _run_command(cmd: List[str], sandbox_dir: Path, timeout_s: float) -> subprocess.CompletedProcess:
+    """Capture a CLI invocation, terminating its process tree when it times out."""
+    with subprocess.Popen(
+        cmd,
+        cwd=str(sandbox_dir),
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        encoding="utf-8",
+        errors="replace",
+        start_new_session=os.name == "posix",
+    ) as process:
+        try:
+            stdout, stderr = process.communicate(timeout=timeout_s)
+        except subprocess.TimeoutExpired as exc:
+            _terminate_process_tree(process)
+            stdout, stderr = process.communicate()
+            raise subprocess.TimeoutExpired(cmd, timeout_s, output=stdout, stderr=stderr) from exc
+        return subprocess.CompletedProcess(cmd, process.returncode, stdout, stderr)
 
 
 class HarnessResult(BaseModel):
@@ -90,7 +134,7 @@ class BaseHarness(ABC):
             model: Optional model name override for this invocation.
 
         Returns:
-            The argv list to pass to `subprocess.run`, e.g. `["claude", "-p", prompt, ...]`.
+            The argv list to pass to `subprocess.Popen`, e.g. `["claude", "-p", prompt, ...]`.
         """
 
     def run(
@@ -131,22 +175,16 @@ class BaseHarness(ABC):
             )
             if result_path.exists():
                 result_path.unlink()
-            proc = subprocess.run(
-                cmd,
-                cwd=str(sandbox_dir),
-                capture_output=True,
-                text=True,
-                timeout=self.timeout_s,
-                check=False,
-            )
-        except subprocess.TimeoutExpired:
+            proc = _run_command(cmd, sandbox_dir, self.timeout_s)
+        except subprocess.TimeoutExpired as exc:
             timed_out = True
+            proc = subprocess.CompletedProcess(cmd, -1, stdout=exc.stdout, stderr=exc.stderr)
         except (FileNotFoundError, OSError):
             return HarnessResult(available=False, duration=time.time() - start)
 
         duration = time.time() - start
 
-        if proc is not None and proc.returncode != 0:
+        if proc is not None and proc.returncode != 0 and not timed_out:
             return HarnessResult(
                 available=False,
                 raw_stdout=proc.stdout or "",
@@ -167,6 +205,8 @@ class BaseHarness(ABC):
         try:
             parsed = json.loads(result_path.read_text(encoding="utf-8", errors="replace"))
         except (json.JSONDecodeError, OSError):
+            return HarnessResult(available=False, timed_out=timed_out, duration=duration)
+        if not isinstance(parsed, dict):
             return HarnessResult(available=False, timed_out=timed_out, duration=duration)
 
         return HarnessResult(

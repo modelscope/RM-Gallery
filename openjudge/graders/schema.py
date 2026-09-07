@@ -319,7 +319,7 @@ class Checkpoint(BaseModel):
     it is a natural-language criterion).
 
     Attributes:
-        id: Unique identifier within the parent Rubric's checkpoints list.
+        id: Unique identifier across all rubrics in an AgenticGrader evaluation.
         description: Human-readable description of what this checkpoint verifies.
         content: Optional freeform content (code/test script/criteria/reference answer).
         weight: Relative weight among checkpoints in the same rubric.
@@ -333,7 +333,7 @@ class Checkpoint(BaseModel):
         ... )
     """
 
-    id: str = Field(description="Unique identifier for this checkpoint within its rubric")
+    id: str = Field(description="Unique identifier for this checkpoint across all rubrics in an evaluation")
     description: str = Field(description="Human-readable description of what this checkpoint verifies")
     content: Optional[str] = Field(
         default=None,
@@ -346,7 +346,7 @@ class Rubric(BaseModel):
     """A named evaluation dimension made up of one or more Checkpoints.
 
     Attributes:
-        name: Rubric dimension name (e.g. "correctness", "safety").
+        name: Unique rubric dimension name within an evaluation (e.g. "correctness", "safety").
         description: Optional human-readable description of this dimension.
         weight: Relative weight of this rubric among all rubrics passed to AgenticGrader.
         checkpoints: The checkpoints belonging to this rubric.
@@ -380,7 +380,7 @@ class CheckpointResult(BaseModel):
     """
 
     checkpoint_id: str = Field(description="Matches Checkpoint.id")
-    passed: bool = Field(description="Whether this checkpoint was judged as passed")
+    passed: bool = Field(strict=True, description="Whether this checkpoint was judged as passed")
     reason: str = Field(default="", description="Evidence/explanation for the pass/fail judgment")
     execution_log: Optional[str] = Field(
         default=None,

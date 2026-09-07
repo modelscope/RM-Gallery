@@ -32,6 +32,10 @@ the agentic judge against it, and prints the resulting score/reason/metadata.
 
 ## Notes
 
+- Rubric names and checkpoint IDs must be unique across all rubrics in an evaluation.
+- Workspace paths must name an existing directory. Invalid paths return `GraderError`.
+- Checkpoint verdicts require JSON booleans. Malformed checkpoint results are dropped
+  and count as failed.
 - These examples make real, billed calls to the configured CLI/model and are not run in
   CI (see `pytest.ini`'s `norecursedirs = cookbooks`).
 - This is a v1 `AgenticGrader`: each call runs exactly one sandboxed harness sample and

@@ -323,6 +323,11 @@ Cursor CLI) inside an isolated, throwaway sandbox — it never runs untrusted co
 in-process. See `openjudge/harness/` for the harness implementations and
 `cookbooks/agentic_judge/` for full runnable examples against each CLI.
 
+Rubric names and checkpoint IDs must be unique across an evaluation. The constructor
+rejects duplicates; invalid per-call rubric overrides return `GraderError`. Result
+verdicts must use JSON booleans (`true`/`false`). Malformed checkpoint results are
+dropped and count as failed, while invalid workspace paths return `GraderError`.
+
 ```python
 from openjudge.graders.agentic_grader import AgenticGrader
 from openjudge.graders.schema import Checkpoint, Rubric

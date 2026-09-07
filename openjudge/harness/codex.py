@@ -22,7 +22,9 @@ class CodexHarness(BaseHarness):
     single force/trust flag. Codex's `exec` sandbox defaults to read-only,
     which would prevent the agent from writing `_judge_result.json` into the
     sandbox directory -- `--sandbox workspace-write` is therefore always
-    passed explicitly and is not optional.
+    passed explicitly and is not optional. The approval option is global and
+    must precede `exec`; the temporary sandbox is not a Git repository, so
+    `--skip-git-repo-check` is required as well.
     """
 
     @property
@@ -32,12 +34,13 @@ class CodexHarness(BaseHarness):
     def build_command(self, sandbox_dir: Path, prompt: str, model: Optional[str]) -> List[str]:
         cmd = [
             self.binary,
-            "exec",
-            "--json",
-            "--sandbox",
-            "workspace-write",
             "--ask-for-approval",
             "never",
+            "exec",
+            "--json",
+            "--skip-git-repo-check",
+            "--sandbox",
+            "workspace-write",
         ]
         if model:
             cmd += ["--model", model]

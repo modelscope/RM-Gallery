@@ -16,6 +16,8 @@ import asyncio
 import time
 from typing import Any, Dict, List, Optional, Union
 
+from pydantic import ValidationError
+
 from openjudge.graders.base_grader import BaseGrader
 from openjudge.graders.schema import (
     CheckpointResult,
@@ -29,6 +31,24 @@ from openjudge.harness.base import BaseHarness
 from openjudge.harness.sandbox import ProcessSandbox
 
 __all__ = ["AgenticGrader"]
+
+
+def _validate_rubrics(rubrics: List[Rubric]) -> None:
+    """Reject empty rubrics or ambiguous identifiers before invoking a judge."""
+    if not rubrics:
+        raise ValueError("rubrics is required for AgenticGrader and must contain at least one Rubric.")
+    rubric_names = set()
+    checkpoint_ids = set()
+    for rubric in rubrics:
+        if rubric.name in rubric_names:
+            raise ValueError(f"Duplicate rubric name: {rubric.name!r}. Rubric names must be unique.")
+        rubric_names.add(rubric.name)
+        for checkpoint in rubric.checkpoints:
+            if checkpoint.id in checkpoint_ids:
+                raise ValueError(
+                    f"Duplicate checkpoint ID: {checkpoint.id!r}. Checkpoint IDs must be unique across all rubrics."
+                )
+            checkpoint_ids.add(checkpoint.id)
 
 
 def _build_output_schema(rubrics: List[Rubric]) -> Dict[str, Any]:
@@ -86,13 +106,12 @@ def _normalize_sample(parsed: Dict[str, Any], all_checkpoint_ids: List[str]) -> 
     normalized: Dict[str, CheckpointResult] = {}
     for checkpoint_id in all_checkpoint_ids:
         val = parsed.get(checkpoint_id)
-        if isinstance(val, dict) and "passed" in val:
-            normalized[checkpoint_id] = CheckpointResult(
-                checkpoint_id=checkpoint_id,
-                passed=bool(val.get("passed")),
-                reason=str(val.get("reason", "")),
-                execution_log=val.get("execution_log"),
-            )
+        if not isinstance(val, dict):
+            continue
+        try:
+            normalized[checkpoint_id] = CheckpointResult.model_validate({**val, "checkpoint_id": checkpoint_id})
+        except ValidationError:
+            continue
     return normalized
 
 
@@ -184,6 +203,7 @@ class AgenticGrader(BaseGrader):
             harness: Pre-constructed BaseHarness (e.g. `ClaudeCodeHarness()`, required.
             rubrics: Default rubrics to evaluate against (required, non-empty). Can be
                 overridden per-call via the `rubrics` keyword to `aevaluate()`.
+                Rubric names and checkpoint IDs must be unique across the evaluation.
             name: Grader name.
             mode: Only POINTWISE is supported.
             description: Grader description.
@@ -191,15 +211,14 @@ class AgenticGrader(BaseGrader):
             **kwargs: Additional keyword arguments forwarded to `BaseGrader.__init__`.
 
         Raises:
-            ValueError: If `harness` is None or `rubrics` is empty.
+            ValueError: If `harness` is None, `rubrics` is empty, or identifiers are duplicated.
         """
         super().__init__(name=name, mode=mode, description=description, **kwargs)
         if harness is None:
             raise ValueError(
                 "harness is required for AgenticGrader. Construct one first, e.g. harness = ClaudeCodeHarness()."
             )
-        if not rubrics:
-            raise ValueError("rubrics is required for AgenticGrader and must contain at least one Rubric.")
+        _validate_rubrics(rubrics)
         self.harness = harness
         self.rubrics = rubrics
         self.model = model
@@ -229,10 +248,14 @@ class AgenticGrader(BaseGrader):
                 for this call only.
 
         Returns:
-            GraderScore on success. GraderError if no evidence was given, or the
-            harness sample failed/was unavailable.
+            GraderScore on success. GraderError if rubrics are invalid, no evidence
+            was given, or the harness sample failed/was unavailable.
         """
         rubrics: List[Rubric] = kwargs.pop("rubrics", self.rubrics)
+        try:
+            _validate_rubrics(rubrics)
+        except ValueError as exc:
+            return GraderError(name=self.name, error="invalid_rubrics", reason=str(exc))
         if workspace_path is None and transcript is None:
             return GraderError(
                 name=self.name,

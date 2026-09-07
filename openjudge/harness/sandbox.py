@@ -112,10 +112,11 @@ class ProcessSandbox:
             if self.workspace_path is not None:
                 dest = self.sandbox_dir / "workspace"
                 src = Path(self.workspace_path)
-                if src.is_dir():
-                    self.symlinks_skipped = _copytree_no_symlinks(src, dest)
-                else:
-                    dest.mkdir(parents=True, exist_ok=True)
+                if not src.exists():
+                    raise FileNotFoundError(f"workspace path not found: {src}")
+                if not src.is_dir():
+                    raise NotADirectoryError(f"workspace path is not a directory: {src}")
+                self.symlinks_skipped = _copytree_no_symlinks(src, dest)
             if self.transcript is not None:
                 _materialize_transcript(self.sandbox_dir / "transcript.jsonl", self.transcript)
         except Exception:
