@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
 import json
 import shutil
+import tempfile
+from concurrent.futures import CancelledError
+from threading import Event
 
 import pytest
 
@@ -24,6 +27,56 @@ class TestProcessSandboxNoEvidence:
 
 @pytest.mark.unit
 class TestProcessSandboxWorkspaceCopy:
+    @pytest.mark.parametrize("alias", [False, True], ids=["direct-path", "symlink-path"])
+    def test_rejects_temp_directory_inside_workspace(self, tmp_path, monkeypatch, alias):
+        candidate = tmp_path / "candidate"
+        candidate.mkdir()
+        (candidate / "answer.txt").write_text("keep this", encoding="utf-8")
+        source = candidate
+        if alias:
+            source = tmp_path / "alias"
+            source.symlink_to(candidate, target_is_directory=True)
+        monkeypatch.setattr(tempfile, "tempdir", str(candidate))
+        sandbox = ProcessSandbox(workspace_path=str(source))
+        with pytest.raises(ValueError, match="outside the workspace"):
+            with sandbox:
+                pytest.fail("A sandbox inside the source must never be copied")
+        assert not sandbox.sandbox_dir.exists()
+        assert [p.name for p in candidate.iterdir()] == ["answer.txt"]
+        assert (candidate / "answer.txt").read_text() == "keep this"
+
+    def test_cancellation_during_copy_cleans_up(self, tmp_path, monkeypatch):
+        candidate = tmp_path / "candidate"
+        candidate.mkdir()
+        for name in ["first", "second"]:
+            (candidate / name).write_text(name, encoding="utf-8")
+        cancelled = Event()
+        copy_file = shutil.copy2
+
+        def cancel_after_copy(src, dest):
+            copy_file(src, dest)
+            cancelled.set()
+
+        monkeypatch.setattr(shutil, "copy2", cancel_after_copy)
+        sandbox = ProcessSandbox(workspace_path=str(candidate), cancel_event=cancelled)
+        with pytest.raises(CancelledError):
+            with sandbox:
+                pytest.fail("Copying must notice cancellation")
+        assert not sandbox.sandbox_dir.exists()
+
+    @pytest.mark.parametrize("is_file", [False, True], ids=["missing", "file"])
+    def test_rejects_invalid_workspace_and_cleans_up(self, tmp_path, is_file):
+        candidate = tmp_path / "candidate"
+        if is_file:
+            candidate.write_text("not a directory", encoding="utf-8")
+        sandbox = ProcessSandbox(workspace_path=str(candidate))
+        error_type = NotADirectoryError if is_file else FileNotFoundError
+        with pytest.raises(error_type, match="workspace_path"):
+            with sandbox:
+                pytest.fail("Invalid workspace must not be exposed to the judge")
+        assert sandbox.sandbox_dir is not None
+        assert not sandbox.sandbox_dir.exists()
+
     def test_copies_workspace_files_into_workspace_subdir(self, tmp_path):
         candidate = tmp_path / "candidate"
         candidate.mkdir()

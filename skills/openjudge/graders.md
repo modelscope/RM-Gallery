@@ -323,6 +323,20 @@ Cursor CLI) inside an isolated, throwaway sandbox — it never runs untrusted co
 in-process. See `openjudge/harness/` for the harness implementations and
 `cookbooks/agentic_judge/` for full runnable examples against each CLI.
 
+Rubric names and checkpoint IDs must be unique across an evaluation. The constructor
+rejects duplicates; invalid per-call rubric overrides return `GraderError`. Result
+verdicts must use JSON booleans (`true`/`false`). Malformed checkpoint results are
+dropped and count as failed, while invalid workspace paths return `GraderError`.
+
+Only POINTWISE mode is supported. Rubric and checkpoint weights must be finite and
+non-negative; zero weights are allowed. The temporary sandbox must be outside the
+candidate workspace (set `TMPDIR` accordingly). CLI processes receive an empty stdin.
+Cancelling `aevaluate()` signals the worker and waits for process and sandbox cleanup
+before propagating cancellation. Custom harnesses overriding `run()` must accept the
+optional `cancel_event` argument and honor it. The built-in harnesses use `psutil` to
+track descendants, including children that create a new session; this remains process
+management, not an OS security boundary.
+
 ```python
 from openjudge.graders.agentic_grader import AgenticGrader
 from openjudge.graders.schema import Checkpoint, Rubric

@@ -13,8 +13,12 @@ stdout/`--output-format` schema -- only the sandboxed result file (see
 `openjudge.harness.base` for the shared protocol).
 """
 import asyncio
+import math
 import time
+from threading import Event
 from typing import Any, Dict, List, Optional, Tuple, Union
+
+from pydantic import ValidationError
 
 from openjudge.graders.base_grader import BaseGrader
 from openjudge.graders.schema import (
@@ -29,6 +33,28 @@ from openjudge.harness.base import BaseHarness
 from openjudge.harness.sandbox import ProcessSandbox
 
 __all__ = ["AgenticGrader"]
+
+
+def _validate_rubrics(rubrics: List[Rubric]) -> None:
+    """Reject empty rubrics or ambiguous identifiers before invoking a judge."""
+    if not rubrics:
+        raise ValueError("rubrics is required for AgenticGrader and must contain at least one Rubric.")
+    rubric_names = set()
+    checkpoint_ids = set()
+    for rubric in rubrics:
+        if not math.isfinite(rubric.weight) or rubric.weight < 0:
+            raise ValueError(f"Rubric {rubric.name!r} must have a finite, non-negative weight.")
+        if rubric.name in rubric_names:
+            raise ValueError(f"Duplicate rubric name: {rubric.name!r}. Rubric names must be unique.")
+        rubric_names.add(rubric.name)
+        for checkpoint in rubric.checkpoints:
+            if not math.isfinite(checkpoint.weight) or checkpoint.weight < 0:
+                raise ValueError(f"Checkpoint {checkpoint.id!r} must have a finite, non-negative weight.")
+            if checkpoint.id in checkpoint_ids:
+                raise ValueError(
+                    f"Duplicate checkpoint ID: {checkpoint.id!r}. Checkpoint IDs must be unique across all rubrics."
+                )
+            checkpoint_ids.add(checkpoint.id)
 
 
 def _build_output_schema(rubrics: List[Rubric]) -> Dict[str, Any]:
@@ -86,13 +112,12 @@ def _normalize_sample(parsed: Dict[str, Any], all_checkpoint_ids: List[str]) -> 
     normalized: Dict[str, CheckpointResult] = {}
     for checkpoint_id in all_checkpoint_ids:
         val = parsed.get(checkpoint_id)
-        if isinstance(val, dict) and "passed" in val:
-            normalized[checkpoint_id] = CheckpointResult(
-                checkpoint_id=checkpoint_id,
-                passed=bool(val.get("passed")),
-                reason=str(val.get("reason", "")),
-                execution_log=val.get("execution_log"),
-            )
+        if not isinstance(val, dict):
+            continue
+        try:
+            normalized[checkpoint_id] = CheckpointResult.model_validate({**val, "checkpoint_id": checkpoint_id})
+        except ValidationError:
+            continue
     return normalized
 
 
@@ -109,12 +134,14 @@ def _aggregate_rubric(rubric: Rubric, checkpoint_results: Dict[str, CheckpointRe
     Note: this is a v1 simplification — there is no `must_have` AND-gate here.
     See "Deferred to a follow-up iteration" at the end of this plan.
     """
-    total_weight = sum(cp.weight for cp in rubric.checkpoints)
-    if total_weight <= 0:
+    scale = max((cp.weight for cp in rubric.checkpoints), default=0.0)
+    if scale == 0:
         score = 0.0
     else:
+        # Scaling preserves the mean without overflowing for large finite weights.
+        total_weight = sum(cp.weight / scale for cp in rubric.checkpoints)
         weighted = sum(
-            cp.weight * (1.0 if checkpoint_results.get(cp.id) and checkpoint_results[cp.id].passed else 0.0)
+            cp.weight / scale * (1.0 if checkpoint_results.get(cp.id) and checkpoint_results[cp.id].passed else 0.0)
             for cp in rubric.checkpoints
         )
         score = weighted / total_weight
@@ -125,11 +152,12 @@ def _aggregate_rubric(rubric: Rubric, checkpoint_results: Dict[str, CheckpointRe
 
 def _aggregate_overall(rubrics: List[Rubric], rubric_results: List[RubricResult]) -> float:
     """Weighted mean of `rubric_results` by each rubric's `weight`."""
-    total_weight = sum(r.weight for r in rubrics)
-    if total_weight <= 0:
+    scale = max((r.weight for r in rubrics), default=0.0)
+    if scale == 0:
         return 0.0
+    total_weight = sum(r.weight / scale for r in rubrics)
     by_name = {r.name: r for r in rubric_results}
-    weighted = sum(r.weight * by_name[r.name].score for r in rubrics if r.name in by_name)
+    weighted = sum(r.weight / scale * by_name[r.name].score for r in rubrics if r.name in by_name)
     return weighted / total_weight
 
 
@@ -184,6 +212,7 @@ class AgenticGrader(BaseGrader):
             harness: Pre-constructed BaseHarness (e.g. `ClaudeCodeHarness()`, required.
             rubrics: Default rubrics to evaluate against (required, non-empty). Can be
                 overridden per-call via the `rubrics` keyword to `aevaluate()`.
+                Rubric names and checkpoint IDs must be unique across the evaluation.
             name: Grader name.
             mode: Only POINTWISE is supported.
             description: Grader description.
@@ -191,15 +220,16 @@ class AgenticGrader(BaseGrader):
             **kwargs: Additional keyword arguments forwarded to `BaseGrader.__init__`.
 
         Raises:
-            ValueError: If `harness` is None or `rubrics` is empty.
+            ValueError: If the mode is not POINTWISE, `harness` is None, or rubrics are invalid.
         """
+        if mode != GraderMode.POINTWISE:
+            raise ValueError("AgenticGrader only supports POINTWISE mode.")
         super().__init__(name=name, mode=mode, description=description, **kwargs)
         if harness is None:
             raise ValueError(
                 "harness is required for AgenticGrader. Construct one first, e.g. harness = ClaudeCodeHarness()."
             )
-        if not rubrics:
-            raise ValueError("rubrics is required for AgenticGrader and must contain at least one Rubric.")
+        _validate_rubrics(rubrics)
         self.harness = harness
         self.rubrics = rubrics
         self.model = model
@@ -229,8 +259,8 @@ class AgenticGrader(BaseGrader):
                 for this call only.
 
         Returns:
-            GraderScore on success. GraderError if no evidence was given, or the
-            harness sample failed/was unavailable -- in the latter case,
+            GraderScore on success. GraderError if rubrics are invalid, no evidence
+            was given, or the harness sample failed/was unavailable. In the latter case,
             `GraderError.metadata` carries harness-level diagnostics (`exit_code`,
             `timed_out`, `duration`, `raw_stderr`, `setup_error` if the sandbox
             itself could not be built, or `harness_error` if the harness raised
@@ -239,6 +269,10 @@ class AgenticGrader(BaseGrader):
             reaching into private internals.
         """
         rubrics: List[Rubric] = kwargs.pop("rubrics", self.rubrics)
+        try:
+            _validate_rubrics(rubrics)
+        except ValueError as exc:
+            return GraderError(name=self.name, error="invalid_rubrics", reason=str(exc))
         if workspace_path is None and transcript is None:
             return GraderError(
                 name=self.name,
@@ -290,6 +324,8 @@ class AgenticGrader(BaseGrader):
 
         `ProcessSandbox`/`BaseHarness.run` are both blocking, so the call runs on
         the default thread pool executor to avoid blocking the event loop.
+        Cancellation signals the worker and waits for cleanup before propagating
+        `CancelledError`, preserving the caller's concurrency limit.
 
         Returns:
             A `(checkpoint_results, diagnostics)` pair. `checkpoint_results` is
@@ -307,12 +343,21 @@ class AgenticGrader(BaseGrader):
               underlying `HarnessResult`, plus `"raw_stderr"` when non-empty.
         """
         loop = asyncio.get_running_loop()
+        cancel_event = Event()
+        worker_started = Event()
 
         def _run_one() -> Tuple[Optional[Dict[str, CheckpointResult]], Dict[str, Any]]:
+            worker_started.set()
             try:
-                with ProcessSandbox(workspace_path=workspace_path, transcript=transcript) as sandbox_dir:
+                with ProcessSandbox(
+                    workspace_path=workspace_path, transcript=transcript, cancel_event=cancel_event
+                ) as sandbox_dir:
+                    if cancel_event.is_set():
+                        return None, {}
                     try:
-                        result = self.harness.run(sandbox_dir, prompt, schema, model=self.model)
+                        result = self.harness.run(
+                            sandbox_dir, prompt, schema, model=self.model, cancel_event=cancel_event
+                        )
                     except Exception as exc:
                         return None, {"harness_error": f"{type(exc).__name__}: {exc}"}
             except Exception as exc:
@@ -329,7 +374,25 @@ class AgenticGrader(BaseGrader):
                 return None, diagnostics
             return _normalize_sample(result.result, all_checkpoint_ids), diagnostics
 
-        return await loop.run_in_executor(None, _run_one)
+        worker = loop.run_in_executor(None, _run_one)
+        try:
+            return await asyncio.shield(worker)
+        except asyncio.CancelledError:
+            cancel_event.set()
+            if not worker_started.is_set():
+                # Queued work owns no resources. If it races with cancellation,
+                # ProcessSandbox observes the signal before creating any files.
+                worker.cancel()
+                raise
+            # Keep the caller's resource slot until the process and sandbox are gone.
+            # Shield cleanup from repeated cancellation requests as well.
+            while not worker.done():
+                try:
+                    await asyncio.shield(worker)
+                except asyncio.CancelledError:
+                    continue
+            worker.result()
+            raise
 
     @staticmethod
     def get_metadata() -> Dict[str, Any]:
