@@ -80,6 +80,9 @@ verl = [
     "transformers>=4.52.4,<5.0.0",
     "verl"
 ]
+litellm = [
+    "litellm>=1.89.0,<2.0.0"
+]
 
 [project.urls]
 Homepage = "https://github.com/agentscope-ai/OpenJudge"
