@@ -82,7 +82,7 @@ verl = [
     "verl"
 ]
 litellm = [
-    "litellm>=1.89.0,<2.0.0"
+    "litellm>=1.96.2,<2.0.0"
 ]
 
 [project.urls]
