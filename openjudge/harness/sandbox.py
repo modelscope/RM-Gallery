@@ -90,6 +90,10 @@ class ProcessSandbox:
 
     Attributes:
         workspace_path: Path to the candidate's produced artifacts directory, if any.
+            Must exist and be a directory -- `__enter__` raises `FileNotFoundError`/
+            `NotADirectoryError` otherwise, the same fail-loud contract as `transcript`.
+            A caller-side misconfiguration (typo'd/not-yet-materialized path) must never
+            be allowed to silently look identical to "the candidate produced no artifacts".
         transcript: Candidate execution transcript (path or message list), if any.
         keep_on_exit: If True, do not delete the sandbox directory on `__exit__`
             (for debugging failed harness runs).
@@ -126,9 +130,9 @@ class ProcessSandbox:
                 dest = self.sandbox_dir / "workspace"
                 src = Path(self.workspace_path)
                 if not src.exists():
-                    raise FileNotFoundError(f"workspace path not found: {src}")
+                    raise FileNotFoundError(f"workspace_path not found: {src}")
                 if not src.is_dir():
-                    raise NotADirectoryError(f"workspace path is not a directory: {src}")
+                    raise NotADirectoryError(f"workspace_path is not a directory: {src}")
                 if self.sandbox_dir.resolve().is_relative_to(src.resolve()):
                     raise ValueError("Sandbox must be outside the workspace; set TMPDIR to a directory outside it.")
                 self.symlinks_skipped = _copytree_no_symlinks(src, dest, self.cancel_event)

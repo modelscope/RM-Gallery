@@ -16,7 +16,7 @@ import asyncio
 import math
 import time
 from threading import Event
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 from pydantic import ValidationError
 
@@ -260,7 +260,13 @@ class AgenticGrader(BaseGrader):
 
         Returns:
             GraderScore on success. GraderError if rubrics are invalid, no evidence
-            was given, or the harness sample failed/was unavailable.
+            was given, or the harness sample failed/was unavailable. In the latter case,
+            `GraderError.metadata` carries harness-level diagnostics (`exit_code`,
+            `timed_out`, `duration`, `raw_stderr`, `setup_error` if the sandbox
+            itself could not be built, or `harness_error` if the harness raised
+            during execution or result parsing) so callers can tell an infrastructure
+            failure apart from "the agent judged checkpoints as failing" without
+            reaching into private internals.
         """
         rubrics: List[Rubric] = kwargs.pop("rubrics", self.rubrics)
         try:
@@ -279,12 +285,15 @@ class AgenticGrader(BaseGrader):
         prompt = _build_prompt(query, response, rubrics)
 
         start_time = time.time()
-        checkpoint_results = await self._run_sample(prompt, schema, workspace_path, transcript, all_checkpoint_ids)
+        checkpoint_results, diagnostics = await self._run_sample(
+            prompt, schema, workspace_path, transcript, all_checkpoint_ids
+        )
         if checkpoint_results is None:
             return GraderError(
                 name=self.name,
                 error="unavailable",
                 reason="The harness sample failed or the harness CLI is unavailable.",
+                metadata={"harness_type": type(self.harness).__name__, **diagnostics},
             )
 
         rubric_results = [_aggregate_rubric(rubric, checkpoint_results) for rubric in rubrics]
@@ -299,6 +308,7 @@ class AgenticGrader(BaseGrader):
                 "rubric_results": [r.model_dump() for r in rubric_results],
                 "harness_type": type(self.harness).__name__,
                 "total_time": time.time() - start_time,
+                **diagnostics,
             },
         )
 
@@ -309,7 +319,7 @@ class AgenticGrader(BaseGrader):
         workspace_path: Optional[str],
         transcript: Optional[Any],
         all_checkpoint_ids: List[str],
-    ) -> Optional[Dict[str, CheckpointResult]]:
+    ) -> Tuple[Optional[Dict[str, CheckpointResult]], Dict[str, Any]]:
         """Run a single sandboxed harness invocation.
 
         `ProcessSandbox`/`BaseHarness.run` are both blocking, so the call runs on
@@ -318,27 +328,51 @@ class AgenticGrader(BaseGrader):
         `CancelledError`, preserving the caller's concurrency limit.
 
         Returns:
+            A `(checkpoint_results, diagnostics)` pair. `checkpoint_results` is
             `{checkpoint_id: CheckpointResult}` if the harness came back `available`,
-            else `None`.
+            else `None`. `diagnostics` is always returned (even on success) and its
+            caller-facing purpose is to let a `GraderError`/`GraderScore.metadata`
+            consumer distinguish an infrastructure failure (CLI crashed/timed out/
+            misconfigured path) from "the agent judged the checkpoints as failing":
+
+            - If sandbox setup itself raised (e.g. a bad `workspace_path`/`transcript`
+              value) before any subprocess ever ran: `{"setup_error": "<ExceptionType>: <msg>"}`.
+            - If `harness.run()` raised after sandbox setup succeeded:
+              `{"harness_error": "<ExceptionType>: <msg>"}`.
+            - Otherwise: `{"exit_code", "timed_out", "duration"}` straight from the
+              underlying `HarnessResult`, plus `"raw_stderr"` when non-empty.
         """
         loop = asyncio.get_running_loop()
         cancel_event = Event()
         worker_started = Event()
 
-        def _run_one() -> Optional[Dict[str, CheckpointResult]]:
+        def _run_one() -> Tuple[Optional[Dict[str, CheckpointResult]], Dict[str, Any]]:
             worker_started.set()
             try:
                 with ProcessSandbox(
                     workspace_path=workspace_path, transcript=transcript, cancel_event=cancel_event
                 ) as sandbox_dir:
                     if cancel_event.is_set():
-                        return None
-                    result = self.harness.run(sandbox_dir, prompt, schema, model=self.model, cancel_event=cancel_event)
-            except Exception:
-                return None
+                        return None, {}
+                    try:
+                        result = self.harness.run(
+                            sandbox_dir, prompt, schema, model=self.model, cancel_event=cancel_event
+                        )
+                    except Exception as exc:
+                        return None, {"harness_error": f"{type(exc).__name__}: {exc}"}
+            except Exception as exc:
+                return None, {"setup_error": f"{type(exc).__name__}: {exc}"}
+
+            diagnostics: Dict[str, Any] = {
+                "exit_code": result.exit_code,
+                "timed_out": result.timed_out,
+                "duration": result.duration,
+            }
+            if result.raw_stderr:
+                diagnostics["raw_stderr"] = result.raw_stderr
             if not result.available:
-                return None
-            return _normalize_sample(result.result, all_checkpoint_ids)
+                return None, diagnostics
+            return _normalize_sample(result.result, all_checkpoint_ids), diagnostics
 
         worker = loop.run_in_executor(None, _run_one)
         try:

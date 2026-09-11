@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
@@ -273,11 +274,48 @@ class TestAgenticGraderEvaluateFullFlow:
         assert isinstance(result, GraderError)
         assert result.error == "unavailable"
 
+    async def test_grader_error_metadata_carries_harness_diagnostics(self, tmp_path):
+        """A caller must be able to tell "harness CLI exited non-zero after 12s" apart from
+        "the agent decided the checkpoints failed" without digging into private internals --
+        the diagnostics HarnessResult already carries (exit_code/timed_out/duration/stderr)
+        must survive into GraderError.metadata rather than being discarded."""
+        harness = FakeHarness(
+            [
+                HarnessResult(
+                    available=False,
+                    exit_code=1,
+                    timed_out=False,
+                    duration=12.5,
+                    raw_stderr="claude: command failed: permission denied",
+                )
+            ]
+        )
+        grader = AgenticGrader(harness=harness, rubrics=_rubrics())
+        result = await grader.aevaluate(query="q", response="r", workspace_path=str(tmp_path))
+
+        assert isinstance(result, GraderError)
+        assert result.metadata["exit_code"] == 1
+        assert result.metadata["timed_out"] is False
+        assert result.metadata["duration"] == pytest.approx(12.5)
+        assert "permission denied" in result.metadata["raw_stderr"]
+        assert result.metadata["harness_type"] == "FakeHarness"
+
+    async def test_grader_error_metadata_reports_timeout(self, tmp_path):
+        harness = FakeHarness([HarnessResult(available=False, timed_out=True, duration=900.0)])
+        grader = AgenticGrader(harness=harness, rubrics=_rubrics())
+        result = await grader.aevaluate(query="q", response="r", workspace_path=str(tmp_path))
+
+        assert isinstance(result, GraderError)
+        assert result.metadata["timed_out"] is True
+        assert result.metadata["duration"] == pytest.approx(900.0)
+
     async def test_returns_grader_score_when_all_checkpoints_pass(self, tmp_path):
         harness = FakeHarness(
             [
                 HarnessResult(
                     available=True,
+                    exit_code=0,
+                    duration=42.0,
                     result={"c1": {"passed": True, "reason": "matches"}, "c2": {"passed": True, "reason": "clear"}},
                 )
             ]
@@ -289,6 +327,10 @@ class TestAgenticGraderEvaluateFullFlow:
         assert result.score == 1.0
         assert result.metadata["rubric_results"][0]["score"] == 1.0
         assert len(harness.run_calls) == 1
+        # Harness-level diagnostics must also survive on the success path, not just on failure.
+        assert result.metadata["exit_code"] == 0
+        assert result.metadata["timed_out"] is False
+        assert result.metadata["duration"] == pytest.approx(42.0)
 
     async def test_returns_partial_score_when_one_checkpoint_fails(self, tmp_path):
         harness = FakeHarness(
@@ -329,7 +371,10 @@ class TestAgenticGraderEvaluateFullFlow:
 
     async def test_returns_grader_error_unavailable_when_sandbox_setup_raises(self):
         """ProcessSandbox.__enter__ raises FileNotFoundError for a nonexistent transcript path.
-        _run_one must catch this and return None so _aevaluate surfaces GraderError(unavailable).
+        _run_one must catch this and return None so _aevaluate surfaces GraderError(unavailable),
+        and the exception itself (not just a generic "unavailable" label) must be visible in
+        metadata -- a caller misconfiguring workspace_path/transcript deserves a config-error
+        message, not the same opaque "harness CLI unavailable" reason as a real CLI crash.
         """
         harness = FakeHarness([HarnessResult(available=True, result={})])
         grader = AgenticGrader(harness=harness, rubrics=_rubrics())
@@ -340,6 +385,59 @@ class TestAgenticGraderEvaluateFullFlow:
         )
         assert isinstance(result, GraderError)
         assert result.error == "unavailable"
+        assert "FileNotFoundError" in result.metadata["setup_error"]
+        assert "transcript path not found" in result.metadata["setup_error"]
+        assert "harness_error" not in result.metadata
+        assert not harness.run_calls
+        # The harness subprocess was never reached, so there is no exit_code/duration to report.
+        assert "exit_code" not in result.metadata
+
+    async def test_invalid_result_is_not_a_sandbox_setup_error(self):
+        """Invalid result types are rejected by the harness after sandbox setup succeeds."""
+        sandbox_dirs = []
+
+        class InvalidResultHarness(BaseHarness):
+            @property
+            def default_binary(self):
+                return sys.executable
+
+            def build_command(self, sandbox_dir, prompt, model):
+                sandbox_dirs.append(sandbox_dir)
+                return [
+                    self.binary,
+                    "-c",
+                    "from pathlib import Path; Path('_judge_result.json').write_text('[]', encoding='utf-8')",
+                ]
+
+        grader = AgenticGrader(harness=InvalidResultHarness(), rubrics=_rubrics())
+        result = await grader.aevaluate(transcript=[])
+
+        assert isinstance(result, GraderError)
+        assert result.error == "unavailable"
+        assert "harness_error" not in result.metadata
+        assert "setup_error" not in result.metadata
+        assert result.metadata["timed_out"] is False
+        assert len(sandbox_dirs) == 1
+        assert not sandbox_dirs[0].exists()
+
+    async def test_harness_exception_is_not_a_sandbox_setup_error(self, monkeypatch):
+        """Unexpected harness exceptions retain their stage and still clean up the sandbox."""
+        harness = FakeHarness([])
+        sandbox_dirs = []
+
+        def fail(sandbox_dir, *args, **kwargs):
+            sandbox_dirs.append(sandbox_dir)
+            raise RuntimeError("harness failed")
+
+        monkeypatch.setattr(harness, "run", fail)
+        grader = AgenticGrader(harness=harness, rubrics=_rubrics())
+        result = await grader.aevaluate(transcript=[])
+
+        assert isinstance(result, GraderError)
+        assert result.metadata["harness_error"] == "RuntimeError: harness failed"
+        assert "setup_error" not in result.metadata
+        assert len(sandbox_dirs) == 1
+        assert not sandbox_dirs[0].exists()
 
 
 @pytest.mark.unit

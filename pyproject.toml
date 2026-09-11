@@ -51,7 +51,9 @@ dependencies = [
     "numpy>=1.22.0",
     "dashscope>=1.19.0",
     "tiktoken>=0.7.0",
-    "nltk>=3.8.1",
+    # 3.10.2 removed the import guard that broke in-project virtual environments;
+    # 3.10.3 also fixes PorterStemmer failures on long tokens used by ROUGE.
+    "nltk>=3.10.3",
     "jieba>=0.42.1",
     "sacrebleu>=2.0.0",
     "rouge-score>=0.1.2",
