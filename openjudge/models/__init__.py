@@ -4,6 +4,7 @@ Model integrations module from AgentScope
 """
 
 from openjudge.models.base_chat_model import BaseChatModel
+from openjudge.models.litellm_chat_model import LiteLLMChatModel
 from openjudge.models.minimax_chat_model import MiniMaxChatModel
 from openjudge.models.openai_chat_model import OpenAIChatModel
 from openjudge.models.qiniu_chat_model import QiniuChatModel
@@ -11,6 +12,7 @@ from openjudge.models.qwen_vl_model import QwenVLModel
 
 __all__ = [
     "BaseChatModel",
+    "LiteLLMChatModel",
     "MiniMaxChatModel",
     "OpenAIChatModel",
     "QiniuChatModel",

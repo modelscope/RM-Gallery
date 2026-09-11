@@ -101,6 +101,8 @@ target_endpoints:
   # search the web via Tavily API to find and verify real papers before
   # recommending them. This allows direct comparison of hallucination rates
   # between bare mode and tool-augmented mode for the same model.
+  # Search runs in this cookbook's local tool loop using the configured model
+  # and Tavily's HTTP API. It requires a Tavily key; no coding-agent CLI is needed.
   deepseek_with_tools:
     base_url: "https://api.deepseek.com/v1"
     api_key: "${DEEPSEEK_API_KEY}"

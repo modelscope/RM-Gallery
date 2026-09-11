@@ -115,6 +115,38 @@ class OpenAIChatModel(BaseChatModel):
 
         self.client = AsyncOpenAI(**client_args)
 
+    @staticmethod
+    def _normalize_and_validate_messages(
+        messages: list[dict | ChatMessage],
+        provider_name: str,
+    ) -> list[dict]:
+        """Convert ``ChatMessage`` objects and validate OpenAI message shape."""
+        if not isinstance(messages, list):
+            raise ValueError(
+                f"{provider_name} `messages` field expected type `list`, " f"got `{type(messages)}` instead.",
+            )
+
+        normalized_messages = [msg.to_dict() if isinstance(msg, ChatMessage) else msg for msg in messages]
+
+        def _is_valid_message(msg: dict) -> bool:
+            if not isinstance(msg, dict) or "role" not in msg:
+                return False
+            role = msg["role"]
+            if role == "assistant" and ("tool_calls" in msg or "function_call" in msg):
+                return True
+            if role == "tool":
+                return "tool_call_id" in msg and "content" in msg
+            return "content" in msg
+
+        if not all(_is_valid_message(msg) for msg in normalized_messages):
+            raise ValueError(
+                "Invalid message format. Each message must have 'role' and appropriate fields. "
+                "User/system messages need 'content'. Tool messages need 'tool_call_id' and 'content'. "
+                "Assistant messages with 'tool_calls' or 'function_call' don't require 'content'.",
+            )
+
+        return normalized_messages
+
     async def achat(
         self,
         messages: list[dict | ChatMessage],
@@ -164,34 +196,7 @@ class OpenAIChatModel(BaseChatModel):
                 The response from the OpenAI chat completions API.
         """
 
-        # checking messages
-        if not isinstance(messages, list):
-            raise ValueError(
-                "OpenAI `messages` field expected type `list`, " f"got `{type(messages)}` instead.",
-            )
-        messages = [msg.to_dict() if isinstance(msg, ChatMessage) else msg for msg in messages]
-
-        # Validate messages - note that for assistant messages with tool_calls,
-        # content can be None or missing (this is valid OpenAI format)
-        def _is_valid_message(msg: dict) -> bool:
-            if not isinstance(msg, dict) or "role" not in msg:
-                return False
-            role = msg["role"]
-            # Assistant messages with tool_calls don't require content
-            if role == "assistant" and "tool_calls" in msg:
-                return True
-            # Tool messages require tool_call_id and content
-            if role == "tool":
-                return "tool_call_id" in msg and "content" in msg
-            # All other messages require content
-            return "content" in msg
-
-        if not all(_is_valid_message(msg) for msg in messages):
-            raise ValueError(
-                "Invalid message format. Each message must have 'role' and appropriate fields. "
-                "User/system messages need 'content'. Tool messages need 'tool_call_id' and 'content'. "
-                "Assistant messages with 'tool_calls' don't require 'content'.",
-            )
+        messages = self._normalize_and_validate_messages(messages, "OpenAI")
 
         # Qwen-omni requires different base64 audio format from openai
         if "omni" in self.model.lower():

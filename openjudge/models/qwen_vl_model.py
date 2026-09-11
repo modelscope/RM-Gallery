@@ -49,6 +49,7 @@ class QwenVLModel(BaseChatModel):
         temperature: float = 0.1,
         top_p: float = 0.9,
         max_tokens: int = 2000,
+        timeout: Optional[float] = None,
     ):
         """
         Initialize Qwen VL API client
@@ -59,6 +60,8 @@ class QwenVLModel(BaseChatModel):
             temperature: Sampling temperature
             top_p: Nucleus sampling
             max_tokens: Maximum tokens to generate
+            timeout: Request timeout in seconds (defaults to the DashScope
+                SDK's own default of 300s when not set)
         """
         super().__init__(model=model, stream=False)
 
@@ -72,6 +75,7 @@ class QwenVLModel(BaseChatModel):
         self.temperature = temperature
         self.top_p = top_p
         self.max_tokens = max_tokens
+        self.timeout = timeout
 
         # Cost tracking
         self._total_requests = 0
@@ -151,15 +155,22 @@ class QwenVLModel(BaseChatModel):
         messages = self._format_messages(content, system_prompt)
 
         # Call API
+        call_kwargs: Dict[str, Any] = {
+            "api_key": self.api_key,
+            "model": self.model,
+            "messages": messages,
+            "temperature": self.temperature,
+            "top_p": self.top_p,
+            "max_length": self.max_tokens,
+        }
+        if self.timeout is not None:
+            # DashScope reads the socket timeout from `request_timeout`;
+            # a `timeout=` kwarg is accepted but dropped into the request
+            # body unused, so this is not a naming choice.
+            call_kwargs["request_timeout"] = self.timeout
+
         try:
-            response = MultiModalConversation.call(
-                api_key=self.api_key,
-                model=self.model,
-                messages=messages,
-                temperature=self.temperature,
-                top_p=self.top_p,
-                max_length=self.max_tokens,
-            )
+            response = MultiModalConversation.call(**call_kwargs)
 
             self._total_requests += 1
 
