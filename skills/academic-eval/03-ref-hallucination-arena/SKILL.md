@@ -1,5 +1,5 @@
 ---
-name: ref-hallucination-arena
+name: 03-ref-hallucination-arena
 description: >
   Benchmark LLM reference recommendation capabilities by verifying every cited
   paper against Crossref, PubMed, arXiv, and DBLP. Measures hallucination rate,
@@ -254,7 +254,7 @@ evaluation_results/ref_hallucination_arena/
 
 ## Additional resources
 
-- Full config examples: [cookbooks/ref_hallucination_arena/examples/](../../cookbooks/ref_hallucination_arena/examples/)
-- Documentation: [docs/validating_graders/ref_hallucination_arena.md](../../docs/validating_graders/ref_hallucination_arena.md)
+- Full config examples: [cookbooks/ref_hallucination_arena/examples/](../../../cookbooks/ref_hallucination_arena/examples/)
+- Documentation: [docs/validating_graders/ref_hallucination_arena.md](../../../docs/validating_graders/ref_hallucination_arena.md)
 - Official dataset: [HuggingFace](https://huggingface.co/datasets/OpenJudge/ref-hallucination-arena)
 - Leaderboard: [openjudge.me/leaderboard](https://openjudge.me/leaderboard)

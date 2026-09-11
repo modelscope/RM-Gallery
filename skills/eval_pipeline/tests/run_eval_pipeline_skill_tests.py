@@ -1,15 +1,29 @@
 # -*- coding: utf-8 -*-
 """
-Functional tests for eval-pipeline skills.
+Functional tests for Agent Skill suites (actor + judge, dual-model).
 
 This runner checks whether a skill can guide an agent through realistic user
 requests. It is different from ``evaluate_skills.py``, which grades the quality
 of a skill package itself.
 
+Despite the filename (kept for backward compatibility — it originated in
+``eval_pipeline`` and is still that suite's default target), this runner is
+suite-agnostic: point it at any ``skills/<suite>/`` directory with
+``--skill-root`` and its own JSONL fixture with ``--cases``. Every default
+below still resolves to ``eval_pipeline`` when no flags are given, so existing
+``eval_pipeline`` invocations are unaffected.
+
 Usage:
     python skills/eval_pipeline/tests/run_eval_pipeline_skill_tests.py
     python skills/eval_pipeline/tests/run_eval_pipeline_skill_tests.py \\
         --case-id rag_eval_001_diagnose_generation_problem
+
+    # Running against a different suite (e.g. academic-eval):
+    python skills/eval_pipeline/tests/run_eval_pipeline_skill_tests.py \\
+        --skill-root skills/academic-eval \\
+        --cases skills/academic-eval/tests/academic_eval_test_cases.jsonl \\
+        --out-dir skills/academic-eval/tests/results \\
+        --report-prefix academic_eval
 
 Environment (any OpenAI-compatible provider):
     OPENAI_API_KEY      preferred; the OpenAI-compatible key
@@ -80,7 +94,11 @@ def load_skill_text(skill_root: Path, skill_id: str) -> str:
             extra.append(ref.read_text(encoding="utf-8"))
         return text + "".join(extra)
 
-    if skill_id == "eval_pipeline_collection":
+    # A skill id ending in "_collection" (e.g. "eval_pipeline_collection",
+    # "academic_eval_collection") is a sentinel meaning "load every SKILL.md
+    # under this suite's skill_root", used for end-to-end test cases that span
+    # a router + its sub-skills rather than a single one.
+    if skill_id.endswith("_collection"):
         parts = []
         for skill_file in sorted(skill_root.glob("*/SKILL.md")):
             parts.append(f"\n\n===== {skill_file.parent.name} =====\n")
@@ -192,7 +210,7 @@ name the minimum missing artifact or sample size.
 
 def judge_actor_output(client: OpenAI, model: str, case: dict[str, Any], actor_output: str) -> dict[str, Any]:
     system = (
-        "You are a strict evaluator for eval-pipeline Skill functional tests. "
+        "You are a strict evaluator for Agent Skill functional tests. "
         "Grade only against the acceptance criteria and failure signals. "
         "Return only a JSON object."
     )
@@ -238,9 +256,9 @@ Return exactly:
     return result
 
 
-def render_report(results: list[dict[str, Any]]) -> str:
+def render_report(results: list[dict[str, Any]], title: str) -> str:
     lines = [
-        "# Eval Pipeline Functional Test Report",
+        f"# {title} Functional Test Report",
         "",
         f"Generated: {time.strftime('%Y-%m-%d %H:%M:%S')}",
         "",
@@ -315,10 +333,17 @@ def aggregate_runs(runs: list[dict[str, Any]]) -> tuple[str, dict[str, Any]]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run functional tests for eval-pipeline skills.")
+    parser = argparse.ArgumentParser(description="Run functional tests for an Agent Skill suite (actor + judge).")
     parser.add_argument("--cases", type=Path, default=DEFAULT_CASES)
     parser.add_argument("--skill-root", type=Path, default=DEFAULT_SKILL_ROOT)
     parser.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR)
+    parser.add_argument(
+        "--report-prefix",
+        default=None,
+        help="Prefix for output filenames and report title, e.g. 'academic_eval' -> "
+        "academic_eval_functional_report.md. Defaults to --skill-root's directory name "
+        "(underscored), which is 'eval_pipeline' when --skill-root is left at its default.",
+    )
     parser.add_argument("--case-id", action="append", help="Run only the given case id. Can be repeated.")
     parser.add_argument("--limit", type=int, default=None, help="Limit number of cases after filtering.")
     parser.add_argument(
@@ -337,6 +362,7 @@ def main() -> None:
         "Single-run verdicts are noisy (LLM actor + judge); use >=3 for robust claims.",
     )
     args = parser.parse_args()
+    report_prefix = args.report_prefix or args.skill_root.name.replace("-", "_")
 
     load_dotenv(REPO_ROOT / ".env")
     client = build_client()
@@ -373,10 +399,11 @@ def main() -> None:
         results.append({"case": case, "actor_output": actor_output, "judge": judge})
 
     args.out_dir.mkdir(parents=True, exist_ok=True)
-    json_path = args.out_dir / "eval_pipeline_functional_results.json"
-    md_path = args.out_dir / "eval_pipeline_functional_report.md"
+    json_path = args.out_dir / f"{report_prefix}_functional_results.json"
+    md_path = args.out_dir / f"{report_prefix}_functional_report.md"
+    report_title = report_prefix.replace("_", " ").title()
     json_path.write_text(json.dumps(results, ensure_ascii=False, indent=2), encoding="utf-8")
-    md_path.write_text(render_report(results), encoding="utf-8")
+    md_path.write_text(render_report(results, report_title), encoding="utf-8")
 
     passed = sum(1 for item in results if item["judge"].get("verdict") == "pass")
     partial = sum(1 for item in results if item["judge"].get("verdict") == "partial")

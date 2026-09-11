@@ -1,5 +1,5 @@
 ---
-name: rl-reward
+name: 02-rl-reward
 description: >
   Build RL reward signals using the OpenJudge framework.
   Covers choosing between pointwise and pairwise reward strategies based on

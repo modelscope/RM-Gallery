@@ -1,5 +1,5 @@
 ---
-name: bib-verify
+name: 02-bib-verify
 description: >
   Verify a BibTeX file for hallucinated or fabricated references by cross-checking
   every entry against CrossRef, arXiv, and DBLP. Reports each reference as
@@ -73,5 +73,5 @@ Each reference entry is assigned one of three statuses:
 
 ## Additional resources
 
-- Full pipeline options: [../paper-review/reference.md](../paper-review/reference.md)
-- Combined PDF review + BibTeX verification: [../paper-review/SKILL.md](../paper-review/SKILL.md)
+- Full pipeline options: [../01-paper-review/reference.md](../01-paper-review/reference.md)
+- Combined PDF review + BibTeX verification: [../01-paper-review/SKILL.md](../01-paper-review/SKILL.md)

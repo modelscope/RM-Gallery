@@ -1,5 +1,5 @@
 ---
-name: auto-arena
+name: 01-auto-arena
 description: >
   Automatically evaluate and compare multiple AI models or agents without
   pre-existing test data. Generates test queries from a task description,
@@ -270,5 +270,5 @@ evaluation_results/
 
 ## Additional resources
 
-- Full config examples: [cookbooks/auto_arena/examples/](../../cookbooks/auto_arena/examples/)
+- Full config examples: [cookbooks/auto_arena/examples/](../../../cookbooks/auto_arena/examples/)
 - Documentation: [Auto Arena Guide](https://agentscope-ai.github.io/OpenJudge/applications/auto_arena/)

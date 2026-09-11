@@ -1,5 +1,5 @@
 ---
-name: paper-review
+name: 01-paper-review
 description: >
   Review academic papers for correctness, quality, and novelty using OpenJudge's
   multi-stage pipeline. Supports PDF files and LaTeX source packages (.tar.gz/.zip).

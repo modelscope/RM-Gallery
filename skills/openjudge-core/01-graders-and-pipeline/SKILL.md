@@ -1,5 +1,5 @@
 ---
-name: openjudge
+name: 01-graders-and-pipeline
 description: >
   Build custom LLM evaluation pipelines using the OpenJudge framework.
   Covers selecting and configuring graders (LLM-based, function-based, agentic),
