@@ -161,3 +161,60 @@ class TestLiteLLMChatModelAchat:
         model = LiteLLMChatModel(model="gpt-4o")
         with pytest.raises(ValueError):
             await model.achat(messages="not a list")
+
+    @pytest.mark.parametrize(
+        "messages",
+        [
+            [{"content": "missing role"}],
+            [{"role": "user"}],
+            [{"role": "tool", "content": "missing tool call id"}],
+            [42],
+        ],
+        ids=["missing_role", "missing_content", "missing_tool_call_id", "non_dict"],
+    )
+    async def test_invalid_message_format_raises(self, messages):
+        _, calls = _install_litellm_stub()
+        model = LiteLLMChatModel(model="gpt-4o")
+
+        with pytest.raises(ValueError, match="Invalid message format"):
+            await model.achat(messages=messages)
+        assert calls == []
+
+    @pytest.mark.parametrize(
+        "instance_stream, call_stream, expected_handler",
+        [
+            (False, True, "streaming"),
+            (True, False, "non_streaming"),
+        ],
+    )
+    async def test_call_stream_override_selects_matching_response_handler(
+        self,
+        monkeypatch,
+        instance_stream,
+        call_stream,
+        expected_handler,
+    ):
+        _, calls = _install_litellm_stub()
+        model = LiteLLMChatModel(model="gpt-4o", stream=instance_stream)
+        streaming_result = object()
+        non_streaming_result = object()
+
+        monkeypatch.setattr(
+            model,
+            "_handle_streaming_response",
+            lambda *_args: streaming_result,
+        )
+        monkeypatch.setattr(
+            model,
+            "_handle_non_streaming_response",
+            lambda *_args: non_streaming_result,
+        )
+
+        result = await model.achat(
+            messages=[{"role": "user", "content": "hi"}],
+            stream=call_stream,
+        )
+
+        assert calls[-1]["stream"] is call_stream
+        expected_result = streaming_result if expected_handler == "streaming" else non_streaming_result
+        assert result is expected_result

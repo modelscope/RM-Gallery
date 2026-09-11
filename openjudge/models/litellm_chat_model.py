@@ -99,11 +99,7 @@ class LiteLLMChatModel(OpenAIChatModel):
         """
         import litellm
 
-        if not isinstance(messages, list):
-            raise ValueError(
-                f"LiteLLM `messages` field expected type `list`, got `{type(messages)}` instead.",
-            )
-        messages = [msg.to_dict() if isinstance(msg, ChatMessage) else msg for msg in messages]
+        messages = self._normalize_and_validate_messages(messages, "LiteLLM")
 
         call_kwargs: Dict[str, Any] = {
             "model": self.model,
@@ -155,6 +151,6 @@ class LiteLLMChatModel(OpenAIChatModel):
 
         response = await litellm.acompletion(**call_kwargs)
 
-        if self.stream:
+        if call_kwargs["stream"]:
             return self._handle_streaming_response(response, structured_model, callback)
         return self._handle_non_streaming_response(response, structured_model, callback)
