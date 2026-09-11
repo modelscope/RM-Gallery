@@ -132,7 +132,7 @@ class OpenAIChatModel(BaseChatModel):
             if not isinstance(msg, dict) or "role" not in msg:
                 return False
             role = msg["role"]
-            if role == "assistant" and "tool_calls" in msg:
+            if role == "assistant" and ("tool_calls" in msg or "function_call" in msg):
                 return True
             if role == "tool":
                 return "tool_call_id" in msg and "content" in msg
@@ -142,7 +142,7 @@ class OpenAIChatModel(BaseChatModel):
             raise ValueError(
                 "Invalid message format. Each message must have 'role' and appropriate fields. "
                 "User/system messages need 'content'. Tool messages need 'tool_call_id' and 'content'. "
-                "Assistant messages with 'tool_calls' don't require 'content'.",
+                "Assistant messages with 'tool_calls' or 'function_call' don't require 'content'.",
             )
 
         return normalized_messages

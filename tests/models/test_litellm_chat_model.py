@@ -162,6 +162,23 @@ class TestLiteLLMChatModelAchat:
         with pytest.raises(ValueError):
             await model.achat(messages="not a list")
 
+    async def test_assistant_function_call_without_content_is_accepted(self):
+        _, calls = _install_litellm_stub()
+        model = LiteLLMChatModel(model="gpt-4o")
+        messages = [
+            {
+                "role": "assistant",
+                "function_call": {
+                    "name": "lookup",
+                    "arguments": "{}",
+                },
+            },
+        ]
+
+        await model.achat(messages=messages)
+
+        assert calls[-1]["messages"] == messages
+
     @pytest.mark.parametrize(
         "messages",
         [
