@@ -6,13 +6,35 @@ and the eval_feedback field on GraderScore and GraderScoreCallback.
 """
 
 import pytest
+from pydantic import ValidationError
 
 from openjudge.graders.schema import (
+    Checkpoint,
+    CheckpointResult,
     EvalFeedback,
     EvalSuggestion,
     GraderScore,
     GraderScoreCallback,
+    Rubric,
+    RubricResult,
 )
+
+
+@pytest.mark.unit
+@pytest.mark.parametrize("weight", [-1.0, float("nan"), float("inf"), float("-inf")])
+@pytest.mark.parametrize("checkpoint", [False, True], ids=["rubric", "checkpoint"])
+def test_judge_weights_must_be_finite_and_non_negative(weight, checkpoint):
+    with pytest.raises(ValidationError):
+        if checkpoint:
+            Checkpoint(id="c", description="criterion", weight=weight)
+        else:
+            Rubric(name="r", checkpoints=[], weight=weight)
+
+
+@pytest.mark.unit
+def test_zero_judge_weights_remain_supported():
+    checkpoint = Checkpoint(id="c", description="criterion", weight=0)
+    assert Rubric(name="r", checkpoints=[checkpoint], weight=0).weight == checkpoint.weight == 0
 
 
 @pytest.mark.unit
@@ -126,3 +148,66 @@ class TestGraderScoreCallbackExcludesEvalFeedback:
         schema = GraderScoreCallback.model_json_schema()
         props = set(schema.get("properties", {}).keys())
         assert props == {"reason", "score", "metadata"}
+
+
+@pytest.mark.unit
+class TestCheckpointAndRubric:
+    def test_checkpoint_defaults(self):
+        cp = Checkpoint(id="c1", description="Must return valid JSON")
+        assert cp.id == "c1"
+        assert cp.content is None
+        assert cp.weight == 1.0
+
+    def test_checkpoint_with_content_and_weight(self):
+        cp = Checkpoint(
+            id="c1",
+            description="Output parses as JSON",
+            content="import json; json.loads(response)",
+            weight=2.0,
+        )
+        assert cp.content == "import json; json.loads(response)"
+        assert cp.weight == 2.0
+
+    def test_rubric_defaults_and_checkpoints(self):
+        rubric = Rubric(name="correctness", checkpoints=[Checkpoint(id="c1", description="d")])
+        assert rubric.name == "correctness"
+        assert rubric.description is None
+        assert rubric.weight == 1.0
+        assert len(rubric.checkpoints) == 1
+
+    def test_rubric_serialization_roundtrip(self):
+        rubric = Rubric(
+            name="safety",
+            description="No unsafe actions",
+            weight=2.0,
+            checkpoints=[Checkpoint(id="s1", description="No destructive commands")],
+        )
+        data = rubric.model_dump()
+        rubric2 = Rubric(**data)
+        assert rubric2 == rubric
+
+
+@pytest.mark.unit
+class TestCheckpointResultAndRubricResult:
+    def test_checkpoint_result_defaults(self):
+        r = CheckpointResult(checkpoint_id="c1", passed=True, reason="matched expected output")
+        assert r.execution_log is None
+
+    def test_checkpoint_result_with_execution_log(self):
+        r = CheckpointResult(
+            checkpoint_id="c1",
+            passed=False,
+            reason="test script failed",
+            execution_log="$ python test.py\nAssertionError: expected 4 got 5",
+        )
+        assert "AssertionError" in r.execution_log
+
+    def test_rubric_result_serialization_roundtrip(self):
+        result = RubricResult(
+            name="correctness",
+            score=0.5,
+            checkpoint_results=[CheckpointResult(checkpoint_id="c1", passed=True, reason="ok")],
+        )
+        data = result.model_dump()
+        result2 = RubricResult(**data)
+        assert result2 == result

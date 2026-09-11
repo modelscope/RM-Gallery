@@ -6,8 +6,8 @@ evaluated simultaneously while respecting per-model rate limits.
 
 Supports two collection modes per endpoint:
   - **Bare mode** (default): Direct LLM call via achat.
-  - **Tool-augmented mode** (tool_config.enabled=true): Uses a ReAct agent
-    with TavilySearchTool so the LLM can search the web to verify/find real
+  - **Tool-augmented mode** (tool_config.enabled=true): Uses a local search loop
+    with Tavily so the LLM can search the web to verify/find real
     papers before recommending them.
 """
 
@@ -16,6 +16,10 @@ from typing import Any, Dict, List, Optional
 
 from loguru import logger
 
+from cookbooks.ref_hallucination_arena.collectors.search_agent import (
+    ReferenceSearchAgent,
+    SearchAgentResult,
+)
 from cookbooks.ref_hallucination_arena.schema import (
     EvaluationConfig,
     OpenAIEndpoint,
@@ -80,7 +84,7 @@ class ResponseCollector:
 
         # Per-endpoint resources
         self.models: Dict[str, OpenAIChatModel] = {}
-        self.agents: Dict[str, Any] = {}
+        self.agents: Dict[str, ReferenceSearchAgent] = {}
         self.system_prompts: Dict[str, Optional[str]] = {}
         self._tool_enabled: Dict[str, bool] = {}
         self._semaphores: Dict[str, asyncio.Semaphore] = {}
@@ -143,7 +147,7 @@ class ResponseCollector:
             tool_cfg = endpoint.tool_config
             if tool_cfg.enabled:
                 self._tool_enabled[name] = True
-                self.agents[name] = self._create_tool_agent(self.models[name], tool_cfg)
+                self.agents[name] = ReferenceSearchAgent(self.models[name], tool_cfg)
                 logger.info(
                     f"Endpoint '{name}': tool-augmented mode "
                     f"(max_iterations={tool_cfg.max_iterations}, "
@@ -157,18 +161,6 @@ class ResponseCollector:
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
-
-    @staticmethod
-    def _create_tool_agent(model: OpenAIChatModel, tool_cfg: Any) -> Any:
-        from openjudge.agentic import ReActAgent
-        from openjudge.graders.common.search_correctness import TavilySearchTool
-
-        search_tool = TavilySearchTool(api_key=tool_cfg.tavily_api_key)
-        return ReActAgent(
-            model=model,
-            tools=[search_tool],
-            max_iterations=tool_cfg.max_iterations,
-        )
 
     def _build_system_prompt(self, endpoint_name: str, query_item: QueryItem) -> str:
         custom = self.system_prompts.get(endpoint_name)
@@ -265,7 +257,7 @@ class ResponseCollector:
         content = result.content or ""
         tool_calls_count = getattr(result, "tool_calls_count", 0)
         iterations = getattr(result, "iterations", 0)
-        hit_max = getattr(result, "metadata", {}).get("max_iterations_reached", False)
+        hit_max = result.max_iterations_reached
 
         # --- Fallback: if the agent exhausted its iterations or the final
         #     content doesn't contain any BibTeX, ask the model one more time
@@ -306,7 +298,7 @@ class ResponseCollector:
         self,
         endpoint_name: str,
         query_item: QueryItem,
-        agent_result: Any,
+        agent_result: SearchAgentResult,
         timeout: float,
     ) -> str:
         """Make one final LLM call *without tools* to produce BibTeX output.

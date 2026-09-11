@@ -20,6 +20,7 @@ USAGE
 
 EXIT: 0 if coverage is adequate, 2 if thin cells found, 1 on usage error.
 """
+# pylint: disable=missing-function-docstring
 from __future__ import annotations
 
 import argparse
@@ -101,14 +102,16 @@ def _self_test() -> None:
     data += [{"metadata": {"dimension": "order_accuracy", "difficulty": "easy"}}] * 12
     data += [{"metadata": {"dimension": "order_accuracy", "difficulty": "boundary"}}] * 11
     data += [{"metadata": {"dimension": "order_accuracy", "difficulty": "adversarial"}}] * 10
-    data += [{"metadata": {"dimension": "tone", "difficulty": "easy"}}] * 3   # thin dimension
+    data += [{"metadata": {"dimension": "tone", "difficulty": "easy"}}] * 3  # thin dimension
     r = analyze(data)
     assert "tone" in r["thin_dimensions"], r["thin_dimensions"]
     assert r["verdict"] == "thin_coverage"
     # A well-covered single dimension.
-    good = ([{"metadata": {"dimension": "d", "difficulty": "easy"}}] * 11
-            + [{"metadata": {"dimension": "d", "difficulty": "boundary"}}] * 10
-            + [{"metadata": {"dimension": "d", "difficulty": "adversarial"}}] * 10)
+    good = (
+        [{"metadata": {"dimension": "d", "difficulty": "easy"}}] * 11
+        + [{"metadata": {"dimension": "d", "difficulty": "boundary"}}] * 10
+        + [{"metadata": {"dimension": "d", "difficulty": "adversarial"}}] * 10
+    )
     rg = analyze(good)
     assert rg["verdict"] == "adequate", rg
     print("self-test OK")
